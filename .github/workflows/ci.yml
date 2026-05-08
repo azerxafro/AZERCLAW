@@ -1,0 +1,133 @@
+name: AZERCLAW CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  # ─── Lint & Test ───────────────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npx tsx bin/azerclaw.ts --version
+      - run: npx tsx bin/azerclaw.ts doctor 2>/dev/null || true
+      - run: npm test
+
+  # ─── Security Audit ────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm audit --production --audit-level=high || true
+      - name: Check for secrets in code
+        run: |
+          ! grep -rn "sk-[a-zA-Z0-9]\{20,\}" --include="*.ts" --include="*.js" --include="*.json" . \
+            --exclude-dir=node_modules --exclude-dir=.git || \
+            (echo "⚠️ Possible API key found in source!" && exit 1)
+
+  # ─── Build Cross-Platform Binaries ─────────────────────────────
+  build:
+    name: Build Binaries
+    needs: [test, security]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            ext: ''
+          - os: ubuntu-latest
+            target: linux-arm64
+            ext: ''
+          - os: macos-latest
+            target: darwin-x64
+            ext: ''
+          - os: macos-latest
+            target: darwin-arm64
+            ext: ''
+          - os: windows-latest
+            target: win-x64
+            ext: '.exe'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build binary
+        run: |
+          npx -y @vercel/ncc build bin/azerclaw.ts -o dist/ncc --minify
+          npx -y pkg dist/ncc/index.js \
+            --target node22-${{ matrix.target }} \
+            --output dist/azerclaw-${{ matrix.target }}${{ matrix.ext }} \
+            --compress GZip
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: azerclaw-${{ matrix.target }}
+          path: dist/azerclaw-${{ matrix.target }}${{ matrix.ext }}
+
+  # ─── Create GitHub Release ─────────────────────────────────────
+  release:
+    name: Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/azerclaw-*/azerclaw-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─── Publish to npm ────────────────────────────────────────────
+  npm-publish:
+    name: Publish to npm
+    needs: [test, security]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

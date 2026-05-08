@@ -1,0 +1,39 @@
+/**
+ * 🐟 AZERCLAW Example Fishbone Workflow
+ * Demonstrates a code deployment pipeline with approval gates.
+ */
+---
+name: deploy-pipeline
+description: Automated code deployment with testing and approval
+version: 1.0.0
+trigger: manual
+---
+
+## Run Tests
+- **Type**: shell
+- **Action**: npm test
+- **OnError**: stop
+
+## Code Review
+- **Type**: agent
+- **Action**: Review the last 5 git commits for potential issues. Check for security vulnerabilities, breaking changes, and missing tests.
+- **Output**: review_result
+
+## Build
+- **Type**: shell
+- **Action**: npm run build
+- **OnError**: stop
+
+## Deploy Approval
+- **Type**: approval
+- **Action**: Deploy to production? Review results: {{review_result}}
+- **Approval**: required
+
+## Deploy
+- **Type**: shell
+- **Action**: echo "Deploying to production..."
+- **OnError**: stop
+
+## Notify
+- **Type**: agent
+- **Action**: Generate a deployment summary including what was deployed, test results, and any issues found during review.

@@ -1,0 +1,113 @@
+{
+  "name": "azerclaw",
+  "version": "1.0.0",
+  "description": "🐟 AZERCLAW — Open-source, BYOK AI agent for your terminal. Your AI, Your Keys, Your Way.",
+  "main": "dist/src/index.js",
+  "bin": {
+    "azerclaw": "./bin/azerclaw.ts",
+    "AZERCLAW": "./bin/azerclaw.ts",
+    "Azerclaw": "./bin/azerclaw.ts"
+  },
+  "scripts": {
+    "start": "npx tsx bin/azerclaw.ts",
+    "chat": "npx tsx bin/azerclaw.ts chat",
+    "tui": "npx tsx bin/azerclaw.ts tui",
+    "dev": "npx tsx bin/azerclaw.ts",
+    "build": "tsc && npm run copy-skills",
+    "copy-skills": "cp -r skills dist/skills 2>/dev/null || true",
+    "doctor": "npx tsx bin/azerclaw.ts doctor",
+    "onboard": "npx tsx bin/azerclaw.ts onboard",
+    "test": "echo \"Tests coming soon\" && exit 0",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "cli",
+    "terminal",
+    "llm",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "ollama",
+    "byok",
+    "open-source",
+    "autonomous",
+    "coding-assistant"
+  ],
+  "author": "AZERCLAW",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/azerclaw/azerclaw"
+  },
+  "homepage": "https://azerclaw.dev",
+  "bugs": {
+    "url": "https://github.com/azerclaw/azerclaw/issues"
+  },
+  "files": [
+    "dist/",
+    "bin/",
+    "skills/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0",
+    "@google/generative-ai": "^0.24.0",
+    "boxen": "^5.1.2",
+    "chalk": "^4.1.2",
+    "cli-highlight": "^2.1.11",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0",
+    "conf": "^11.0.2",
+    "croner": "^9.0.0",
+    "enquirer": "^2.4.1",
+    "figures": "^3.2.0",
+    "glob": "^11.0.2",
+    "gradient-string": "^2.0.2",
+    "log-symbols": "^4.1.0",
+    "lowdb": "^6.1.2",
+    "nanoid": "^3.3.11",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.97.0",
+    "ora": "^5.4.1",
+    "strip-ansi": "^6.0.1",
+    "string-width": "^4.2.3",
+    "wrap-ansi": "^7.0.0",
+    "ws": "^8.18.2",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "@types/ws": "^8.18.1",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "azerclaw": {
+    "security": {
+      "telemetry": false,
+      "analytics": false,
+      "dataCollection": false,
+      "phoneHome": false
+    }
+  }
+}
