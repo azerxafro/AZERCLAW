@@ -79,13 +79,44 @@ export class ProviderRouter {
       
       const provider = this.providers.get(providerName);
       if (!provider) continue;
-      try {
-        const result = await provider.complete(options);
-        if (result.finishReason !== 'error') return result;
-        lastError = result.content || `${providerName} returned error`;
-      } catch (e: any) {
-        lastError = e.message || `${providerName} threw exception`;
-        continue;
+      
+      // Retry with exponential backoff for transient errors
+      const maxRetries = 3;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const result = await provider.complete(options);
+          if (result.finishReason !== 'error') return result;
+          
+          // Check if error is retryable (rate limit, server error)
+          const isRetryable = result.content.includes('429') || 
+                              result.content.includes('500') || 
+                              result.content.includes('502') || 
+                              result.content.includes('503') ||
+                              result.content.includes('rate') ||
+                              result.content.includes('timeout');
+          
+          if (isRetryable && attempt < maxRetries - 1) {
+            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          
+          lastError = result.content || `${providerName} returned error`;
+          break;
+        } catch (e: any) {
+          const isRetryable = e.status === 429 || e.status >= 500 || 
+                              e.code === 'ECONNREFUSED' || e.code === 'ETIMEDOUT' ||
+                              e.code === 'ENOTFOUND';
+          
+          if (isRetryable && attempt < maxRetries - 1) {
+            const delay = Math.pow(2, attempt) * 1000;
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          
+          lastError = e.message || `${providerName} threw exception`;
+          break;
+        }
       }
     }
 

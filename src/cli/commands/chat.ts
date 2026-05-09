@@ -32,6 +32,13 @@ function registerAllTools(): void {
 export async function runChat(options: { model?: string; provider?: string }): Promise<void> {
   registerAllTools();
 
+  // Initialize memory
+  const { getSessionStore, getContextStore } = require('../../memory/store');
+  const sessionStore = getSessionStore();
+  const contextStore = getContextStore();
+  const session = sessionStore.create();
+  const contextPrompt = contextStore.toPromptContext();
+
   const thinking = new FishThinkingAnimation('Initializing');
   let isThinking = false;
 
@@ -118,6 +125,63 @@ export async function runChat(options: { model?: string; provider?: string }): P
 
     // Handle slash commands
     if (input.startsWith('/')) {
+      // Check for agent invocation: /ZEUS, /ORION, /ATLAS, etc.
+      const agentMatch = input.match(/^\/([A-Z]+)\s+(.*)/);
+      if (agentMatch) {
+        const agentName = agentMatch[1];
+        let task = agentMatch[2];
+        
+        // Parse execution flags
+        let flags = { turbo: false, auto: false, review: false, collab: false, secure: false };
+        const flagPattern = /\/\/(turbo|auto|review|collab|secure)/g;
+        let flagMatch;
+        while ((flagMatch = flagPattern.exec(task)) !== null) {
+          (flags as any)[flagMatch[1]] = true;
+        }
+        task = task.replace(flagPattern, '').trim();
+        
+        const { getAgent, createAgent, formatAgentRoster } = require('../../agents/builtin');
+        
+        if (agentName === 'PANTHEON' || agentName === 'ALL') {
+          console.log(formatAgentRoster());
+          fishInfo('Multi-agent collaboration coming soon. Use /AGENT_NAME [task] for now.');
+          rl.prompt();
+          return;
+        }
+        
+        const agentDef = getAgent(agentName);
+        if (!agentDef) {
+          fishError(`Unknown agent: ${agentName}. Type /agents to see available agents.`);
+          rl.prompt();
+          return;
+        }
+        
+        console.log(chalk.hex('#818cf8')(`  ${agentDef.emoji} ${agentDef.codename} activated — ${agentDef.role}`));
+        if (flags.turbo) console.log(chalk.hex('#fbbf24')('  ⚡ TURBO mode — auto-executing without confirmation'));
+        if (flags.auto) console.log(chalk.hex('#34d399')('  🤖 AUTO mode — full autonomous execution'));
+        
+        const subAgent = createAgent(agentDef, async (event: any) => {
+          if (event.type === 'response' && event.content) {
+            console.log('');
+            console.log(chalk.hex('#c4b5fd')(`  ┌─ ${agentDef.emoji} ${agentDef.codename}`));
+            const lines = event.content.split('\n');
+            for (const l of lines) {
+              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(l));
+            }
+            console.log(chalk.hex('#c4b5fd')('  └─'));
+            console.log('');
+          }
+        });
+        
+        try {
+          await subAgent.run(task);
+        } catch (error: any) {
+          fishError(`${agentDef.codename} error: ${error.message}`);
+        }
+        rl.prompt();
+        return;
+      }
+      
       switch (input.toLowerCase()) {
         case '/exit':
         case '/quit':
@@ -130,21 +194,33 @@ export async function runChat(options: { model?: string; provider?: string }): P
           console.clear();
           fishInfo('Chat cleared');
           break;
+        case '/agents': {
+          const { formatAgentRoster } = require('../../agents/builtin');
+          console.log('');
+          console.log(formatAgentRoster());
+          console.log('');
+          fishInfo('Usage: /AGENT_NAME [task]  (e.g., /ORION write a REST API)');
+          break;
+        }
         case '/help':
           fishBox('Commands', [
-            chalk.hex('#60a5fa')('/exit    ') + chalk.dim('— Exit chat'),
-            chalk.hex('#60a5fa')('/clear   ') + chalk.dim('— Clear screen'),
-            chalk.hex('#60a5fa')('/model   ') + chalk.dim('— Show current model'),
-            chalk.hex('#60a5fa')('/help    ') + chalk.dim('— This help'),
+            chalk.hex('#60a5fa')('/exit      ') + chalk.dim('— Exit chat'),
+            chalk.hex('#60a5fa')('/clear     ') + chalk.dim('— Clear screen'),
+            chalk.hex('#60a5fa')('/model     ') + chalk.dim('— Show current model'),
+            chalk.hex('#60a5fa')('/agents    ') + chalk.dim('— List all Pantheon agents'),
+            chalk.hex('#60a5fa')('/ZEUS task ') + chalk.dim('— Invoke a specific agent'),
+            chalk.hex('#60a5fa')('/help      ') + chalk.dim('— This help'),
+            '',
+            chalk.dim('Execution flags: //turbo //auto //review //collab //secure'),
           ]);
           break;
         case '/model':
-          const { getConfigManager } = require('../../config/manager');
-          const cfg = getConfigManager().getAll();
+          const { getConfigManager: getCM } = require('../../config/manager');
+          const cfg = getCM().getAll();
           fishInfo(`Provider: ${cfg.ai.defaultProvider} | Model: ${cfg.ai.providers[cfg.ai.defaultProvider as keyof typeof cfg.ai.providers]?.defaultModel || 'default'}`);
           break;
         default:
-          fishError(`Unknown command: ${input}`);
+          fishError(`Unknown command: ${input}. Type /help for available commands.`);
       }
       rl.prompt();
       return;
