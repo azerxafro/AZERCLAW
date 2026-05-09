@@ -178,13 +178,13 @@ export function printQuickSplash(version: string): void {
 
 const THE_BOYS_QUOTES = [
   "Diabolical.",
-  "I can do whatever the f**k I want.",
-  "Well, well, well, if it ain't the invisible c**t.",
+  "I can do whatever the fuck I want.",
+  "Well, well, well, if it ain't the invisible cunt.",
   "Scorched earth.",
   "You guys are the real heroes.",
-  "I'll laser every f**king one of you!",
+  "I'll laser every fucking one of you!",
   "Don't you worry. Daddy's home.",
-  "With great power comes the absolute certainty that you'll turn into a right c**t."
+  "With great power comes the absolute certainty that you'll turn into a right cunt."
 ];
 
 // ─── Thinking Animation ─────────────────────────────────────────
