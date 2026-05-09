@@ -113,6 +113,18 @@ const UIConfigSchema = z.object({
   colorMode: z.enum(['auto', 'ansi256', 'truecolor', 'none']).default('auto'),
 });
 
+// ─── Channels Config ──────────────────────────────────────────────
+
+const ChannelsConfigSchema = z.object({
+  discord: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
+  telegram: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
+  slack: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
+}).default(() => ({
+  discord: { token: '', enabled: false },
+  telegram: { token: '', enabled: false },
+  slack: { token: '', enabled: false },
+}));
+
 // ─── Full Config ────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
@@ -147,6 +159,11 @@ export const ConfigSchema = z.object({
     showSplash: true,
     animationSpeed: 'normal' as const,
     colorMode: 'auto' as const,
+  })),
+  channels: ChannelsConfigSchema.default(() => ({
+    discord: { token: '', enabled: false },
+    telegram: { token: '', enabled: false },
+    slack: { token: '', enabled: false },
   })),
   version: z.string().default('1.0.0'),
   firstRun: z.boolean().default(true),

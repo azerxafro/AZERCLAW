@@ -8,6 +8,7 @@ import { getRouter } from '../providers/router';
 import { getToolRegistry, ToolResult } from '../tools/registry';
 import { getConfigManager } from '../config/manager';
 import { ChatMessage, CompletionResult, ToolCall } from '../providers/base';
+import { loadAllSkills, formatSkillsForPrompt } from '../skills/loader';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -72,10 +73,18 @@ export class AgentRuntime {
     eventHandler: AgentEventHandler;
   }) {
     const config = getConfigManager().getAll();
+    
+    // Load skills and format them
+    const skills = loadAllSkills(process.cwd());
+    const skillsPrompt = formatSkillsForPrompt(skills);
+    
+    const basePrompt = options.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+    const finalPrompt = basePrompt + skillsPrompt;
+
     this.context = {
       sessionId: options.sessionId || `session_${Date.now()}`,
       messages: [],
-      systemPrompt: options.systemPrompt || DEFAULT_SYSTEM_PROMPT,
+      systemPrompt: finalPrompt,
       maxIterations: options.maxIterations || config.agent.maxIterations,
       currentIteration: 0,
       parentAgentId: options.parentAgentId,

@@ -176,6 +176,17 @@ export function printQuickSplash(version: string): void {
   console.log('');
 }
 
+const THE_BOYS_QUOTES = [
+  "Diabolical.",
+  "I can do whatever the f**k I want.",
+  "Well, well, well, if it ain't the invisible c**t.",
+  "Scorched earth.",
+  "You guys are the real heroes.",
+  "I'll laser every f**king one of you!",
+  "Don't you worry. Daddy's home.",
+  "With great power comes the absolute certainty that you'll turn into a right c**t."
+];
+
 // ─── Thinking Animation ─────────────────────────────────────────
 
 export class FishThinkingAnimation {
@@ -184,6 +195,8 @@ export class FishThinkingAnimation {
   private message: string;
   private bubbleFrames = ['○', '◦', '·', '◦'];
   private bubbleIndex = 0;
+  private quoteIndex = Math.floor(Math.random() * THE_BOYS_QUOTES.length);
+  private quoteTick = 0;
 
   constructor(message: string = 'Thinking') {
     this.message = message;
@@ -193,17 +206,27 @@ export class FishThinkingAnimation {
     hideCursor();
     this.frameIndex = 0;
     this.bubbleIndex = 0;
+    this.quoteTick = 0;
+    this.quoteIndex = Math.floor(Math.random() * THE_BOYS_QUOTES.length);
     
     this.interval = setInterval(() => {
       const fish = FISH_FRAMES[this.frameIndex % FISH_FRAMES.length];
       const bubble = this.bubbleFrames[this.bubbleIndex % this.bubbleFrames.length];
       const dots = '.'.repeat((this.frameIndex % 3) + 1).padEnd(3);
       
+      this.quoteTick++;
+      if (this.quoteTick > 25) { // change quote every ~3.75 seconds
+        this.quoteIndex = Math.floor(Math.random() * THE_BOYS_QUOTES.length);
+        this.quoteTick = 0;
+      }
+      const quote = THE_BOYS_QUOTES[this.quoteIndex];
+      
       process.stdout.write('\r\x1b[2K');
       process.stdout.write(
         OCEAN_GRADIENT(fish) + 
         chalk.hex('#60a5fa')(` ${bubble} ${bubble} `) + 
-        chalk.hex('#a78bfa')(`${this.message}${dots}`)
+        chalk.hex('#a78bfa')(`${this.message}${dots} `) +
+        chalk.dim(`"${quote}"`)
       );
       
       this.frameIndex++;

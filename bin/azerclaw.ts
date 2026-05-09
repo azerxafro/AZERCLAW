@@ -18,7 +18,8 @@
  */
 
 const { Command } = require('commander');
-const { playSplashScreen, printQuickSplash, fishError, fishInfo } = require('../src/cli/animations/fish');
+const chalk = require('chalk');
+const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
 const VERSION = '1.0.0';
@@ -284,6 +285,60 @@ agentsCmd.action(() => {
   const { agentsList } = require('../src/cli/commands/agents');
   agentsList();
 });
+
+// ─── Workflow Command ───────────────────────────────────────────
+
+const workflowCmd = program
+  .command('workflow')
+  .description('Manage and run Fishbone workflows');
+
+workflowCmd
+  .command('run <file>')
+  .description('Run a .fishbone workflow file')
+  .action(async (file: string) => {
+    printQuickSplash(VERSION);
+    const { parseFishboneFile, FishboneEngine } = require('../src/workflow/engine');
+    const path = require('path');
+    const fs = require('fs');
+    
+    const filePath = path.resolve(process.cwd(), file);
+    if (!fs.existsSync(filePath)) {
+      fishError(`Workflow file not found: ${filePath}`);
+      return;
+    }
+    
+    const workflow = parseFishboneFile(filePath);
+    fishInfo(`Running workflow: ${workflow.name} (v${workflow.version})`);
+    
+    const engine = new FishboneEngine();
+    await engine.execute(workflow, {}, async (event: any) => {
+      if (event.type === 'step_start') console.log(chalk.hex('#60a5fa')(`[Step] ${event.stepName}...`));
+      if (event.type === 'approval_needed') {
+        console.log(chalk.hex('#fbbf24')(`[Approval] Needed for: ${event.content}`));
+        console.log(chalk.hex('#34d399')(`Resume token: ${event.resumeToken}`));
+      }
+      if (event.type === 'step_error') console.log(chalk.hex('#ef4444')(`[Error] ${event.content}`));
+      if (event.type === 'workflow_complete') fishSuccess('Workflow completed successfully');
+      if (event.type === 'workflow_error') fishError(`Workflow failed: ${event.content}`);
+    });
+  });
+
+workflowCmd
+  .command('resume <id> <token>')
+  .description('Resume a paused workflow')
+  .action(async (id: string, token: string) => {
+    printQuickSplash(VERSION);
+    const { FishboneEngine } = require('../src/workflow/engine');
+    // Note: In a real system, the engine state needs to be persisted to resume across process boundaries.
+    // For now, this invokes the API.
+    const engine = new FishboneEngine();
+    const resumed = await engine.resume(id, token);
+    if (resumed) {
+      fishSuccess(`Workflow ${id} resumed successfully.`);
+    } else {
+      fishError(`Failed to resume workflow ${id}. Invalid token or session not found.`);
+    }
+  });
 
 // ─── Parse & Run ────────────────────────────────────────────────
 

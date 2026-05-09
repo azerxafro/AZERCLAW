@@ -144,6 +144,39 @@ export async function runOnboard(): Promise<void> {
   config.set('agent.name', agentName);
   config.completeFirstRun();
 
+  // Channels settings
+  console.log('');
+  fishBox('📡 Channel Integrations', [
+    chalk.dim('Connect AZERCLAW to your favorite messengers (optional)'),
+  ]);
+
+  const { configureChannels } = await new Enquirer.Confirm({
+    name: 'configureChannels',
+    message: OCEAN('Would you like to configure Discord, Telegram, or Slack bots?'),
+    initial: false,
+  }).run().then((val: boolean) => ({ configureChannels: val })).catch(() => ({ configureChannels: false }));
+
+  if (configureChannels) {
+    const { channels } = await new Enquirer.MultiSelect({
+      name: 'channels',
+      message: 'Select channels to configure:',
+      choices: ['Discord', 'Telegram', 'Slack'],
+    }).run().catch(() => ({ channels: [] }));
+
+    for (const channel of channels) {
+      const channelKey = channel.toLowerCase();
+      const token = await new Enquirer.Password({
+        message: `${channel} Bot Token:`,
+      }).run().catch(() => '');
+
+      if (token) {
+        config.set(`channels.${channelKey}.token`, token);
+        config.set(`channels.${channelKey}.enabled`, true);
+        fishSuccess(`${channel} configured`);
+      }
+    }
+  }
+
   // Final summary
   console.log('');
   fishBox('✅ Setup Complete', [
