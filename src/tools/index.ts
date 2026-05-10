@@ -8,6 +8,7 @@ import { getToolLoader } from './loader';
 import { shellTool } from './shell';
 import { readFileTool, writeFileTool, listDirTool, searchFilesTool } from './filesystem';
 import { spawnSubAgentTool, webSearchTool, codeAnalysisTool } from './advanced';
+import { memoryTool } from './memory';
 import * as path from 'path';
 import * as os from 'os';
 
@@ -26,6 +27,7 @@ export async function registerAllTools(): Promise<void> {
   registry.register(spawnSubAgentTool);
   registry.register(webSearchTool);
   registry.register(codeAnalysisTool);
+  registry.register(memoryTool);
 
   // 2. Load External Plugins
   const loader = getToolLoader();

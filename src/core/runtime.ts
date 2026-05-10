@@ -9,6 +9,7 @@ import { getToolRegistry, ToolResult } from '../tools/registry';
 import { getConfigManager } from '../config/manager';
 import { ChatMessage, CompletionResult, ToolCall } from '../providers/base';
 import { loadAllSkills, formatSkillsForPrompt } from '../skills/loader';
+import { getSessionStore, getContextStore } from '../memory/store';
 import {
   filterToolDefinitionsForSession,
   isToolAllowedInSession,
@@ -84,12 +85,16 @@ export class AgentRuntime {
   }) {
     const config = getConfigManager().getAll();
     
-    // Load skills and format them
+    // 1. Load skills
     const skills = loadAllSkills(process.cwd());
     const skillsPrompt = formatSkillsForPrompt(skills);
     
+    // 2. Load long-term memories
+    const contextStore = getContextStore();
+    const memoryPrompt = contextStore.toPromptContext();
+    
     const basePrompt = options.systemPrompt || DEFAULT_SYSTEM_PROMPT;
-    const finalPrompt = basePrompt + skillsPrompt;
+    const finalPrompt = basePrompt + skillsPrompt + memoryPrompt;
 
     this.context = {
       sessionId: options.sessionId || `session_${Date.now()}`,
@@ -101,13 +106,21 @@ export class AgentRuntime {
       metadata: {},
     };
     this.eventHandler = options.eventHandler;
+
+    // Load existing messages if sessionId was provided
+    if (options.sessionId) {
+      const session = getSessionStore().get(options.sessionId);
+      if (session) {
+        this.context.messages = [...session.messages];
+      }
+    }
   }
 
   /**
    * Send a user message and run the agent loop.
    */
   async run(userMessage: string): Promise<string> {
-    this.context.messages.push({ role: 'user', content: userMessage });
+    this.addMessage({ role: 'user', content: userMessage });
     return this.agentLoop();
   }
 
@@ -115,8 +128,23 @@ export class AgentRuntime {
    * Continue a conversation with a new message.
    */
   async chat(userMessage: string): Promise<string> {
-    this.context.messages.push({ role: 'user', content: userMessage });
+    this.addMessage({ role: 'user', content: userMessage });
     return this.agentLoop();
+  }
+
+  private addMessage(message: ChatMessage): void {
+    this.context.messages.push(message);
+    const store = getSessionStore();
+    // Ensure session exists
+    if (!store.get(this.context.sessionId)) {
+      store.create(this.context.sessionId);
+    }
+    store.addMessage(this.context.sessionId, message);
+    
+    // Auto-title if it's the first user message
+    if (message.role === 'user' && this.context.messages.filter(m => m.role === 'user').length === 1) {
+      store.autoTitle(this.context.sessionId);
+    }
   }
 
   /**
@@ -157,7 +185,7 @@ export class AgentRuntime {
       // Handle tool calls
       if (result.toolCalls && result.toolCalls.length > 0) {
         // Add assistant message with tool calls
-        this.context.messages.push({
+        this.addMessage({
           role: 'assistant',
           content: result.content || '',
           toolCalls: result.toolCalls,
@@ -204,7 +232,7 @@ export class AgentRuntime {
 
           await this.emit({ type: 'tool_result', toolName: toolCall.function.name, toolResult });
 
-          this.context.messages.push({
+          this.addMessage({
             role: 'tool',
             content: toolResult.success ? toolResult.output : `Error: ${toolResult.error}`,
             toolCallId: toolCall.id,
@@ -217,7 +245,7 @@ export class AgentRuntime {
 
       // No tool calls — this is the final response
       finalResponse = result.content;
-      this.context.messages.push({ role: 'assistant', content: finalResponse });
+      this.addMessage({ role: 'assistant', content: finalResponse });
       await this.emit({ type: 'response', content: finalResponse });
       break;
     }
