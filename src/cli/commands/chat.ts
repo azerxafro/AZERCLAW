@@ -219,13 +219,48 @@ export async function runChat(options: { model?: string; provider?: string; init
         case '/reset':
         case '/new':
           console.clear();
+          agent.clearHistory();
+          messageCount = 0;
           fishInfo('Conversation cleared');
           break;
         case '/compact': {
           fishInfo('Compacting conversation history...');
-          // In a full implementation, this would summarize the conversation
-          // and replace the history with a compact version
-          fishSuccess(`Compacted ${messageCount} messages into context summary.`);
+          const history = agent.getHistory();
+          if (history.length < 4) {
+            fishWarn('Conversation is too short to compact.');
+            break;
+          }
+
+          const { getRouter } = require('../../providers/router');
+          const router = getRouter();
+          
+          const summaryThinking = new FishThinkingAnimation('Summarizing');
+          summaryThinking.start();
+          
+          try {
+            const summaryResult = await router.complete({
+              messages: [
+                ...history,
+                { role: 'user', content: 'Summarize our conversation so far in a concise way to preserve context for future turns. Focus on key decisions, technical details, and progress made. Keep it under 500 words.' }
+              ],
+              systemPrompt: 'You are a context compression assistant. Output ONLY the summary.',
+              maxTokens: 1000,
+            });
+            
+            summaryThinking.stop();
+            
+            if (summaryResult.finishReason !== 'error') {
+              agent.setHistory([
+                { role: 'system', content: `Previous Conversation Summary:\n${summaryResult.content}` }
+              ]);
+              messageCount = 1;
+              fishSuccess('Conversation compacted into a summary.');
+            } else {
+              fishError(`Compaction failed: ${summaryResult.content}`);
+            }
+          } catch (e: any) {
+            summaryThinking.fail(e.message);
+          }
           break;
         }
         case '/status': {

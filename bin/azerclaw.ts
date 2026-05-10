@@ -48,9 +48,17 @@ program
 // ─── Default Action (no command) ────────────────────────────────
 
 program
-  .action(async (opts: any) => {
+  .argument('[task]', 'Optional task to execute immediately (one-off mode)')
+  .action(async (task: string | undefined, opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
+
+    // Check for positional task
+    if (task) {
+      const { runTask } = require('../src/cli/commands/run');
+      await runTask(task.trim(), opts);
+      return;
+    }
 
     // Check for piped input (stdin)
     if (!process.stdin.isTTY) {
