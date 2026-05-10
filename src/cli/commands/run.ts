@@ -32,9 +32,10 @@ export async function runTask(task: string, options: { model?: string; verbose?:
         case 'response':
           if (isThinking) { thinking.stop(); isThinking = false; }
           if (event.content) {
-            console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 Result'));
+            console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 AZERCLAW Result'));
             event.content.split('\n').forEach((line: string) => {
-              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(line));
+              const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
             });
             console.log(chalk.hex('#c4b5fd')('  └─'));
           }

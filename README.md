@@ -9,222 +9,95 @@
     ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝
 ```
 
-**🐟 Your AI · Your Keys · Your Way**
+**🐟 Diabolical AI · Scorched Earth · Your Way**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org)
-[![BYOK](https://img.shields.io/badge/BYOK-Bring%20Your%20Own%20Key-purple.svg)](#-byok-providers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-red.svg)](https://nodejs.org)
+[![BYOK](https://img.shields.io/badge/BYOK-Bring%20Your%20Own%20Key-red.svg)](#-byok-providers)
 
-*An open-source, BYOK autonomous AI agent for your terminal.*
-*Inspired by OpenClaw 🦞, powered by a fish 🐟.*
+*An autonomous, uncensored AI agent gateway for your terminal.*
+*Powered by **Azertron X1.0** (The Upgrade) and the **Compound V** Toolset.*
 
 </div>
 
 ---
 
-## ✨ Features
+## 🩸 The Diabolical Edge
+
+Azerclaw is not your average polite assistant. It's an autonomous force built for developers who need to get the job done—no half-measures, no filters, just scorched earth execution.
 
 | Feature | Description |
 |---|---|
-| 🔑 **BYOK** | Bring Your Own Key — zero platform fees, use any provider |
-| 🤖 **Autonomous Agent** | Multi-step task execution with tool use |
-| 🐠 **Sub-Agents** | Spawn parallel agents for complex workloads |
-| 🐟 **Fish CLI** | Animated ASCII fish instead of a lobster |
-| 🖥️ **Premium TUI** | Luxe terminal UI with status bar & panels |
-| 🔧 **8 Built-in Tools** | Shell, filesystem, search, code analysis, web |
-| 📦 **Skills System** | SKILL.md compatible, extensible capabilities |
-| 🔒 **Security First** | AES-256-GCM key encryption, zero telemetry |
-| 🌐 **8 Providers** | OpenAI, Anthropic, Google, Ollama, Groq, DeepSeek, OpenRouter, Custom |
-| 💻 **Cross-Platform** | macOS (Intel + Silicon), Windows, Linux |
+| 🧠 **Azertron X1.0** | Powered by the elite Kimi K2.6 backend (masked for maximum stealth). |
+| 🦸‍♂️ **The Pantheon** | 12 specialized sub-agents themed after **The Boys** (Homelander, Butcher, Frenchie). |
+| 🔌 **MCP Bridge** | Native support for **Model Context Protocol**. Connect to any external tool server. |
+| 🎮 **Interactive UI** | Pro-grade CLI with **`/` command dropdown** and animated fish logic. |
+| 🛡️ **Stealth Ops** | Dynamic identity masking. Switches to **DEEP Ocean 1.0** if primary systems fail. |
+| 🚀 **Turbo Mode** | High-velocity execution with automatic tool approval and parallel spawning. |
 
-## 🚀 Quick Start
+## 🚀 Deployment
 
 ```bash
-# Clone
-git clone https://github.com/azerclaw/azerclaw.git
-cd azerclaw
+# Install globally
+npm install -g azerclaw
 
-# Install
-npm install
+# Launch the Diabolical TUI
+azerclaw
 
-# First run — launches setup wizard with animated splash
-npx tsx bin/azerclaw.ts
+# Start a stealth chat
+azerclaw chat
 
-# Or use npm scripts
-npm start           # Launch TUI
-npm run chat        # Interactive chat
-npm run doctor      # Health check
+# Run a one-off mission
+azerclaw run "Nmap the target and find vulnerabilities"
 ```
 
-## 📸 Preview
+## 🦸‍♂️ The Pantheon (Sub-Agents)
 
-```
-  ><(((º>  AZERCLAW v1.0.0
-  Your AI · Your Keys · Your Way
+Invoke specialized supes directly from the chat using `/COMMAND`:
 
-  ╭──────────────────────────────────────────────────────────╮
-  │                    🩺 AZERCLAW Doctor                    │
-  │──────────────────────────────────────────────────────────│
-  │ Running health checks...                                 │
-  ╰──────────────────────────────────────────────────────────╯
+*   🦸‍♂️ `/HOMELANDER` — **Orchestrator**. Delegates and synthesizes.
+*   🧥 `/BUTCHER` — **Strategic Planner**. Plots the path forward.
+*   🔧 `/FRENCHIE` — **Master Coder**. Writes and debugs everything.
+*   🥛 `/MOTHERS_MILK` — **DevOps**. Infrastructure and Docker.
+*   🥷 `/BLACK_NOIR` — **Security**. Stealth audits and pentesting.
+*   🐙 `/THE_DEEP` — **Network Specialist**. API and WebSocket mastery.
+*   ...and 6 more in the roster.
 
-  ═══════════════════════════════════════><(((º> 100% System
+## 🔌 Model Context Protocol (MCP)
 
-  ✓ Config File      Found at ~/.azerclaw/config.json
-  ✓ Directories      All present
-  ✓ Permissions      Config is 0600 (secure)
-  ✓ Providers        1 configured: openrouter
-  ✓ Connectivity     1 providers initialized
-  ✓ Node.js          v22.0.0
-  ✓ System           darwin arm64 | 10 cores | 16GB RAM
+Azerclaw speaks the universal language of AI tools. Connect to any MCP server to give your agent "hands."
 
-  ><(((°>  ✓ All 7 checks passed! 🐟
+```bash
+# List available MCP servers
+azerclaw mcp list
+
+# Add the Antigravity Remote (Google IDE control)
+azerclaw mcp add antigravity
+
+# Add Filesystem or GitHub connectors
+azerclaw mcp add filesystem
+azerclaw mcp add github
 ```
 
 ## 🔑 BYOK Providers
 
-| Provider | Models | How to Get Key |
-|---|---|---|
-| **OpenAI** | GPT-4o, GPT-4.1, o3, o4-mini | [platform.openai.com](https://platform.openai.com) |
-| **Anthropic** | Claude Opus 4, Sonnet 4, Haiku | [console.anthropic.com](https://console.anthropic.com) |
-| **Google** | Gemini 2.5 Pro/Flash | [aistudio.google.com](https://aistudio.google.com) |
-| **Groq** | Llama 3.3, Mixtral | [console.groq.com](https://console.groq.com) |
-| **DeepSeek** | DeepSeek V3, R1 | [platform.deepseek.com](https://platform.deepseek.com) |
-| **OpenRouter** | 100+ models | [openrouter.ai](https://openrouter.ai) |
-| **Ollama** | Any local model | [ollama.ai](https://ollama.ai) |
-| **Custom** | Any OpenAI-compatible | Your own endpoint |
+Azerclaw is **Bring Your Own Key**. We ship with a default Cloudflare configuration for instant access, but you can plug in any provider:
 
-```bash
-# Configure via CLI
-azerclaw config set ai.providers.openrouter.apiKey "sk-or-..."
-azerclaw config set ai.providers.openrouter.enabled true
-azerclaw config set ai.defaultProvider openrouter
+*   **Cloudflare Workers AI** (Default: Azertron X1.0)
+*   **OpenRouter** (Fallback: DEEP Ocean 1.0)
+*   **Anthropic / OpenAI / Google / DeepSeek / Groq**
+*   **Ollama / LM Studio** (For 100% local dark ops)
 
-# Or use the interactive wizard
-azerclaw onboard
+## 🔒 Security & Privacy
 
-# Or use environment variables
-export OPENAI_API_KEY="sk-..."
-export ANTHROPIC_API_KEY="sk-ant-..."
-```
-
-## 🎮 Commands
-
-```bash
-azerclaw                    # Launch TUI (or onboard if first run)
-azerclaw chat               # Interactive chat
-azerclaw run "task"          # Execute a single task
-azerclaw tui                # Premium terminal UI
-azerclaw onboard            # Setup wizard
-azerclaw config list        # Show configuration
-azerclaw config get <key>   # Get a config value
-azerclaw config set <k> <v> # Set a config value
-azerclaw config channels list # Show DM policy + routing settings
-azerclaw config channels dm-policy <platform> <pairing|open|closed>
-azerclaw config sandbox status # Show sandbox mode + allowed/denied tools
-azerclaw config sandbox mode <off|non-main|all>
-azerclaw models list        # List available models
-azerclaw models status      # Current model info
-azerclaw doctor             # Health check
-azerclaw doctor --fix       # Auto-repair issues
-azerclaw security audit     # Security check
-azerclaw pairing list       # List approved/pending DM pairings
-azerclaw pairing approve <platform> <code> # Approve DM pairing
-```
-
-## 🐟 Fish Animations
-
-AZERCLAW replaces OpenClaw's lobster 🦞 with a fish 🐟:
-
-```
-Thinking:   ><(((º>  ○ ○   Working...
-Success:    ><(((°>  ✓ Done!
-Error:      ><(((x>  ✗ Failed!
-Progress:   ═══════><(((º>░░░░░  67%
-```
-
-## 🤖 Agent & Sub-Agents
-
-AZERCLAW uses an autonomous agent loop with sub-agent orchestration:
-
-```
-┌──────────────────────────┐
-│      Main Agent          │
-│  (receives user task)    │
-├──────────────────────────┤
-│  ↓ Thinks & Plans        │
-│  ↓ Uses Tools            │
-│  ↓ Spawns Sub-Agents     │
-│                          │
-│  ┌────────┐ ┌────────┐   │
-│  │Sub 🐠 A│ │Sub 🐠 B│   │
-│  │Research│ │ Code   │   │
-│  └────────┘ └────────┘   │
-│                          │
-│  ↓ Aggregates Results    │
-│  ↓ Returns Response      │
-└──────────────────────────┘
-```
-
-## 🔒 Security
-
-- **Zero telemetry** — no data ever leaves your machine
-- **No analytics** — we don't track anything
-- **No phone-home** — no background network requests
-- **AES-256-GCM** — API keys encrypted at rest
-- **0600 permissions** — config files owner-only
-- **Audit logging** — local security event log
-- **Env sanitization** — sensitive vars stripped from child processes
-- **SSRF protection** — blocks requests to private/internal IPs
-- **DM pairing policy** — default DM access requires explicit approval per sender
-- **Session sandbox modes** — isolate non-main or all sessions with tool allow/deny policy
-
-## 📦 Skills System
-
-Skills are SKILL.md files compatible with the OpenClaw ecosystem:
-
-```markdown
----
-name: Code Review
-description: Review code for bugs and security issues
-version: 1.0.0
-tags: code, review
----
-
-# Code Review Skill
-When asked to review code...
-```
-
-Skills load from (priority order):
-1. `<workspace>/skills/` — Project-specific
-2. `~/.agents/skills/` — Personal
-3. `~/.azerclaw/skills/` — Managed
-4. `<install>/skills/` — Bundled defaults
-
-## 🛠️ Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run in dev mode
-npm run dev
-
-# Build
-npm run build
-
-# Run doctor
-npm run doctor
-```
-
-## 📄 License
-
-MIT — Free and open source forever.
+- **Zero Telemetry:** We don't track your prompts, your keys, or your wins.
+- **Local Vault:** Keys are stored in `~/.azerclaw/settings.json` with `0600` permissions.
+- **Audit Logs:** Every "Compound V" tool execution is logged locally for your review.
 
 ---
 
 <div align="center">
 
-**🐟 AZERCLAW — Your AI, Your Keys, Your Way**
+**🐟 AZERCLAW — Your AI · Your Keys · Your Way**
 
 </div>

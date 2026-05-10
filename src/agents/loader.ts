@@ -51,6 +51,7 @@ function parseAgentMd(content: string, filename: string): AgentDefinition | null
     id: name.toLowerCase(),
     codename,
     emoji: extractEmoji(fmMatch[2]) || builtin?.emoji || '🐟',
+    character: builtin?.character || codename,
     role: extractRole(fmMatch[2]) || builtin?.role || 'Agent',
     description: metadata['description'] || '',
     systemPrompt: builtin?.systemPrompt || fmMatch[2],

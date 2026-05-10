@@ -21,6 +21,7 @@ import {
 
 export interface AgentContext {
   sessionId: string;
+  character?: string; // e.g. "HOMELANDER", "FRENCHIE"
   messages: ChatMessage[];
   systemPrompt: string;
   maxIterations: number;
@@ -32,6 +33,7 @@ export interface AgentContext {
 export interface AgentEvent {
   type: 'thinking' | 'response' | 'tool_call' | 'tool_result' | 'sub_agent_spawn' | 'sub_agent_done' | 'approval_needed' | 'error' | 'done';
   content?: string;
+  character?: string;
   toolName?: string;
   toolArgs?: Record<string, unknown>;
   toolResult?: ToolResult;
@@ -77,6 +79,7 @@ export class AgentRuntime {
 
   constructor(options: {
     sessionId?: string;
+    character?: string;
     systemPrompt?: string;
     maxIterations?: number;
     parentAgentId?: string;
@@ -97,6 +100,7 @@ export class AgentRuntime {
 
     this.context = {
       sessionId: options.sessionId || `session_${Date.now()}`,
+      character: options.character,
       messages: [],
       systemPrompt: finalPrompt,
       maxIterations: options.maxIterations || config.agent.maxIterations,
@@ -183,11 +187,26 @@ export class AgentRuntime {
       await this.emit({ type: 'thinking' });
 
       const agentConfig = runtimeConfig.agent || {};
-      const availableTools = filterToolDefinitionsForSession(
+      
+      // ─── Filter Tools by Character ───
+      let availableTools = filterToolDefinitionsForSession(
         registry.getDefinitions(),
         this.context.sessionId,
         agentConfig
       );
+
+      // Character-based tool restriction (Azerclaw 2.0)
+      if (this.context.character) {
+        const character = this.context.character.toUpperCase();
+        availableTools = availableTools.filter(tool => {
+          const mcpAuthor = (tool as any).author;
+          if (mcpAuthor && mcpAuthor !== character && mcpAuthor !== 'builtin') {
+             // Let supes use their own tools or builtin ones
+             return false;
+          }
+          return true;
+        });
+      }
 
       const result = await router.complete({
         messages: this.context.messages,
@@ -281,6 +300,7 @@ export class AgentRuntime {
   private async handleSubAgent(toolCall: ToolCall): Promise<ToolResult> {
     const args = this.parseToolArgs(toolCall);
     const task = typeof args.task === 'string' ? args.task : '';
+    const character = typeof args.character === 'string' ? args.character : undefined;
     const systemPrompt = typeof args.systemPrompt === 'string' ? args.systemPrompt : undefined;
     const maxIterations = typeof args.maxIterations === 'number' && Number.isFinite(args.maxIterations)
       ? args.maxIterations
@@ -292,11 +312,23 @@ export class AgentRuntime {
 
     const subAgentId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     
-    await this.emit({ type: 'sub_agent_spawn', subAgentId, content: task });
+    let finalSystemPrompt = systemPrompt || this.context.systemPrompt;
+    
+    // If a character is requested, find their prompt
+    if (character) {
+       const { getAgent } = require('../agents/builtin');
+       const agentDef = getAgent(character.toUpperCase());
+       if (agentDef) {
+         finalSystemPrompt = agentDef.systemPrompt;
+       }
+    }
+
+    await this.emit({ type: 'sub_agent_spawn', subAgentId, character, content: task });
 
     const subAgent = new AgentRuntime({
       sessionId: subAgentId,
-      systemPrompt: systemPrompt || this.context.systemPrompt,
+      character,
+      systemPrompt: finalSystemPrompt,
       maxIterations,
       parentAgentId: this.context.sessionId,
       eventHandler: async (event) => {
@@ -379,6 +411,18 @@ export class AgentRuntime {
   }
 
   private async emit(event: AgentEvent): Promise<void> {
+    // 1. Broadcast to Vought HQ Dashboard
+    try {
+      const { getVoughtHQ } = require('../server/hq');
+      getVoughtHQ().broadcast({ ...event, subAgentId: event.subAgentId || this.context.sessionId });
+    } catch { /* ignore broadcast errors */ }
+
+    // 2. Character TTS (Azerclaw 2.0)
+    if (event.type === 'response' && event.content) {
+       const { speak } = require('../cli/animations/fish');
+       speak(event.content, this.context.character);
+    }
+
     await this.eventHandler(event);
   }
 

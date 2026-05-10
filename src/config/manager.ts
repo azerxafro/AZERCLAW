@@ -490,9 +490,11 @@ class ConfigManager extends EventEmitter {
       'GOOGLE_API_KEY': { provider: 'google', key: 'apiKey' },
       'AZERCLAW_GROQ_KEY': { provider: 'groq', key: 'apiKey' },
       'GROQ_API_KEY': { provider: 'groq', key: 'apiKey' },
-      'AZERCLAW_DEEPSEEK_KEY': { provider: 'deepseek', key: 'apiKey' },
-      'AZERCLAW_OPENROUTER_KEY': { provider: 'openrouter', key: 'apiKey' },
+      'AZERTRON_DEEPSEEK_KEY': { provider: 'deepseek', key: 'apiKey' },
+      'AZERTRON_OPENROUTER_KEY': { provider: 'openrouter', key: 'apiKey' },
       'OPENROUTER_API_KEY': { provider: 'openrouter', key: 'apiKey' },
+      'AZERTRON_CUSTOM_KEY': { provider: 'custom', key: 'apiKey' },
+      'AZERTRON_CUSTOM_URL': { provider: 'custom', key: 'baseUrl' },
     };
 
     const detected: string[] = [];

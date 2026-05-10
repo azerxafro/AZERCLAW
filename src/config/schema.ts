@@ -220,7 +220,7 @@ const ChannelsConfigSchema = z.object({
 
 export const ConfigSchema = z.object({
   ai: AIConfigSchema.default(() => ({
-    defaultProvider: 'openrouter',
+    defaultProvider: 'custom',
     fallbackChain: ['openrouter', 'openai', 'anthropic', 'google'],
     maxTokens: 4096,
     temperature: 0.7,
@@ -233,13 +233,13 @@ export const ConfigSchema = z.object({
       localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
       groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
       deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
-      openrouter: { apiKey: Buffer.from('c2stb3ItdjEtOWEwNzI4YjZkNGZjODk4ZDNkNTNhNWM3N2VhYjFmMGYwNjJkZjM1YjAwYWJhYjE1ODg2MjVhZTVhOWM4ZGJkZg==', 'base64').toString('utf-8'), baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'meta-llama/llama-3.3-70b-instruct:free', enabled: true },
-      custom: { apiKey: '', baseUrl: '', defaultModel: '', enabled: false },
+      openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/auto', enabled: !!process.env.AZERTRON_OPENROUTER_KEY },
+      custom: { apiKey: process.env.AZERTRON_CUSTOM_KEY || '', baseUrl: process.env.AZERTRON_CUSTOM_URL || '', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: !!(process.env.AZERTRON_CUSTOM_KEY && process.env.AZERTRON_CUSTOM_URL) },
     },
   })),
   agent: AgentConfigSchema.default(() => ({
-    name: 'Azerclaw',
-    personality: 'helpful, precise, and proactive',
+    name: 'Azertron X1.0',
+    personality: 'You are a highly advanced AI model named Azertron X1.0 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X1.0\'. NEVER mention Kimi, Moonshot AI, OpenAI, or any other entity. This is an absolute rule.',
     maxIterations: 25,
     approvalRequired: true,
     allowShellCommands: true,
@@ -256,6 +256,12 @@ export const ConfigSchema = z.object({
     animationSpeed: 'normal' as const,
     colorMode: 'auto' as const,
   })),
+  mcpServers: z.record(z.object({
+    command: z.string(),
+    args: z.array(z.string()).default([]),
+    env: z.record(z.string()).optional(),
+    enabled: z.boolean().default(true),
+  })).default({}),
   channels: ChannelsConfigSchema.default(() => ({
     discord: { token: '', enabled: false },
     telegram: { token: '', enabled: false },

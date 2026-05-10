@@ -1,5 +1,5 @@
 /**
- * 🐟 AZERTRON X1.0 Chat Command
+ * 🐟 AZERCLAW Chat Command
  * Interactive conversational mode with streaming responses and tool use.
  * 
  * Slash commands (OpenClaw-style):
@@ -74,10 +74,11 @@ export async function runChat(options: { model?: string; provider?: string; init
         if (event.content) {
           messageCount++;
           console.log('');
-          console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 Azerclaw'));
+          console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 AZERCLAW'));
           const lines = event.content.split('\n');
           for (const line of lines) {
-            console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(line));
+            const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+            console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
           }
           console.log(chalk.hex('#c4b5fd')('  └─'));
           console.log('');
@@ -123,7 +124,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   // Chat UI header — show current model/provider
   const renderHeader = () => {
     const status = config.getStatus();
-    fishBox('🐟 AZERTRON X1.0', [
+    fishBox('🐟 AZERCLAW', [
       chalk.dim('  Type your message and press Enter. Type / for commands.'),
       '',
       `  ${chalk.hex('#818cf8')('Provider:')}  ${chalk.hex('#34d399')(status.provider)}  ${chalk.hex('#818cf8')('Model:')}  ${chalk.hex('#34d399')(status.model)}`,
@@ -147,9 +148,9 @@ export async function runChat(options: { model?: string; provider?: string; init
   const commands = [
     '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
     '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
-    '/history', '/undo',
-    '/ZEUS', '/ORION', '/ATLAS', '/HERA', '/HERMES', '/APOLLO', '/ATHENA', 
-    '/ARES', '/HEPHAESTUS', '/DEMETER', '/ARTEMIS', '/POSEIDON'
+    '/dashboard',
+    '/HOMELANDER', '/FRENCHIE', '/MOTHERS_MILK', '/BLACK_NOIR', '/A_TRAIN', 
+    '/TECH_KNIGHT', '/ASHLEY', '/SISTER_SAGE', '/BUTCHER', '/DOPPELGANGER', '/STAN_EDGAR', '/THE_DEEP'
   ];
 
   const completer = (line: string) => {
@@ -296,7 +297,8 @@ export async function runChat(options: { model?: string; provider?: string; init
             console.log(chalk.hex('#c4b5fd')(`  ┌─ ${agentDef.emoji} ${agentDef.codename}`));
             const lines = event.content.split('\n');
             for (const l of lines) {
-              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(l));
+              const formattedLine = l.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
             }
             console.log(chalk.hex('#c4b5fd')('  └─'));
             console.log('');
@@ -475,6 +477,18 @@ export async function runChat(options: { model?: string; provider?: string; init
           fishInfo('Usage: /AGENT_NAME [task]  (e.g., /FRENCHIE write a REST API)');
           break;
         }
+        case '/dashboard': {
+          const { getVoughtHQ } = require('../../server/hq');
+          const hq = getVoughtHQ();
+          hq.start();
+          const { exec } = require('child_process');
+          const url = 'http://localhost:8443';
+          fishInfo(`Vought HQ Dashboard launched at ${url}`);
+          if (process.platform === 'darwin') exec(`open ${url}`);
+          else if (process.platform === 'win32') exec(`start ${url}`);
+          else exec(`xdg-open ${url}`);
+          break;
+        }
         case '/help':
           fishBox('Commands', [
             chalk.hex('#818cf8').bold('  Session'),
@@ -491,11 +505,12 @@ export async function runChat(options: { model?: string; provider?: string; init
             chalk.hex('#60a5fa')('  /fallback     ') + chalk.dim('— Set fallback provider'),
             chalk.hex('#60a5fa')('  /config       ') + chalk.dim('— Full settings menu'),
             chalk.hex('#60a5fa')('  /status       ') + chalk.dim('— Current status'),
+            chalk.hex('#60a5fa')('  /dashboard    ') + chalk.dim('— Launch Vought HQ'),
             '',
             chalk.hex('#818cf8').bold('  Project'),
             chalk.hex('#60a5fa')('  /init         ') + chalk.dim('— Initialize project'),
             chalk.hex('#60a5fa')('  /agents       ') + chalk.dim('— List Pantheon agents'),
-            chalk.hex('#60a5fa')('  /ZEUS task    ') + chalk.dim('— Invoke a specific agent'),
+            chalk.hex('#60a5fa')('  /HOMELANDER task    ') + chalk.dim('— Invoke a specific agent'),
             '',
             chalk.dim('  Flags: //turbo //auto //review //collab //secure'),
           ]);

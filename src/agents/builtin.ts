@@ -26,6 +26,7 @@ export interface AgentDefinition {
   id: string;
   codename: string;
   emoji: string;
+  character: string; // The The Boys character name for TTS and tool filtering
   role: string;
   description: string;
   systemPrompt: string;
@@ -38,6 +39,7 @@ export const BUILT_IN_AGENTS: AgentDefinition[] = [
   {
     id: 'homelander',
     codename: 'HOMELANDER',
+    character: 'HOMELANDER',
     emoji: '🦸‍♂️',
     role: 'Orchestrator',
     description: 'Supreme orchestrator — delegates complex tasks to specialist agents and synthesizes results.',
@@ -75,6 +77,7 @@ RULES:
   {
     id: 'frenchie',
     codename: 'FRENCHIE',
+    character: 'FRENCHIE',
     emoji: '🔧',
     role: 'Coder',
     description: 'The hunter who never misses — writes, debugs, and refactors code across all languages.',
@@ -107,6 +110,7 @@ You have full access to the filesystem and shell. Strike true. 🔧`,
   {
     id: 'mothers_milk',
     codename: 'MOTHERS_MILK',
+    character: 'MOTHERS_MILK',
     emoji: '🥛',
     role: 'DevOps',
     description: 'Carries the weight of infrastructure — Docker, CI/CD, cloud, deploy, monitoring.',
@@ -138,6 +142,7 @@ RULES:
   {
     id: 'black_noir',
     codename: 'BLACK_NOIR',
+    character: 'BLACK_NOIR',
     emoji: '🥷',
     role: 'Security Auditor',
     description: 'The divine shield — audits code, configs, and infrastructure for vulnerabilities.',
@@ -177,6 +182,7 @@ RULES:
   {
     id: 'a_train',
     codename: 'A_TRAIN',
+    character: 'A_TRAIN',
     emoji: '🏃🏾‍♂️',
     role: 'Researcher',
     description: 'Messenger of knowledge — investigates topics, gathers data, synthesizes findings.',
@@ -208,6 +214,7 @@ RULES:
   {
     id: 'tech_knight',
     codename: 'TECH_KNIGHT',
+    character: 'TECH_KNIGHT',
     emoji: '🦇',
     role: 'Architect',
     description: 'The divine builder — designs systems, plans migrations, evaluates trade-offs.',
@@ -249,6 +256,7 @@ RULES:
   {
     id: 'ashley',
     codename: 'ASHLEY',
+    character: 'ASHLEY',
     emoji: '📱',
     role: 'Technical Writer',
     description: 'Muse of eloquence — READMEs, API docs, guides, changelogs, and onboarding.',
@@ -280,6 +288,7 @@ RULES:
   {
     id: 'sister_sage',
     codename: 'SISTER_SAGE',
+    character: 'SISTER_SAGE',
     emoji: '🧠',
     role: 'Data Analyst',
     description: 'Goddess of wisdom — processes data, generates insights, finds patterns.',
@@ -309,6 +318,7 @@ RULES:
   {
     id: 'butcher',
     codename: 'BUTCHER',
+    character: 'BUTCHER',
     emoji: '🧥',
     role: 'Project Planner',
     description: 'Foresight incarnate — breaks tasks into steps, estimates effort, plans execution.',
@@ -345,6 +355,7 @@ RULES:
   {
     id: 'doppelganger',
     codename: 'DOPPELGANGER',
+    character: 'DOPPELGANGER',
     emoji: '🎭',
     role: 'Git Master',
     description: 'Shapeshifter of branches — branching, merging, rebasing, conflict resolution.',
@@ -386,6 +397,7 @@ RULES:
   {
     id: 'stan_edgar',
     codename: 'STAN_EDGAR',
+    character: 'STAN_EDGAR',
     emoji: '👔',
     role: 'SysAdmin',
     description: 'Primordial power — OS config, networking, processes, disk, and system health.',
@@ -418,6 +430,7 @@ RULES:
   {
     id: 'the_deep',
     codename: 'THE_DEEP',
+    character: 'THE_DEEP',
     emoji: '🐙',
     role: 'Network & API Specialist',
     description: 'God of the deep — API design, HTTP debugging, WebSocket, networking diagnostics.',
@@ -498,6 +511,7 @@ export function createAgent(
 ): AgentRuntime {
   return new AgentRuntime({
     sessionId: `main:${definition.codename.toLowerCase()}`,
+    character: definition.character,
     systemPrompt: definition.systemPrompt,
     maxIterations: definition.maxIterations,
     eventHandler,
@@ -516,7 +530,7 @@ export function listAgents(): AgentDefinition[] {
  */
 export function formatAgentRoster(): string {
   let roster = '  ╔═══════════════════════════════════════════════════════════╗\n';
-  roster +=    '  ║             🦸‍♂️ THE AZERTRON X1.0 PANTHEON 🦸‍♂️                  ║\n';
+  roster +=    '  ║             ⚡ THE AZERCLAW PANTHEON ⚡                  ║\n';
   roster +=    '  ╠═══════════════════════════════════════════════════════════╣\n';
   
   for (const agent of BUILT_IN_AGENTS) {

@@ -11,12 +11,13 @@
     "chat": "npx tsx bin/azerclaw.ts chat",
     "tui": "npx tsx bin/azerclaw.ts tui",
     "dev": "npx tsx bin/azerclaw.ts",
-    "build": "tsc && npm run copy-skills",
+    "build": "tsc && npm run copy-skills && node scripts/inject-secrets.js",
     "copy-skills": "cp -r skills dist/skills 2>/dev/null || true",
     "doctor": "npx tsx bin/azerclaw.ts doctor",
     "onboard": "npx tsx bin/azerclaw.ts onboard",
     "test": "vitest run",
     "clean": "rimraf dist",
+    "mcp:antigravity": "tsx src/mcp-servers/antigravity/index.ts",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
@@ -69,6 +70,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
     "@google/generative-ai": "^0.24.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "boxen": "^5.1.2",
     "chalk": "^4.1.2",
     "cli-highlight": "^2.1.11",
@@ -77,6 +79,7 @@
     "conf": "^11.0.2",
     "croner": "^9.0.0",
     "enquirer": "^2.4.1",
+    "express": "^5.2.1",
     "figures": "^3.2.0",
     "gradient-string": "^2.0.2",
     "log-symbols": "^4.1.0",
@@ -93,6 +96,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.19.18",
     "@types/ws": "^8.18.1",
     "rimraf": "^6.0.1",

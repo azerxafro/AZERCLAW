@@ -174,10 +174,11 @@ export async function runTUI(): Promise<void> {
             // Render response in a styled box
             const width = Math.min(75, (process.stdout.columns || 80) - 4);
             console.log('');
-            console.log(T.borderActive(`  ╭─ 🐟 `) + T.highlight('Azerclaw'));
+            console.log(T.borderActive(`  ╭─ 🐟 `) + T.highlight('AZERCLAW'));
             const lines = event.content.split('\n');
             for (const line of lines) {
-              console.log(T.borderActive('  │ ') + T.text(line));
+              const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+              console.log(T.borderActive('  │ ') + T.text(formattedLine));
             }
             console.log(T.borderActive('  ╰─'));
             console.log('');
@@ -269,7 +270,8 @@ export async function runTUI(): Promise<void> {
             console.log('');
             console.log(T.borderActive(`  ╭─ ${agentDef.emoji} `) + T.highlight(agentDef.codename));
             for (const l of event.content.split('\n')) {
-              console.log(T.borderActive('  │ ') + T.text(l));
+              const formattedLine = l.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+              console.log(T.borderActive('  │ ') + T.text(formattedLine));
             }
             console.log(T.borderActive('  ╰─'));
             console.log('');

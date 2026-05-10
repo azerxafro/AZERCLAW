@@ -852,6 +852,32 @@ toolsCmd.action(() => {
   program.helpInformation();
 });
 
+// ─── MCP Commands ──────────────────────────────────────────────
+
+const mcp = program.command('mcp')
+  .description('Manage Model Context Protocol (MCP) servers');
+
+mcp.command('list')
+  .description('List available MCP servers from the directory')
+  .action(async () => {
+    const { listMCPDirectory } = require('../src/cli/commands/mcp');
+    await listMCPDirectory();
+  });
+
+mcp.command('add <name>')
+  .description('Add an MCP server from the directory')
+  .action(async (name: string) => {
+    const { addMCPServer } = require('../src/cli/commands/mcp');
+    await addMCPServer(name);
+  });
+
+mcp.command('remove <name>')
+  .description('Remove an MCP server')
+  .action(async (name: string) => {
+    const { removeMCPServer } = require('../src/cli/commands/mcp');
+    await removeMCPServer(name);
+  });
+
 // ─── Parse & Run ────────────────────────────────────────────────
 
 

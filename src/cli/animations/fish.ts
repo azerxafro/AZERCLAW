@@ -99,6 +99,28 @@ function showCursor(): void {
   process.stdout.write('\x1b[?25h');
 }
 
+/**
+ * Character-specific TTS voices for macOS
+ */
+const CHARACTER_VOICES: Record<string, string> = {
+  'HOMELANDER': 'Daniel',
+  'BUTCHER': 'Oliver',
+  'FRENCHIE': 'Thomas',
+  'ASHLEY': 'Samantha',
+};
+
+export function speak(text: string, character?: string): void {
+  if (process.platform !== 'darwin') return; // Only support macOS for now
+  
+  const voice = character ? CHARACTER_VOICES[character.toUpperCase()] : 'Daniel';
+  const cleanText = text.replace(/[*_`]/g, '').slice(0, 200); // Strip markdown and limit length
+  
+  try {
+    const { exec } = require('child_process');
+    exec(`say -v "${voice || 'Daniel'}" "${cleanText}"`);
+  } catch { /* ignore tts errors */ }
+}
+
 export async function playSplashScreen(version: string): Promise<void> {
   hideCursor();
   const termWidth = process.stdout.columns || 80;
@@ -140,7 +162,7 @@ export async function playSplashScreen(version: string): Promise<void> {
 
 export function printQuickSplash(version: string): void {
   const termWidth = process.stdout.columns || 80;
-  const fishLine = `  🔪 ><(((º>  AZERTRON X1.0 v${version} (Diabolical)`;
+  const fishLine = `  🔪 ><(((º>  AZERCLAW v${version} (Diabolical)`;
   const pad = Math.max(0, Math.floor((termWidth - fishLine.length) / 2));
   console.log('');
   console.log(' '.repeat(pad) + BLOOD_GRADIENT(fishLine));

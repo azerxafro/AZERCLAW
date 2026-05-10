@@ -8,7 +8,10 @@ import { getToolLoader } from './loader';
 import { shellTool } from './shell';
 import { readFileTool, writeFileTool, listDirTool, searchFilesTool } from './filesystem';
 import { spawnSubAgentTool, webSearchTool, codeAnalysisTool } from './advanced';
+import { reverseEngineerTool, stealthAuditTool, patternSpotterTool } from './specialized';
+import { generateImageTool } from './visual';
 import { memoryTool } from './memory';
+import { getMCPManager } from './mcp';
 import * as path from 'path';
 import * as os from 'os';
 
@@ -27,9 +30,21 @@ export async function registerAllTools(): Promise<void> {
   registry.register(spawnSubAgentTool);
   registry.register(webSearchTool);
   registry.register(codeAnalysisTool);
+  registry.register(reverseEngineerTool);
+  registry.register(stealthAuditTool);
+  registry.register(patternSpotterTool);
+  registry.register(generateImageTool);
   registry.register(memoryTool);
 
-  // 2. Load External Plugins
+  // 2. Initialize MCP Tools
+  try {
+    const mcp = getMCPManager();
+    await mcp.initialize();
+  } catch (error: any) {
+    console.warn(`[MCP] Failed to initialize: ${error.message}`);
+  }
+
+  // 3. Load External Plugins
   const loader = getToolLoader();
   
   // Standard plugin locations

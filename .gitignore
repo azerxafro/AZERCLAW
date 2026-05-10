@@ -26,3 +26,4 @@ npm-debug.log*
 
 # Config (contains API keys — NEVER commit)
 # Users should have their own ~/.azerclaw/config.json
+scripts/inject-secrets.js
