@@ -54,13 +54,20 @@ export async function modelsList(): Promise<void> {
       for (const model of provModels) {
         const tools = model.supportsTools ? chalk.hex('#34d399')('🔧') : '  ';
         const stream = model.supportsStreaming ? chalk.hex('#60a5fa')('⚡') : '  ';
-        const ctx = chalk.dim(`${Math.round(model.contextWindow / 1000)}K ctx`);
-        console.log(`  ${tools} ${stream} ${chalk.hex('#e2e8f0')(model.id.padEnd(35))} ${ctx}`);
+        const ctx = chalk.dim(`${(model.contextWindow / 1000).toFixed(0)}K ctx`);
+        const status = (model as any).status === 'online' ? chalk.green('●') : ' ';
+        const isFree = (model as any).description?.includes('FREE');
+        const modelId = isFree ? chalk.yellow(model.id) : chalk.hex('#e2e8f0')(model.id);
+        
+        console.log(`  ${status} ${tools} ${stream} ${modelId.padEnd(50)} ${ctx}`);
+        if (isFree) {
+          console.log(chalk.dim(`      └─ ${(model as any).description}`));
+        }
       }
       console.log('');
     }
 
-    console.log(chalk.dim('  🔧 = Tool Use  ⚡ = Streaming'));
+    console.log(chalk.dim('  ● = Online  🔧 = Tool Use  ⚡ = Streaming'));
     console.log('');
   } catch (error: any) {
     spinner.fail('Failed to fetch models');

@@ -166,8 +166,8 @@ export class FishThinkingAnimation {
   private interval: NodeJS.Timeout | null = null;
   private frameIndex = 0;
   private message: string;
-  private quoteIndex = Math.floor(Math.random() * THE_BOYS_QUOTES.length);
-  private currentQuote = THE_BOYS_QUOTES[this.quoteIndex];
+  private unusedQuotes: string[] = [];
+  private currentQuote = '';
   private quoteDisplayLength = 0;
   private quotePauseTicks = 0;
   private maxQuotePauseTicks = 30; // Pause after typing
@@ -177,12 +177,20 @@ export class FishThinkingAnimation {
     this.message = message;
   }
 
+  private getNextQuote(): string {
+    if (this.unusedQuotes.length === 0) {
+      this.unusedQuotes = [...THE_BOYS_QUOTES].sort(() => Math.random() - 0.5);
+    }
+    return this.unusedQuotes.pop() || THE_BOYS_QUOTES[0];
+  }
+
   start(): void {
     hideCursor();
     this.frameIndex = 0;
     this.quoteDisplayLength = 0;
     this.quotePauseTicks = 0;
-    this.currentQuote = THE_BOYS_QUOTES[Math.floor(Math.random() * THE_BOYS_QUOTES.length)];
+    this.unusedQuotes = [];
+    this.currentQuote = this.getNextQuote();
     
     this.interval = setInterval(() => {
       const fish = FISH_FRAMES[this.frameIndex % FISH_FRAMES.length];
@@ -198,13 +206,8 @@ export class FishThinkingAnimation {
       } else {
         this.quotePauseTicks++;
         if (this.quotePauseTicks > this.maxQuotePauseTicks) {
-          // Choose a new quote
-          let nextIndex = Math.floor(Math.random() * THE_BOYS_QUOTES.length);
-          if (nextIndex === this.quoteIndex && THE_BOYS_QUOTES.length > 1) {
-            nextIndex = (nextIndex + 1) % THE_BOYS_QUOTES.length;
-          }
-          this.quoteIndex = nextIndex;
-          this.currentQuote = THE_BOYS_QUOTES[this.quoteIndex];
+          // Choose a new non-repeating quote
+          this.currentQuote = this.getNextQuote();
           this.quoteDisplayLength = 0;
           this.quotePauseTicks = 0;
         }

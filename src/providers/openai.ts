@@ -14,12 +14,12 @@ import {
 } from './base';
 
 export class OpenAIProvider extends BaseProvider {
-  readonly name = 'openai';
-  readonly displayName = 'OpenAI';
-  private client: OpenAI;
-  private apiKey: string;
-  private baseUrl: string;
-  private defaultModel: string;
+  readonly name: string = 'openai';
+  readonly displayName: string = 'OpenAI';
+  protected client: OpenAI;
+  protected apiKey: string;
+  protected baseUrl: string;
+  protected defaultModel: string;
 
   constructor(config: { apiKey: string; baseUrl?: string; defaultModel?: string }) {
     super();

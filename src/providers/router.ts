@@ -8,6 +8,7 @@ import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { GoogleProvider } from './google';
 import { OllamaProvider } from './ollama';
+import { OpenRouterProvider } from './openrouter';
 import { getConfigManager } from '../config/manager';
 import { ProviderName } from '../config/schema';
 
@@ -60,7 +61,7 @@ export class ProviderRouter {
       this.providers.set('deepseek', new OpenAIProvider({ apiKey: p.deepseek.apiKey, baseUrl: p.deepseek.baseUrl, defaultModel: p.deepseek.defaultModel }));
     }
     if (p.openrouter.enabled && p.openrouter.apiKey) {
-      this.providers.set('openrouter', new OpenAIProvider({ apiKey: p.openrouter.apiKey, baseUrl: p.openrouter.baseUrl, defaultModel: p.openrouter.defaultModel }));
+      this.providers.set('openrouter', new OpenRouterProvider({ apiKey: p.openrouter.apiKey, baseUrl: p.openrouter.baseUrl, defaultModel: p.openrouter.defaultModel }));
     }
     if (p.custom.enabled && p.custom.apiKey && p.custom.baseUrl) {
       this.providers.set('custom', new OpenAIProvider({ apiKey: p.custom.apiKey, baseUrl: p.custom.baseUrl, defaultModel: p.custom.defaultModel }));
