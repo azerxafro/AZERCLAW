@@ -119,11 +119,15 @@ azerclaw onboard            # Setup wizard
 azerclaw config list        # Show configuration
 azerclaw config get <key>   # Get a config value
 azerclaw config set <k> <v> # Set a config value
+azerclaw config channels list # Show DM policy + routing settings
+azerclaw config channels dm-policy <platform> <pairing|open|closed>
 azerclaw models list        # List available models
 azerclaw models status      # Current model info
 azerclaw doctor             # Health check
 azerclaw doctor --fix       # Auto-repair issues
 azerclaw security audit     # Security check
+azerclaw pairing list       # List approved/pending DM pairings
+azerclaw pairing approve <platform> <code> # Approve DM pairing
 ```
 
 ## 🐟 Fish Animations
@@ -170,6 +174,7 @@ AZERCLAW uses an autonomous agent loop with sub-agent orchestration:
 - **Audit logging** — local security event log
 - **Env sanitization** — sensitive vars stripped from child processes
 - **SSRF protection** — blocks requests to private/internal IPs
+- **DM pairing policy** — default DM access requires explicit approval per sender
 
 ## 📦 Skills System
 

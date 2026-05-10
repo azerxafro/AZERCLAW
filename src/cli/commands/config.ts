@@ -96,6 +96,12 @@ export function configList(): void {
     `  Theme: ${chalk.dim(all.ui.theme)}`,
     `  Splash: ${chalk.dim(String(all.ui.showSplash))}`,
     '',
+    chalk.hex('#818cf8').bold('Channel Security:'),
+    `  Discord DM:  ${chalk.dim((all.channels as any)?.discord?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.discord?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
+    `  Telegram DM: ${chalk.dim((all.channels as any)?.telegram?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.telegram?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
+    `  Slack DM:    ${chalk.dim((all.channels as any)?.slack?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.slack?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
+    `  Routing:     ${chalk.dim((all.channels as any)?.routing?.strategy || 'platform_channel')} (${chalk.dim(String((((all.channels as any)?.routing?.rules || []) as unknown[]).length))} rules)`,
+    '',
     chalk.dim(`Config: ${config.paths.configFile}`),
   ]);
 }

@@ -96,7 +96,7 @@ export class SlackAdapter extends ChannelAdapter {
         size: f.size,
       })),
       timestamp: new Date(parseFloat(event.ts) * 1000),
-      metadata: { threadTs: event.thread_ts },
+      metadata: { threadTs: event.thread_ts, channelType: event.channel_type },
     };
 
     this.handleIncoming(normalized);

@@ -17,6 +17,8 @@
  *   azerclaw config model     — Switch model
  *   azerclaw config apikey    — Set API key
  *   azerclaw config fallback  — Configure fallback
+ *   azerclaw config channels  — DM policy + routing controls
+ *   azerclaw pairing          — Manage DM pairing approvals
  *   azerclaw init             — Initialize project (AZERCLAW.md)
  *   azerclaw models           — Manage AI models
  *   azerclaw doctor           — Health check
@@ -337,6 +339,96 @@ configCmd
     await interactiveSettingsMenu();
   });
 
+const configChannelsCmd = configCmd
+  .command('channels')
+  .description('Manage channel DM policy, allowlists, and session routing');
+
+configChannelsCmd
+  .command('list')
+  .description('Show channel DM policy and routing config')
+  .action(() => {
+    const { channelsConfigList } = require('../src/cli/commands/channels');
+    channelsConfigList();
+  });
+
+configChannelsCmd
+  .command('dm-policy <platform> <policy>')
+  .description('Set dmPolicy for a channel platform (pairing|open|closed)')
+  .action((platform: string, policy: string) => {
+    const { setChannelDmPolicy } = require('../src/cli/commands/channels');
+    setChannelDmPolicy(platform, policy);
+  });
+
+const configChannelsAllowCmd = configChannelsCmd
+  .command('allow')
+  .description('Manage channel allowFrom list');
+
+configChannelsAllowCmd
+  .command('list <platform>')
+  .description('List allowFrom entries for a platform')
+  .action((platform: string) => {
+    const { listChannelAllowFrom } = require('../src/cli/commands/channels');
+    listChannelAllowFrom(platform);
+  });
+
+configChannelsAllowCmd
+  .command('add <platform> <senderId>')
+  .description('Add senderId to allowFrom')
+  .action((platform: string, senderId: string) => {
+    const { addChannelAllowFrom } = require('../src/cli/commands/channels');
+    addChannelAllowFrom(platform, senderId);
+  });
+
+configChannelsAllowCmd
+  .command('remove <platform> <senderId>')
+  .description('Remove senderId from allowFrom')
+  .action((platform: string, senderId: string) => {
+    const { removeChannelAllowFrom } = require('../src/cli/commands/channels');
+    removeChannelAllowFrom(platform, senderId);
+  });
+
+const configChannelsRoutingCmd = configChannelsCmd
+  .command('routing')
+  .description('Manage channel session routing rules');
+
+configChannelsRoutingCmd
+  .command('strategy <strategy>')
+  .description('Set routing strategy (channel|platform_channel|platform_sender)')
+  .action((strategy: string) => {
+    const { setRoutingStrategy } = require('../src/cli/commands/channels');
+    setRoutingStrategy(strategy);
+  });
+
+configChannelsRoutingCmd
+  .command('add <sessionId>')
+  .description('Add routing rule')
+  .option('--platform <platform>', 'Platform matcher')
+  .option('--channel <channelId>', 'Channel matcher')
+  .option('--sender <senderId>', 'Sender matcher')
+  .action((sessionId: string, opts: any) => {
+    const { addRoutingRule } = require('../src/cli/commands/channels');
+    addRoutingRule(sessionId, { platform: opts.platform, channel: opts.channel, sender: opts.sender });
+  });
+
+configChannelsRoutingCmd
+  .command('remove <sessionId>')
+  .description('Remove routing rule(s) for sessionId and optional matchers')
+  .option('--platform <platform>', 'Platform matcher')
+  .option('--channel <channelId>', 'Channel matcher')
+  .option('--sender <senderId>', 'Sender matcher')
+  .action((sessionId: string, opts: any) => {
+    const { removeRoutingRule } = require('../src/cli/commands/channels');
+    removeRoutingRule(sessionId, { platform: opts.platform, channel: opts.channel, sender: opts.sender });
+  });
+
+configChannelsRoutingCmd
+  .command('list')
+  .description('List DM policy and routing settings')
+  .action(() => {
+    const { channelsConfigList } = require('../src/cli/commands/channels');
+    channelsConfigList();
+  });
+
 // Default config action (no sub-command) shows list
 configCmd.action(() => {
   const { configList } = require('../src/cli/commands/config');
@@ -395,6 +487,7 @@ program
     
     const fs = require('fs');
     const config = getConfigManager();
+    const { auditDmPolicies, applySafeDmDefaults } = require('../src/channels/security');
     const issues: string[] = [];
     
     // Check config file permissions
@@ -417,6 +510,21 @@ program
         fishInfo(`${key} found in environment (normal for CI/CD, prefer config file for local use)`);
       }
     }
+
+    const dmAudit = auditDmPolicies(config.getAll().channels);
+    for (const issue of dmAudit.failures) {
+      issues.push(issue.message);
+    }
+    for (const issue of dmAudit.warnings) {
+      issues.push(issue.message);
+    }
+
+    if (opts.fix && dmAudit.failures.length > 0) {
+      const changes = applySafeDmDefaults(config);
+      for (const change of changes) {
+        fishInfo(`Fixed: ${change}`);
+      }
+    }
     
     if (issues.length === 0) {
       const { fishSuccess } = require('../src/cli/animations/fish');
@@ -428,6 +536,43 @@ program
       }
     }
   });
+
+// ─── Pairing Command ──────────────────────────────────────────────
+
+const pairingCmd = program
+  .command('pairing')
+  .description('Manage DM pairing approvals for channel adapters');
+
+pairingCmd
+  .command('list')
+  .description('List approved pairings')
+  .option('--pending', 'Include pending pairing requests')
+  .option('-p, --platform <platform>', 'Filter by platform')
+  .action((opts: any) => {
+    const { pairingList } = require('../src/cli/commands/pairing');
+    pairingList({ pending: opts.pending, platform: opts.platform });
+  });
+
+pairingCmd
+  .command('approve <platform> <code>')
+  .description('Approve a pending pairing code')
+  .action((platform: string, code: string) => {
+    const { pairingApprove } = require('../src/cli/commands/pairing');
+    pairingApprove(platform, code);
+  });
+
+pairingCmd
+  .command('revoke <platform> <senderId>')
+  .description('Revoke an approved sender pairing')
+  .action((platform: string, senderId: string) => {
+    const { pairingRevoke } = require('../src/cli/commands/pairing');
+    pairingRevoke(platform, senderId);
+  });
+
+pairingCmd.action(() => {
+  const { pairingList } = require('../src/cli/commands/pairing');
+  pairingList({ pending: true });
+});
 
 // ─── Agents Command ─────────────────────────────────────────────
 

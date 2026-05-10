@@ -152,14 +152,49 @@ const UIConfigSchema = z.object({
 
 // ─── Channels Config ──────────────────────────────────────────────
 
-const ChannelsConfigSchema = z.object({
-  discord: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
-  telegram: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
-  slack: z.object({ token: z.string().default(''), enabled: z.boolean().default(false) }),
+const DmPolicySchema = z.enum(['pairing', 'open', 'closed']).default('pairing');
+
+const ChannelSecuritySchema = z.object({
+  dmPolicy: DmPolicySchema,
+  allowFrom: z.array(z.string()).default([]),
+});
+
+const ChannelRoutingRuleSchema = z.object({
+  platform: z.string().optional(),
+  channelId: z.string().optional(),
+  senderId: z.string().optional(),
+  sessionId: z.string().min(1),
+});
+
+const ChannelRoutingSchema = z.object({
+  strategy: z.enum(['channel', 'platform_channel', 'platform_sender']).default('platform_channel'),
+  rules: z.array(ChannelRoutingRuleSchema).default([]),
 }).default(() => ({
-  discord: { token: '', enabled: false },
-  telegram: { token: '', enabled: false },
-  slack: { token: '', enabled: false },
+  strategy: 'platform_channel' as const,
+  rules: [],
+}));
+
+const ChannelsConfigSchema = z.object({
+  discord: z.object({
+    token: z.string().default(''),
+    enabled: z.boolean().default(false),
+  }).merge(ChannelSecuritySchema),
+  telegram: z.object({
+    token: z.string().default(''),
+    enabled: z.boolean().default(false),
+  }).merge(ChannelSecuritySchema),
+  slack: z.object({
+    token: z.string().default(''),
+    botToken: z.string().default(''),
+    appToken: z.string().default(''),
+    enabled: z.boolean().default(false),
+  }).merge(ChannelSecuritySchema),
+  routing: ChannelRoutingSchema,
+}).default(() => ({
+  discord: { token: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
+  telegram: { token: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
+  slack: { token: '', botToken: '', appToken: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
+  routing: { strategy: 'platform_channel' as const, rules: [] },
 }));
 
 // ─── Full Config ────────────────────────────────────────────────

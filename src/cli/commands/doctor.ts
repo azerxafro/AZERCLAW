@@ -7,6 +7,7 @@ const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const { getConfigManager } = require('../../config/manager');
 const { getRouter, resetRouter } = require('../../providers/router');
+const { auditDmPolicies, applySafeDmDefaults } = require('../../channels/security');
 const { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation, renderFishProgress } = require('../animations/fish');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
@@ -27,7 +28,7 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
   ]);
   console.log('');
 
-  const totalChecks = 7;
+  const totalChecks = 8;
   let completed = 0;
 
   // 1. Config file
@@ -111,7 +112,27 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
     checks.push({ name: 'Node.js', status: 'warn', message: `${nodeVersion} (recommend 18+)` });
   }
 
-  // 7. System info
+  // 7. DM policy safety
+  renderFishProgress(++completed, totalChecks, 'DM policy');
+  const dmAudit = auditDmPolicies(config.getAll().channels);
+  if (dmAudit.failures.length > 0) {
+    checks.push({
+      name: 'DM Policy',
+      status: 'fail',
+      message: `${dmAudit.failures.length} risky DM policy issue(s)`,
+      fix: () => { applySafeDmDefaults(config); },
+    });
+  } else if (dmAudit.warnings.length > 0) {
+    checks.push({
+      name: 'DM Policy',
+      status: 'warn',
+      message: `${dmAudit.warnings.length} DM policy warning(s)`,
+    });
+  } else {
+    checks.push({ name: 'DM Policy', status: 'pass', message: 'Safe defaults active' });
+  }
+
+  // 8. System info
   renderFishProgress(++completed, totalChecks, 'System');
   const os = require('os');
   checks.push({

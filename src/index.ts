@@ -28,6 +28,9 @@ export * from './tools/advanced';
 // Workflow & Scheduler
 export * from './workflow/engine';
 export * from './scheduler/heartbeat';
+export * from './channels/pairing';
+export * from './channels/routing';
+export * from './channels/security';
 
 // Memory & Config
 export * from './memory/store';
