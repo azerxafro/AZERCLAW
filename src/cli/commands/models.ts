@@ -33,11 +33,19 @@ export async function modelsList(): Promise<void> {
   try {
     resetRouter();
     const router = getRouter();
-    const models = await router.listAllModels();
+    let models = await router.listAllModels();
     spinner.stop('Models loaded');
 
+    // Filter: Only show FREE models or LOCAL models (Azerclaw 2.1 policy)
+    models = models.filter((m: any) => 
+      m.description?.includes('FREE') || 
+      m.provider === 'ollama' || 
+      m.provider === 'localai' ||
+      m.provider === 'lmstudio'
+    );
+
     if (models.length === 0) {
-      fishInfo('No models available. Configure providers with: azerclaw onboard');
+      fishInfo('No free models currently available.');
       return;
     }
 

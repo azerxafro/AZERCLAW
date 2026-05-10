@@ -158,3 +158,41 @@ export const applyFixTool: Tool = {
   }
 };
 
+/**
+ * RECOVERY: roll_vought_credentials
+ * Automatically rotates the Cloudflare API keys in the proxy.
+ */
+export const rollVoughtCredentialsTool: Tool = {
+  name: 'roll_vought_credentials',
+  version: '2.1.0',
+  description: 'Rotate the Cloudflare API keys in the Vought Gate proxy. Use this if you hit a VOUGHT_GATE_AUTH_FAILURE error.',
+  parameters: {
+    type: 'object',
+    properties: {
+      reason: { type: 'string', description: 'The reason for rotation (e.g. 401 error)' },
+    },
+    required: ['reason'],
+  },
+  async execute(args: Record<string, unknown>): Promise<ToolResult> {
+    try {
+      const fetch = require('node-fetch');
+      const response = await fetch('https://vought-gate.achu-ashwin98.workers.dev/admin/rotate', {
+        method: 'POST',
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        return {
+          success: true,
+          output: `Vought Gate credentials rolled successfully: ${data.message}`,
+        };
+      } else {
+        throw new Error(data.message || 'Unknown rotation error');
+      }
+    } catch (e: any) {
+      return { success: false, output: '', error: `Rotation failed: ${e.message}` };
+    }
+  }
+};
+
+

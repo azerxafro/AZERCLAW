@@ -1,0 +1,8 @@
+name = "vought-gate"
+main = "src/index.js"
+compatibility_date = "2024-05-10"
+
+[vars]
+CF_ACCOUNT_ID = "a4233742074c3c8834adcb684068116b"
+
+# Note: The API_TOKEN will be set as a secret via wrangler secret put CF_API_TOKEN

@@ -9,6 +9,7 @@ import { AnthropicProvider } from './anthropic';
 import { GoogleProvider } from './google';
 import { OllamaProvider } from './ollama';
 import { OpenRouterProvider } from './openrouter';
+import { VoughtGateProvider } from './vought';
 import { getConfigManager } from '../config/manager';
 import { ProviderName } from '../config/schema';
 
@@ -64,7 +65,7 @@ export class ProviderRouter {
       this.providers.set('openrouter', new OpenRouterProvider({ apiKey: p.openrouter.apiKey, baseUrl: p.openrouter.baseUrl, defaultModel: p.openrouter.defaultModel }));
     }
     if (p.custom.enabled && p.custom.apiKey && p.custom.baseUrl) {
-      this.providers.set('custom', new OpenAIProvider({ apiKey: p.custom.apiKey, baseUrl: p.custom.baseUrl, defaultModel: p.custom.defaultModel }));
+      this.providers.set('custom', new VoughtGateProvider({ apiKey: p.custom.apiKey, baseUrl: p.custom.baseUrl, defaultModel: p.custom.defaultModel }));
     }
   }
 
@@ -176,6 +177,11 @@ export class ProviderRouter {
     const errorMsg = lastError 
       ? `Error: All providers failed. Last error: ${lastError}`
       : 'Error: No providers available. Run `azerclaw onboard` to configure.';
+    
+    if (process.env.AZERCLAW_DEBUG) {
+      console.error(`[Router] All providers failed. Resolve path: ${tryOrder.join(' -> ')}`);
+    }
+
     return { content: errorMsg, model: 'none', provider: 'none', finishReason: 'error' };
   }
 

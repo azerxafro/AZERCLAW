@@ -38,6 +38,7 @@ export class MCPManager {
       command: config.command,
       args: config.args,
       env: { ...process.env, ...(config.env || {}) },
+      stderr: 'pipe', // Avoid cluttering the CLI with server logs
     });
 
     const client = new Client(
@@ -82,7 +83,9 @@ export class MCPManager {
     }
 
     this.clients.set(name, client);
-    console.log(`[MCP] Connected to "${name}" and registered ${tools.length} tools.`);
+    if (process.env.AZERCLAW_DEBUG) {
+      console.log(`[MCP] Connected to "${name}" and registered ${tools.length} tools.`);
+    }
   }
 
   async shutdown(): Promise<void> {

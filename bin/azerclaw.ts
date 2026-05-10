@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+process.removeAllListeners('warning');
+process.env.NODE_NO_WARNINGS = '1';
+
 /**
  * 🐟 AZERCLAW — CLI Entry Point
  * 
@@ -38,7 +41,7 @@ if (!process.stdout.isTTY) {
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '2.1.0';
+const VERSION = '2.1.1';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
@@ -250,6 +253,13 @@ program
     config.resolveEnvOverrides();
     const { showStatus } = require('../src/cli/commands/settings');
     showStatus();
+  });
+
+program
+  .command('version')
+  .description('Display version information')
+  .action(() => {
+    console.log(`AZERCLAW v${VERSION} — Diabolical Edition`);
   });
 
 // ─── Config Command ─────────────────────────────────────────────

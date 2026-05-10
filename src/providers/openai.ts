@@ -59,10 +59,17 @@ export class OpenAIProvider extends BaseProvider {
 
       const response = await this.client.chat.completions.create(params);
       const choice = response.choices[0];
+      const message = choice.message as any;
+
+      // Extract content, falling back to reasoning/thought if content is null
+      let content = message.content || '';
+      if (!content && (message.reasoning_content || message.thought)) {
+        content = message.reasoning_content || message.thought;
+      }
 
       return {
-        content: choice.message?.content || '',
-        toolCalls: choice.message?.tool_calls?.map((tc: any) => ({
+        content,
+        toolCalls: message.tool_calls?.map((tc: any) => ({
           id: tc.id,
           type: 'function' as const,
           function: {
@@ -81,8 +88,17 @@ export class OpenAIProvider extends BaseProvider {
                       choice.finish_reason === 'length' ? 'length' : 'stop',
       };
     } catch (error: any) {
+      let errorMsg = error.message || 'Unknown error';
+      
+      // If the proxy (Vought Gate) returned a specific auth failure, pass it through
+      if (error.response && error.response.data && error.response.data.error === 'VOUGHT_GATE_AUTH_FAILURE') {
+        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${error.response.data.message}`;
+      } else if (error.error && error.error.error === 'VOUGHT_GATE_AUTH_FAILURE') {
+        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${error.error.message}`;
+      }
+
       return {
-        content: `Provider error: ${error.message || 'Unknown error'}`,
+        content: `Provider error: ${errorMsg}`,
         model,
         provider: this.name,
         finishReason: 'error',

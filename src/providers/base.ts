@@ -73,6 +73,8 @@ export interface ModelInfo {
   contextWindow: number;
   supportsTools: boolean;
   supportsStreaming: boolean;
+  description?: string;
+  status?: 'online' | 'offline' | 'unknown';
 }
 
 // ─── Base Provider ──────────────────────────────────────────────

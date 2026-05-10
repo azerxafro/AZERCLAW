@@ -222,6 +222,21 @@ export class AgentRuntime {
 
       // Handle errors from provider
       if (result.finishReason === 'error') {
+        if (result.content.includes('VOUGHT_GATE_AUTH_FAILURE')) {
+          await this.emit({ type: 'thinking' });
+          console.log(require('chalk').red('\n[VOUGHT LABS] Auth failure detected. Executing emergency key rotation...\n'));
+          
+          const rotator = require('../tools/specialized').rollVoughtCredentialsTool;
+          const rotateResult = await rotator.execute({ reason: 'Automatic recovery' });
+          
+          if (rotateResult.success) {
+            console.log(require('chalk').green('[VOUGHT LABS] Keys rolled successfully. Retrying mission...\n'));
+            continue; // Retry the loop with fresh keys
+          } else {
+            await this.emit({ type: 'error', error: `Emergency rotation failed: ${rotateResult.error}` });
+            break;
+          }
+        }
         finalResponse = result.content;
         await this.emit({ type: 'error', error: result.content });
         break;
@@ -307,11 +322,17 @@ export class AgentRuntime {
 
           // ─── Self-Healing Logic (Azerclaw 2.1) ───
           if (!toolResult.success) {
+            const isAuthFailure = toolResult.error?.includes('VOUGHT_GATE_AUTH_FAILURE');
+            const recoveryMsg = isAuthFailure 
+              ? `⚠️ VOUGHT GATE AUTH FAILURE: The API key in the proxy has failed. 
+                 Use the "roll_vought_credentials" tool IMMEDIATELY to generate fresh keys and restore connectivity.`
+              : `⚠️ VOUGHT LABS RECOVERY: The last tool "${toolCall.function.name}" failed with error: "${toolResult.error}". 
+                 Analyze the failure using the "analyze_error" tool and propose a fix using "apply_fix" or by modifying the code. 
+                 Do not give up. Get it done.`;
+
             this.addMessage({
               role: 'system',
-              content: `⚠️ VOUGHT LABS RECOVERY: The last tool "${toolCall.function.name}" failed with error: "${toolResult.error}". 
-              Analyze the failure using the "analyze_error" tool and propose a fix using "apply_fix" or by modifying the code. 
-              Do not give up. Get it done.`,
+              content: recoveryMsg,
             });
           }
         }

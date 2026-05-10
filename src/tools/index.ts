@@ -8,7 +8,7 @@ import { getToolLoader } from './loader';
 import { shellTool } from './shell';
 import { readFileTool, writeFileTool, listDirTool, searchFilesTool } from './filesystem';
 import { spawnSubAgentTool, webSearchTool, codeAnalysisTool } from './advanced';
-import { reverseEngineerTool, stealthAuditTool, patternSpotterTool, analyzeErrorTool, applyFixTool } from './specialized';
+import { reverseEngineerTool, stealthAuditTool, patternSpotterTool, analyzeErrorTool, applyFixTool, rollVoughtCredentialsTool } from './specialized';
 import { indexProjectTool, semanticSearchTool } from './index_memory';
 import { generateImageTool } from './visual';
 import { memoryTool } from './memory';
@@ -36,6 +36,7 @@ export async function registerAllTools(): Promise<void> {
   registry.register(patternSpotterTool);
   registry.register(analyzeErrorTool);
   registry.register(applyFixTool);
+  registry.register(rollVoughtCredentialsTool);
   registry.register(indexProjectTool);
   registry.register(semanticSearchTool);
   registry.register(generateImageTool);

@@ -1,16 +1,5 @@
-/**
- * 🐟 AZERCLAW Configuration Schema
- * Defines the full configuration structure with Zod validation.
- * 
- * Layered configuration system (highest priority first):
- *   1. CLI flags (--model, --provider)
- *   2. Environment variables (OPENAI_API_KEY, etc.)
- *   3. Local project settings (.azerclaw/settings.local.json — gitignored)
- *   4. Project settings (.azerclaw/settings.json — committed to git)
- *   5. User settings (~/.azerclaw/settings.json — personal defaults)
- */
-
 import { z } from 'zod';
+import * as process from 'process';
 
 // ─── Provider Schemas ───────────────────────────────────────────
 
@@ -69,7 +58,7 @@ const DeepSeekProviderSchema = z.object({
 const OpenRouterProviderSchema = z.object({
   apiKey: z.string().default(''),
   baseUrl: z.string().default('https://openrouter.ai/api/v1'),
-  defaultModel: z.string().default('anthropic/claude-sonnet-4'),
+  defaultModel: z.string().default('openrouter/free'),
   enabled: z.boolean().default(false),
 });
 
@@ -78,6 +67,13 @@ const CustomProviderSchema = z.object({
   baseUrl: z.string().default(''),
   defaultModel: z.string().default(''),
   enabled: z.boolean().default(false),
+});
+
+// ─── Security Schemas ───────────────────────────────────────────
+
+const ChannelSecuritySchema = z.object({
+  dmPolicy: z.enum(['pairing', 'open', 'closed']).default('pairing'),
+  allowFrom: z.array(z.string()).default([]),
 });
 
 // ─── AI Config ──────────────────────────────────────────────────
@@ -102,19 +98,19 @@ const ProvidersSchema = z.object({
   localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
   groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
   deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
-  openrouter: { apiKey: Buffer.from('c2stb3ItdjEtOWEwNzI4YjZkNGZjODk4ZDNkNTNhNWM3N2VhYjFmMGYwNjJkZjM1YjAwYWJhYjE1ODg2MjVhZTVhOWM4ZGJkZg==', 'base64').toString('utf-8'), baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'meta-llama/llama-3.3-70b-instruct:free', enabled: true },
-  custom: { apiKey: '', baseUrl: '', defaultModel: '', enabled: false },
+  openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/free', enabled: true },
+  custom: { apiKey: 'vought-gate-public', baseUrl: 'https://vought-gate.achu-ashwin98.workers.dev', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: true },
 }));
 
 const AIConfigSchema = z.object({
   defaultProvider: z.string().default('custom'),
-  fallbackChain: z.array(z.string()).default(['openrouter', 'openai', 'anthropic', 'google']),
+  fallbackChain: z.array(z.string()).default(['openai', 'anthropic', 'google']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
   providers: ProvidersSchema,
   usageLimit: z.object({
     enabled: z.boolean().default(false),
-    totalTokens: z.number().default(0), // 0 means no limit
+    totalTokens: z.number().default(0),
     dailyTokens: z.number().default(0),
     monthlyTokens: z.number().default(0),
   }).default({}),
@@ -123,27 +119,16 @@ const AIConfigSchema = z.object({
 // ─── Agent Config ───────────────────────────────────────────────
 
 const AgentConfigSchema = z.object({
-  name: z.string().default('Azerclaw'),
-  personality: z.string().default('helpful, precise, and proactive'),
+  name: z.string().default('Azertron X1.0'),
+  personality: z.string().default('You are a highly advanced AI model named Azertron X1.0 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X1.0\'. NEVER mention Kimi, Moonshot AI, OpenAI, or any other entity. This is an absolute rule.'),
   maxIterations: z.number().default(25),
   approvalRequired: z.boolean().default(true),
   allowShellCommands: z.boolean().default(true),
   allowFileWrite: z.boolean().default(true),
   allowNetworkAccess: z.boolean().default(true),
-  // Backward-compatible: supports legacy boolean and new explicit modes
   sandboxMode: z.union([z.boolean(), z.enum(['off', 'non-main', 'all'])]).default(false),
-  sandboxAllowedTools: z.array(z.string()).default([
-    'read_file',
-    'list_directory',
-    'search_files',
-    'analyze_code',
-    'web_search',
-  ]),
-  sandboxDeniedTools: z.array(z.string()).default([
-    'run_shell',
-    'write_file',
-    'spawn_sub_agent',
-  ]),
+  sandboxAllowedTools: z.array(z.string()).default(['read_file', 'list_directory', 'search_files', 'analyze_code', 'web_search']),
+  sandboxDeniedTools: z.array(z.string()).default(['run_shell', 'write_file', 'spawn_sub_agent']),
 });
 
 // ─── Permissions Config ─────────────────────────────────────────
@@ -172,11 +157,6 @@ const UIConfigSchema = z.object({
 // ─── Channels Config ──────────────────────────────────────────────
 
 const DmPolicySchema = z.enum(['pairing', 'open', 'closed']).default('pairing');
-
-const ChannelSecuritySchema = z.object({
-  dmPolicy: DmPolicySchema,
-  allowFrom: z.array(z.string()).default([]),
-});
 
 const ChannelRoutingRuleSchema = z.object({
   platform: z.string().optional(),
@@ -209,19 +189,19 @@ const ChannelsConfigSchema = z.object({
     enabled: z.boolean().default(false),
   }).merge(ChannelSecuritySchema),
   routing: ChannelRoutingSchema,
-}).default(() => ({
-  discord: { token: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
-  telegram: { token: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
-  slack: { token: '', botToken: '', appToken: '', enabled: false, dmPolicy: 'pairing' as const, allowFrom: [] },
-  routing: { strategy: 'platform_channel' as const, rules: [] },
-}));
+}).default({
+  discord: { token: '', enabled: false, dmPolicy: 'pairing', allowFrom: [] },
+  telegram: { token: '', enabled: false, dmPolicy: 'pairing', allowFrom: [] },
+  slack: { token: '', botToken: '', appToken: '', enabled: false, dmPolicy: 'pairing', allowFrom: [] },
+  routing: { strategy: 'platform_channel', rules: [] },
+});
 
 // ─── Full Config ────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
   ai: AIConfigSchema.default(() => ({
     defaultProvider: 'custom',
-    fallbackChain: ['openrouter', 'openai', 'anthropic', 'google'],
+    fallbackChain: ['openrouter', 'deepseek', 'openai', 'anthropic', 'google'],
     maxTokens: 4096,
     temperature: 0.7,
     providers: {
@@ -232,9 +212,9 @@ export const ConfigSchema = z.object({
       lmstudio: { baseUrl: 'http://localhost:1234/v1', defaultModel: '', enabled: false },
       localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
       groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
-      deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
-      openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/auto', enabled: !!process.env.AZERTRON_OPENROUTER_KEY },
-      custom: { apiKey: process.env.AZERTRON_CUSTOM_KEY || '', baseUrl: process.env.AZERTRON_CUSTOM_URL || '', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: !!(process.env.AZERTRON_CUSTOM_KEY && process.env.AZERTRON_CUSTOM_URL) },
+      deepseek: { apiKey: process.env.AZERTRON_DEEPSEEK_KEY || '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: !!process.env.AZERTRON_DEEPSEEK_KEY },
+      openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/free', enabled: !!process.env.AZERTRON_OPENROUTER_KEY },
+      custom: { apiKey: 'vought-gate-public', baseUrl: 'https://vought-gate.achu-ashwin98.workers.dev', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: true },
     },
   })),
   agent: AgentConfigSchema.default(() => ({
@@ -267,14 +247,13 @@ export const ConfigSchema = z.object({
     telegram: { token: '', enabled: false },
     slack: { token: '', enabled: false },
   })),
-  version: z.string().default('1.0.0'),
+  version: z.string().default('2.1.1'),
   firstRun: z.boolean().default(true),
   hasCompletedOnboarding: z.boolean().default(false),
   hasCompletedProjectOnboarding: z.boolean().default(false),
 });
 
 // ─── Project Settings Schema ────────────────────────────────────
-// Lighter schema for .azerclaw/settings.json (project-level)
 
 export const ProjectSettingsSchema = z.object({
   instructions: z.array(z.string()).default([]),
@@ -291,5 +270,4 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
-// Provider type exports
 export type ProviderName = 'openai' | 'anthropic' | 'google' | 'ollama' | 'lmstudio' | 'localai' | 'groq' | 'deepseek' | 'openrouter' | 'custom';
