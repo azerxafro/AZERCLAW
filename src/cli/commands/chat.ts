@@ -1,5 +1,5 @@
 /**
- * 🐟 AZERCLAW Chat Command
+ * 🐟 AZERTRON X1.0 Chat Command
  * Interactive conversational mode with streaming responses and tool use.
  * 
  * Slash commands (OpenClaw-style):
@@ -21,6 +21,7 @@
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const readline = require('readline');
+const { AutoComplete } = require('enquirer');
 const { AgentRuntime } = require('../../core/runtime');
 const { getToolRegistry } = require('../../tools/registry');
 const { shellTool } = require('../../tools/shell');
@@ -54,6 +55,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   const thinking = new FishThinkingAnimation('Initializing');
   let isThinking = false;
   let messageCount = 0;
+  let isDropdownOpen = false;
 
   const agent = new AgentRuntime({
     sessionId: 'main:chat',
@@ -119,7 +121,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   // Chat UI header — show current model/provider
   const renderHeader = () => {
     const status = config.getStatus();
-    fishBox('🐟 AZERCLAW', [
+    fishBox('🐟 AZERTRON X1.0', [
       chalk.dim('  Type your message and press Enter. Type / for commands.'),
       '',
       `  ${chalk.hex('#818cf8')('Provider:')}  ${chalk.hex('#34d399')(status.provider)}  ${chalk.hex('#818cf8')('Model:')}  ${chalk.hex('#34d399')(status.model)}`,
@@ -140,11 +142,73 @@ export async function runChat(options: { model?: string; provider?: string; init
     // Silently updated runtime config
   });
 
+  const commands = [
+    '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
+    '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
+    '/ZEUS', '/ORION', '/ATLAS', '/HERA', '/HERMES', '/APOLLO', '/ATHENA', 
+    '/ARES', '/HEPHAESTUS', '/DEMETER', '/ARTEMIS', '/POSEIDON'
+  ];
+
+  const completer = (line: string) => {
+    const hits = commands.filter((c) => c.startsWith(line));
+    return [hits.length ? hits : commands, line];
+  };
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     prompt: OCEAN('  🐟 > '),
     terminal: true,
+    completer,
+  });
+
+  // Enable ESC to abort
+  readline.emitKeypressEvents(process.stdin);
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+  }
+
+  process.stdin.on('keypress', async (str, key) => {
+    if (key.name === 'escape') {
+      if (isThinking) {
+        agent.abort();
+        thinking.stop('Aborted by user (ESC)');
+        isThinking = false;
+        rl.prompt();
+      }
+    }
+    // Handle Ctrl+C manually since we are in raw mode
+    if (key.ctrl && key.name === 'c') {
+      process.exit(0);
+    }
+
+    // Trigger Dropdown Menu on typing '/'
+    if (!isDropdownOpen && str === '/' && rl.line === '/') {
+      isDropdownOpen = true;
+      
+      // Clear the '/' that readline just printed
+      readline.moveCursor(process.stdout, -1, 0);
+      readline.clearLine(process.stdout, 1);
+      // Clear readline's internal buffer
+      rl.write(null, {ctrl: true, name: 'u'});
+      
+      try {
+        const prompt = new AutoComplete({
+          name: 'command',
+          message: 'Select a command:',
+          limit: 10,
+          choices: commands
+        });
+        
+        const answer = await prompt.run();
+        isDropdownOpen = false;
+        rl.emit('line', answer);
+      } catch (e) {
+        isDropdownOpen = false;
+        console.log('');
+        rl.prompt();
+      }
+    }
   });
 
   // Process initial message if provided
@@ -165,9 +229,12 @@ export async function runChat(options: { model?: string; provider?: string; init
     if (!input) { rl.prompt(); return; }
 
     // Handle slash commands
-    if (input.startsWith('/')) {
+    let commandInput = input;
+    if (commandInput === '/') commandInput = '/help';
+
+    if (commandInput.startsWith('/')) {
       // Check for agent invocation: /ZEUS, /ORION, /ATLAS, etc.
-      const agentMatch = input.match(/^\/([A-Z]+)\s+(.*)/);
+      const agentMatch = commandInput.match(/^\/([A-Z]+)\s+(.*)/);
       if (agentMatch) {
         const agentName = agentMatch[1];
         let task = agentMatch[2];
@@ -223,7 +290,7 @@ export async function runChat(options: { model?: string; provider?: string; init
         return;
       }
       
-      switch (input.toLowerCase()) {
+      switch (commandInput.toLowerCase()) {
         case '/exit':
         case '/quit':
         case '/q':
@@ -320,7 +387,7 @@ export async function runChat(options: { model?: string; provider?: string; init
           console.log('');
           console.log(formatAgentRoster());
           console.log('');
-          fishInfo('Usage: /AGENT_NAME [task]  (e.g., /ORION write a REST API)');
+          fishInfo('Usage: /AGENT_NAME [task]  (e.g., /FRENCHIE write a REST API)');
           break;
         }
         case '/help':

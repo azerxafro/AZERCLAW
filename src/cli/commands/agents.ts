@@ -33,7 +33,7 @@ export function agentsList(): void {
 
   console.log('');
   console.log(chalk.dim('  Usage: azerclaw agent invoke <name> <task>'));
-  console.log(chalk.dim('  Chat:  Type /ZEUS, /ORION, /ATLAS etc. in chat mode'));
+  console.log(chalk.dim('  Chat:  Type /HOMELANDER, /FRENCHIE, /MOTHERS_MILK etc. in chat mode'));
   console.log('');
 }
 

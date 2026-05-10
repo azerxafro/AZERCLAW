@@ -385,7 +385,7 @@ export async function runTUI(): Promise<void> {
             T.highlight('  Project'),
             T.accent('  /init         ') + T.dim('Initialize project (AZERCLAW.md)'),
             T.accent('  /agents       ') + T.dim('List Pantheon agents'),
-            T.accent('  /ZEUS task    ') + T.dim('Invoke a specific agent'),
+            T.accent('  /HOMELANDER task    ') + T.dim('Invoke a specific agent'),
             '',
             T.dim('  Flags: //turbo //auto //review //collab //secure'),
           ]);

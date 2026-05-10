@@ -87,7 +87,7 @@ export async function runOnboard(): Promise<void> {
   const config = getConfigManager();
   
   console.log('');
-  fishBox('🐟 AZERCLAW Setup', [
+  fishBox('🐟 AZERTRON X1.0 Setup', [
     '',
     chalk.hex('#e2e8f0')('  Welcome to AZERCLAW — your AI, your keys, your way.'),
     '',

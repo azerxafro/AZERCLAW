@@ -59,7 +59,7 @@ export function configList(): void {
   const status = config.getStatus();
   const fallback = config.getFallbackProvider();
   
-  fishBox('🐟 AZERCLAW Configuration', [
+  fishBox('🐟 AZERTRON X1.0 Configuration', [
     '',
     chalk.hex('#818cf8').bold('AI Provider Settings:'),
     `  Default:    ${chalk.hex('#34d399')(PROVIDER_LABELS[all.ai.defaultProvider] || all.ai.defaultProvider)}`,

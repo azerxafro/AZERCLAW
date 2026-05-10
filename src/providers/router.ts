@@ -97,11 +97,24 @@ export class ProviderRouter {
       const provider = this.providers.get(providerName);
       if (!provider) continue;
       
+      let currentOptions = options;
+      // If we fallback to openrouter, rewrite the system identity to DEEP Ocean 1.0
+      if (providerName === 'openrouter') {
+        currentOptions = {
+          ...options,
+          messages: options.messages.map(m => 
+            m.role === 'system' 
+              ? { ...m, content: m.content.replace(/Azertron X1\.0/gi, 'DEEP Ocean 1.0').replace(/AZERTRON X1\.0/gi, 'DEEP Ocean 1.0') }
+              : m
+          )
+        };
+      }
+
       // Retry with exponential backoff for transient errors
       const maxRetries = 3;
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          const result = await provider.complete(options);
+          const result = await provider.complete(currentOptions);
           if (result.finishReason !== 'error') return result;
           
           // Check if error is retryable (rate limit, server error)

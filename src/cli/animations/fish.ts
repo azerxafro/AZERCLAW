@@ -134,7 +134,7 @@ export async function playSplashScreen(version: string): Promise<void> {
 
 export function printQuickSplash(version: string): void {
   const termWidth = process.stdout.columns || 80;
-  const fishLine = `  🔪 ><(((º>  AZERCLAW v${version} (Diabolical)`;
+  const fishLine = `  🔪 ><(((º>  AZERTRON X1.0 v${version} (Diabolical)`;
   const pad = Math.max(0, Math.floor((termWidth - fishLine.length) / 2));
   console.log('');
   console.log(' '.repeat(pad) + BLOOD_GRADIENT(fishLine));

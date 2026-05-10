@@ -38,7 +38,7 @@ const program = new Command();
 
 program
   .name('azerclaw')
-  .description('🐟 AZERCLAW — Diabolical AI · Scorched Earth · Your Way')
+  .description('🐟 AZERTRON X1.0 — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')

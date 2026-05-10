@@ -107,7 +107,7 @@ export function showStatus(): void {
     : status.authRoute === 'api_key' ? 'Config File'
     : chalk.hex('#f87171')('Not Configured');
 
-  fishBox('🐟 AZERCLAW Status', [
+  fishBox('🐟 AZERTRON X1.0 Status', [
     '',
     `  ${chalk.hex('#818cf8')('Version:')}     ${chalk.hex('#e2e8f0')(`v${status.version}`)}`,
     `  ${chalk.hex('#818cf8')('Provider:')}    ${chalk.hex('#34d399')(PROVIDER_LABELS[status.provider] || status.provider)}`,
