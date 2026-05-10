@@ -112,6 +112,12 @@ const AIConfigSchema = z.object({
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
   providers: ProvidersSchema,
+  usageLimit: z.object({
+    enabled: z.boolean().default(false),
+    totalTokens: z.number().default(0), // 0 means no limit
+    dailyTokens: z.number().default(0),
+    monthlyTokens: z.number().default(0),
+  }).default({}),
 });
 
 // ─── Agent Config ───────────────────────────────────────────────

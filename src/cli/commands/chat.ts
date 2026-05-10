@@ -21,7 +21,7 @@
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const readline = require('readline');
-const { AutoComplete } = require('enquirer');
+const { AutoComplete, Select } = require('enquirer');
 const { AgentRuntime } = require('../../core/runtime');
 const { getToolRegistry } = require('../../tools/registry');
 const { shellTool } = require('../../tools/shell');
@@ -57,65 +57,67 @@ export async function runChat(options: { model?: string; provider?: string; init
   let messageCount = 0;
   let isDropdownOpen = false;
 
-  const agent = new AgentRuntime({
-    sessionId: 'main:chat',
-    eventHandler: async (event: any) => {
-      switch (event.type) {
-        case 'thinking':
-          if (!isThinking) {
-            isThinking = true;
-            thinking.start();
+  const chatEventHandler = async (event: any) => {
+    switch (event.type) {
+      case 'thinking':
+        if (!isThinking) {
+          isThinking = true;
+          thinking.start();
+        }
+        break;
+
+      case 'response':
+        if (isThinking) {
+          thinking.stop();
+          isThinking = false;
+        }
+        if (event.content) {
+          messageCount++;
+          console.log('');
+          console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 Azerclaw'));
+          const lines = event.content.split('\n');
+          for (const line of lines) {
+            console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(line));
           }
-          break;
+          console.log(chalk.hex('#c4b5fd')('  └─'));
+          console.log('');
+        }
+        break;
 
-        case 'response':
-          if (isThinking) {
-            thinking.stop();
-            isThinking = false;
-          }
-          if (event.content) {
-            messageCount++;
-            console.log('');
-            console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 Azerclaw'));
-            const lines = event.content.split('\n');
-            for (const line of lines) {
-              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(line));
-            }
-            console.log(chalk.hex('#c4b5fd')('  └─'));
-            console.log('');
-          }
-          break;
+      case 'tool_call':
+        if (isThinking) { thinking.updateMessage(`Using ${event.toolName}`); }
+        break;
 
-        case 'tool_call':
-          if (isThinking) { thinking.updateMessage(`Using ${event.toolName}`); }
-          break;
+      case 'tool_result':
+        if (event.toolResult?.success) {
+          // Silently process — agent will use the result
+        } else if (event.toolResult?.error) {
+          if (isThinking) { thinking.fail(event.toolResult.error); isThinking = false; }
+        }
+        break;
 
-        case 'tool_result':
-          if (event.toolResult?.success) {
-            // Silently process — agent will use the result
-          } else if (event.toolResult?.error) {
-            if (isThinking) { thinking.fail(event.toolResult.error); isThinking = false; }
-          }
-          break;
+      case 'sub_agent_spawn':
+        console.log(chalk.hex('#818cf8')(`  🐠 Sub-agent spawned: ${event.content?.slice(0, 60)}...`));
+        break;
 
-        case 'sub_agent_spawn':
-          console.log(chalk.hex('#818cf8')(`  🐠 Sub-agent spawned: ${event.content?.slice(0, 60)}...`));
-          break;
+      case 'sub_agent_done':
+        console.log(chalk.hex('#34d399')(`  🐠 Sub-agent completed`));
+        break;
 
-        case 'sub_agent_done':
-          console.log(chalk.hex('#34d399')(`  🐠 Sub-agent completed`));
-          break;
+      case 'error':
+        if (isThinking) { thinking.fail(event.error); isThinking = false; }
+        else fishError(event.error || 'Unknown error');
+        break;
 
-        case 'error':
-          if (isThinking) { thinking.fail(event.error); isThinking = false; }
-          else fishError(event.error || 'Unknown error');
-          break;
+      case 'done':
+        if (isThinking) { thinking.stop('Done'); isThinking = false; }
+        break;
+    }
+  };
 
-        case 'done':
-          if (isThinking) { thinking.stop('Done'); isThinking = false; }
-          break;
-      }
-    },
+  let agent = new AgentRuntime({
+    sessionId: session.id,
+    eventHandler: chatEventHandler,
   });
 
   // Chat UI header — show current model/provider
@@ -145,6 +147,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   const commands = [
     '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
     '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
+    '/history', '/undo',
     '/ZEUS', '/ORION', '/ATLAS', '/HERA', '/HERMES', '/APOLLO', '/ATHENA', 
     '/ARES', '/HEPHAESTUS', '/DEMETER', '/ARTEMIS', '/POSEIDON'
   ];
@@ -154,10 +157,17 @@ export async function runChat(options: { model?: string; provider?: string; init
     return [hits.length ? hits : commands, line];
   };
 
+  const getPrompt = () => {
+    const s = sessionStore.get(agent.getSessionId());
+    const tokens = s ? s.tokenCount : 0;
+    const tokenStr = tokens > 1000 ? `${(tokens / 1000).toFixed(1)}K` : tokens;
+    return OCEAN(`  🐟 [${tokenStr}] > `);
+  };
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: OCEAN('  🐟 > '),
+    prompt: getPrompt(),
     terminal: true,
     completer,
   });
@@ -183,13 +193,15 @@ export async function runChat(options: { model?: string; provider?: string; init
     }
 
     // Trigger Dropdown Menu on typing '/'
-    if (!isDropdownOpen && str === '/' && rl.line === '/') {
+    if (!isDropdownOpen && str === '/' && rl.line.trim() === '/') {
       isDropdownOpen = true;
       
-      // Clear the '/' that readline just printed
-      readline.moveCursor(process.stdout, -1, 0);
+      // Pause readline to prevent interference
+      rl.pause();
+      
+      // Clear the '/' that readline just printed and the internal buffer
+      readline.moveCursor(process.stdout, -rl.line.length, 0);
       readline.clearLine(process.stdout, 1);
-      // Clear readline's internal buffer
       rl.write(null, {ctrl: true, name: 'u'});
       
       try {
@@ -202,10 +214,14 @@ export async function runChat(options: { model?: string; provider?: string; init
         
         const answer = await prompt.run();
         isDropdownOpen = false;
+        rl.resume();
+        // Manually trigger the line event with the selected command
         rl.emit('line', answer);
       } catch (e) {
         isDropdownOpen = false;
+        rl.resume();
         console.log('');
+        rl.setPrompt(getPrompt());
         rl.prompt();
       }
     }
@@ -226,7 +242,11 @@ export async function runChat(options: { model?: string; provider?: string; init
 
   rl.on('line', async (line: string) => {
     const input = line.trim();
-    if (!input) { rl.prompt(); return; }
+    if (!input) { 
+      rl.setPrompt(getPrompt());
+      rl.prompt(); 
+      return; 
+    }
 
     // Handle slash commands
     let commandInput = input;
@@ -253,6 +273,7 @@ export async function runChat(options: { model?: string; provider?: string; init
         if (agentName === 'PANTHEON' || agentName === 'ALL') {
           console.log(formatAgentRoster());
           fishInfo('Multi-agent collaboration coming soon. Use /AGENT_NAME [task] for now.');
+          rl.setPrompt(getPrompt());
           rl.prompt();
           return;
         }
@@ -260,6 +281,7 @@ export async function runChat(options: { model?: string; provider?: string; init
         const agentDef = getAgent(agentName);
         if (!agentDef) {
           fishError(`Unknown agent: ${agentName}. Type /agents to see available agents.`);
+          rl.setPrompt(getPrompt());
           rl.prompt();
           return;
         }
@@ -286,6 +308,7 @@ export async function runChat(options: { model?: string; provider?: string; init
         } catch (error: any) {
           fishError(`${agentDef.codename} error: ${error.message}`);
         }
+        rl.setPrompt(getPrompt());
         rl.prompt();
         return;
       }
@@ -382,6 +405,68 @@ export async function runChat(options: { model?: string; provider?: string; init
           initProject();
           break;
         }
+        case '/history': {
+          const recentSessions = sessionStore.getRecent(10);
+          if (recentSessions.length === 0) {
+            fishInfo('No past sessions found.');
+            rl.setPrompt(getPrompt());
+            rl.prompt();
+            return;
+          }
+          
+          try {
+            isDropdownOpen = true;
+            // Clear readline
+            readline.moveCursor(process.stdout, -1, 0);
+            readline.clearLine(process.stdout, 1);
+            rl.write(null, {ctrl: true, name: 'u'});
+
+            const choices = recentSessions.map((s: any) => {
+              const date = new Date(s.updatedAt).toLocaleString();
+              const tokens = s.tokenCount > 0 ? chalk.dim(` [${s.tokenCount} tokens]`) : '';
+              return {
+                name: s.id,
+                message: `${chalk.hex('#818cf8')(date)} - ${s.title}${tokens}`
+              };
+            });
+
+            const prompt = new Select({
+              name: 'sessionId',
+              message: 'Select a session to resume:',
+              choices: choices,
+            });
+
+            const selectedSessionId = await prompt.run();
+            isDropdownOpen = false;
+
+            const selectedSession = sessionStore.get(selectedSessionId);
+            if (selectedSession) {
+              fishSuccess(`Resuming session: ${selectedSession.title}`);
+              // Assign new agent runtime
+              agent = new AgentRuntime({
+                sessionId: selectedSessionId,
+                eventHandler: chatEventHandler,
+              });
+              // Reset message count contextually
+              messageCount = selectedSession.messages.length;
+              renderHeader();
+            }
+          } catch (e) {
+            isDropdownOpen = false;
+            console.log('');
+          }
+          break;
+        }
+        case '/undo': {
+          if (agent.undo()) {
+            fishSuccess('Last exchange undone.');
+            messageCount = agent.getHistory().length;
+            rl.setPrompt(getPrompt());
+          } else {
+            fishWarn('Nothing to undo.');
+          }
+          break;
+        }
         case '/agents': {
           const { formatAgentRoster } = require('../../agents/builtin');
           console.log('');
@@ -396,6 +481,8 @@ export async function runChat(options: { model?: string; provider?: string; init
             chalk.hex('#60a5fa')('  /exit         ') + chalk.dim('— Exit session'),
             chalk.hex('#60a5fa')('  /clear        ') + chalk.dim('— Clear conversation'),
             chalk.hex('#60a5fa')('  /compact      ') + chalk.dim('— Compress context'),
+            chalk.hex('#60a5fa')('  /history      ') + chalk.dim('— Browse and resume past sessions'),
+            chalk.hex('#60a5fa')('  /undo         ') + chalk.dim('— Rollback last exchange'),
             '',
             chalk.hex('#818cf8').bold('  Configuration'),
             chalk.hex('#60a5fa')('  /model        ') + chalk.dim('— Switch model'),
@@ -416,6 +503,7 @@ export async function runChat(options: { model?: string; provider?: string; init
         default:
           fishError(`Unknown command: ${input}. Type /help for available commands.`);
       }
+      rl.setPrompt(getPrompt());
       rl.prompt();
       return;
     }
@@ -427,6 +515,7 @@ export async function runChat(options: { model?: string; provider?: string; init
       fishError(error.message || 'Something went wrong');
     }
 
+    rl.setPrompt(getPrompt());
     rl.prompt();
   });
 

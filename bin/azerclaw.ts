@@ -28,6 +28,13 @@
 
 const { Command } = require('commander');
 const chalk = require('chalk');
+
+// Disable colors and animations if output is piped
+if (!process.stdout.isTTY) {
+  chalk.level = 0;
+  process.env.FORCE_COLOR = '0';
+}
+
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
@@ -42,7 +49,11 @@ program
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')
-  .hook('preAction', async () => {
+  .hook('preAction', async (thisCommand: any) => {
+    if (thisCommand.opts().color === false) {
+      chalk.level = 0;
+      process.env.FORCE_COLOR = '0';
+    }
     // Global initialization
     const { registerAllTools } = require('../src/tools');
     await registerAllTools();

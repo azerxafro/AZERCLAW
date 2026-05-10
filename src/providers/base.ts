@@ -55,9 +55,14 @@ export interface CompletionResult {
 }
 
 export interface StreamChunk {
-  type: 'text' | 'tool_call' | 'done' | 'error';
+  type: 'text' | 'tool_call' | 'done' | 'error' | 'usage';
   content?: string;
   toolCall?: ToolCall;
+  usage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
   error?: string;
 }
 

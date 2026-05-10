@@ -88,14 +88,28 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
     });
   }
 
-  // 5. Provider connectivity
-  renderFishProgress(++completed, totalChecks, 'Connectivity');
+  // 5. Provider connectivity & Latency
+  renderFishProgress(++completed, totalChecks, 'Connectivity & Latency');
   if (enabled.length > 0) {
     resetRouter();
     const router = getRouter();
     const available = router.getAvailableProviders();
     if (available.length > 0) {
-      checks.push({ name: 'Connectivity', status: 'pass', message: `${available.length} providers initialized` });
+      const pings: string[] = [];
+      for (const pName of available) {
+        const provider = router.getProvider(pName);
+        if (provider) {
+          const start = Date.now();
+          try {
+            await provider.isAvailable();
+            const latency = Date.now() - start;
+            pings.push(`${pName}: ${latency}ms`);
+          } catch {
+            pings.push(`${pName}: error`);
+          }
+        }
+      }
+      checks.push({ name: 'Connectivity', status: 'pass', message: `${available.length} providers initialized | ${pings.join(' | ')}` });
     } else {
       checks.push({ name: 'Connectivity', status: 'warn', message: 'No providers could initialize' });
     }

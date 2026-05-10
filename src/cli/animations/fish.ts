@@ -6,14 +6,20 @@
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 
+// Helper to create TTY-aware gradients
+const createGradient = (colors: string[]) => {
+  const grad = gradientString(colors);
+  return (str: string) => (process.stdout.isTTY && chalk.level > 0) ? grad(str) : str;
+};
+
 // ─── Color Palette ──────────────────────────────────────────────
-const BLOOD_GRADIENT = gradientString(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
-const VOUGHT_GRADIENT = gradientString(['#1e3a8a', '#1d4ed8', '#fbbf24', '#f59e0b']);
-const GRITTY_GRADIENT = gradientString(['#262626', '#525252', '#a3a3a3', '#fafafa']);
+const BLOOD_GRADIENT = createGradient(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
+const VOUGHT_GRADIENT = createGradient(['#1e3a8a', '#1d4ed8', '#fbbf24', '#f59e0b']);
+const GRITTY_GRADIENT = createGradient(['#262626', '#525252', '#a3a3a3', '#fafafa']);
 const OCEAN_GRADIENT = BLOOD_GRADIENT; // Redirect legacy for consistency
 const GOLD_GRADIENT = VOUGHT_GRADIENT;
-const NEON_GRADIENT = gradientString(['#ef4444', '#1d4ed8', '#000000']);
-const LUXE_GRADIENT = gradientString(['#000000', '#ef4444', '#000000']);
+const NEON_GRADIENT = createGradient(['#ef4444', '#1d4ed8', '#000000']);
+const LUXE_GRADIENT = createGradient(['#000000', '#ef4444', '#000000']);
 const EMBER_GRADIENT = BLOOD_GRADIENT;
 
 // ─── Fish ASCII Art ─────────────────────────────────────────────
@@ -185,6 +191,10 @@ export class FishThinkingAnimation {
   }
 
   start(): void {
+    if (!process.stdout.isTTY) {
+      console.log(`[Thinking] ${this.message}...`);
+      return;
+    }
     hideCursor();
     this.frameIndex = 0;
     this.quoteDisplayLength = 0;
@@ -234,6 +244,10 @@ export class FishThinkingAnimation {
 
   stop(finalMessage?: string): void {
     if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    if (!process.stdout.isTTY) {
+      if (finalMessage) console.log(`[Done] ✓ ${finalMessage}`);
+      return;
+    }
     process.stdout.write('\r\x1b[2K');
     if (finalMessage) {
       process.stdout.write(BLOOD_GRADIENT(`  ><(((°>`) + chalk.bold.green(` ✓ ${finalMessage}`) + '\n');
@@ -243,6 +257,10 @@ export class FishThinkingAnimation {
 
   fail(errorMessage?: string): void {
     if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    if (!process.stdout.isTTY) {
+      if (errorMessage) console.error(`[Error] ✗ ${errorMessage}`);
+      return;
+    }
     process.stdout.write('\r\x1b[2K');
     if (errorMessage) {
       process.stdout.write(BLOOD_GRADIENT(`  ><(((x>`) + chalk.bold.red(` ✗ ${errorMessage}`) + '\n');
@@ -253,6 +271,10 @@ export class FishThinkingAnimation {
 
 
 export function renderFishProgress(current: number, total: number, label: string = ''): void {
+  if (!process.stdout.isTTY) {
+    if (current >= total) console.log(`[Progress] 100% ${label}`);
+    return;
+  }
   const termWidth = process.stdout.columns || 80;
   const barWidth = Math.min(40, termWidth - 30);
   const progress = Math.min(1, current / total);

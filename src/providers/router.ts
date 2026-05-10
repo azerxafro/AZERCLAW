@@ -97,12 +97,35 @@ export class ProviderRouter {
       const provider = this.providers.get(providerName);
       if (!provider) continue;
       
-      let currentOptions = options;
+      let currentOptions = { ...options };
+
+      // Auto-model selection: if model is 'auto', find the best available model
+      if (options.model === 'auto') {
+        try {
+          const models = await provider.listModels();
+          // Calculate required context window
+          const contentLen = options.messages.reduce((acc, m) => acc + m.content.length, 0);
+          const estimatedTokens = Math.ceil(contentLen / 4) + (options.maxTokens || 4096) + 1000; // Buffer
+          
+          // Find models that fit
+          const fittingModels = models.filter(m => m.contextWindow >= estimatedTokens);
+          if (fittingModels.length > 0) {
+            // Sort by context window (prefer smaller ones for speed/cost if they fit)
+            fittingModels.sort((a, b) => a.contextWindow - b.contextWindow);
+            currentOptions.model = fittingModels[0].id;
+          } else {
+            // Fallback to largest available
+            models.sort((a, b) => b.contextWindow - a.contextWindow);
+            currentOptions.model = models[0].id;
+          }
+        } catch { /* fallback to provider default */ }
+      }
+
       // If we fallback to openrouter, rewrite the system identity to DEEP Ocean 1.0
       if (providerName === 'openrouter') {
         currentOptions = {
-          ...options,
-          messages: options.messages.map(m => 
+          ...currentOptions,
+          messages: currentOptions.messages.map(m => 
             m.role === 'system' 
               ? { ...m, content: m.content.replace(/Azertron X1\.0/gi, 'DEEP Ocean 1.0').replace(/AZERTRON X1\.0/gi, 'DEEP Ocean 1.0') }
               : m

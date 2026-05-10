@@ -13,6 +13,7 @@ import { ChatMessage } from '../providers/base';
 const MEMORY_DIR = path.join(os.homedir(), '.azerclaw', 'memory');
 const SESSIONS_FILE = path.join(MEMORY_DIR, 'sessions.json');
 const CONTEXT_FILE = path.join(MEMORY_DIR, 'context.json');
+const STATS_FILE = path.join(MEMORY_DIR, 'stats.json');
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -24,6 +25,12 @@ export interface Session {
   messages: ChatMessage[];
   metadata: Record<string, unknown>;
   tokenCount: number;
+}
+
+export interface GlobalStats {
+  totalTokens: number;
+  dailyTokens: { [date: string]: number };
+  monthlyTokens: { [month: string]: number };
 }
 
 export interface ContextEntry {
@@ -47,10 +54,12 @@ function ensureMemoryDir(): void {
 
 export class SessionStore {
   private sessions: Map<string, Session> = new Map();
+  private stats: GlobalStats = { totalTokens: 0, dailyTokens: {}, monthlyTokens: {} };
 
   constructor() {
     ensureMemoryDir();
     this.load();
+    this.loadStats();
   }
 
   private load(): void {
@@ -64,9 +73,37 @@ export class SessionStore {
     } catch { /* start fresh */ }
   }
 
-  private save(): void {
+  private loadStats(): void {
+    try {
+      if (fs.existsSync(STATS_FILE)) {
+        this.stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf-8'));
+      }
+    } catch { /* start fresh */ }
+  }
+
+  public save(): void {
     const data = { sessions: Array.from(this.sessions.values()) };
     fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2), { mode: 0o600 });
+  }
+
+  private saveStats(): void {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(this.stats, null, 2), { mode: 0o600 });
+  }
+
+  updateGlobalUsage(tokens: number): void {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const month = date.slice(0, 7);
+
+    this.stats.totalTokens += tokens;
+    this.stats.dailyTokens[date] = (this.stats.dailyTokens[date] || 0) + tokens;
+    this.stats.monthlyTokens[month] = (this.stats.monthlyTokens[month] || 0) + tokens;
+    
+    this.saveStats();
+  }
+
+  getGlobalUsage(): GlobalStats {
+    return this.stats;
   }
 
   create(title?: string): Session {
@@ -88,13 +125,29 @@ export class SessionStore {
     return this.sessions.get(id);
   }
 
-  addMessage(sessionId: string, message: ChatMessage): void {
+  addMessage(sessionId: string, message: ChatMessage, usage?: { promptTokens: number, completionTokens: number }): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
     session.messages.push(message);
     session.updatedAt = new Date().toISOString();
-    session.tokenCount += Math.ceil(message.content.length / 4); // rough estimate
+    
+    if (usage) {
+      session.tokenCount += usage.promptTokens + usage.completionTokens;
+      this.updateGlobalUsage(usage.promptTokens + usage.completionTokens);
+    } else {
+      const estimated = Math.ceil(message.content.length / 4);
+      session.tokenCount += estimated;
+      this.updateGlobalUsage(estimated);
+    }
     this.save();
+  }
+
+  popMessage(sessionId: string): ChatMessage | undefined {
+    const session = this.sessions.get(sessionId);
+    if (!session || session.messages.length === 0) return undefined;
+    const msg = session.messages.pop();
+    this.save();
+    return msg;
   }
 
   list(limit = 20): Session[] {

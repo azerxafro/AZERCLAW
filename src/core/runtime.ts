@@ -131,14 +131,14 @@ export class AgentRuntime {
     return this.agentLoop();
   }
 
-  private addMessage(message: ChatMessage): void {
+  private addMessage(message: ChatMessage, usage?: { promptTokens: number, completionTokens: number }): void {
     this.context.messages.push(message);
     const store = getSessionStore();
     // Ensure session exists
     if (!store.get(this.context.sessionId)) {
       store.create(this.context.sessionId);
     }
-    store.addMessage(this.context.sessionId, message);
+    store.addMessage(this.context.sessionId, message, usage);
     
     // Auto-title if it's the first user message
     if (message.role === 'user' && this.context.messages.filter(m => m.role === 'user').length === 1) {
@@ -153,13 +153,35 @@ export class AgentRuntime {
     const router = getRouter();
     const registry = getToolRegistry();
     const configManager = getConfigManager();
+    const store = getSessionStore();
     let finalResponse = '';
 
     while (this.context.currentIteration < this.context.maxIterations && !this.aborted) {
+      const runtimeConfig = configManager.getAll();
+      const aiConfig = runtimeConfig.ai || {};
+      
+      // Budget Check
+      if (aiConfig.usageLimit?.enabled) {
+        const stats = store.getGlobalUsage();
+        const now = new Date();
+        const date = now.toISOString().split('T')[0];
+        const month = date.slice(0, 7);
+
+        const totalExceeded = aiConfig.usageLimit.totalTokens > 0 && stats.totalTokens >= aiConfig.usageLimit.totalTokens;
+        const dailyExceeded = aiConfig.usageLimit.dailyTokens > 0 && (stats.dailyTokens[date] || 0) >= aiConfig.usageLimit.dailyTokens;
+        const monthlyExceeded = aiConfig.usageLimit.monthlyTokens > 0 && (stats.monthlyTokens[month] || 0) >= aiConfig.usageLimit.monthlyTokens;
+
+        if (totalExceeded || dailyExceeded || monthlyExceeded) {
+          const reason = totalExceeded ? 'total' : dailyExceeded ? 'daily' : 'monthly';
+          const error = `Token budget exceeded (${reason} limit). Check your config or increase limits.`;
+          await this.emit({ type: 'error', error });
+          return error;
+        }
+      }
+
       this.context.currentIteration++;
       await this.emit({ type: 'thinking' });
 
-      const runtimeConfig = configManager.getAll();
       const agentConfig = runtimeConfig.agent || {};
       const availableTools = filterToolDefinitionsForSession(
         registry.getDefinitions(),
@@ -188,7 +210,7 @@ export class AgentRuntime {
           role: 'assistant',
           content: result.content || '',
           toolCalls: result.toolCalls,
-        });
+        }, result.usage);
 
         if (result.content) {
           await this.emit({ type: 'response', content: result.content });
@@ -244,7 +266,7 @@ export class AgentRuntime {
 
       // No tool calls — this is the final response
       finalResponse = result.content;
-      this.addMessage({ role: 'assistant', content: finalResponse });
+      this.addMessage({ role: 'assistant', content: finalResponse }, result.usage);
       await this.emit({ type: 'response', content: finalResponse });
       break;
     }
@@ -333,6 +355,27 @@ export class AgentRuntime {
   clearHistory(): void {
     this.context.messages = [];
     this.context.currentIteration = 0;
+  }
+
+  /**
+   * Undo the last exchange (last user message and following agent messages).
+   */
+  undo(): boolean {
+    const store = getSessionStore();
+    const session = store.get(this.context.sessionId);
+    if (!session || session.messages.length === 0) return false;
+
+    // Pop until we remove the last user message
+    let poppedUser = false;
+    while (session.messages.length > 0 && !poppedUser) {
+      const msg = session.messages[session.messages.length - 1];
+      if (msg.role === 'user') poppedUser = true;
+      session.messages.pop();
+    }
+    
+    this.context.messages = [...session.messages];
+    store.save(); // Save the truncated history
+    return true;
   }
 
   private async emit(event: AgentEvent): Promise<void> {
