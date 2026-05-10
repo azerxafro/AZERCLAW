@@ -28,7 +28,7 @@ const chalk = require('chalk');
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '1.1.1';
+const VERSION = '1.1.2';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────

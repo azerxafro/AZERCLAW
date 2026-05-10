@@ -10,7 +10,6 @@ const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const readline = require('readline');
 const { AgentRuntime } = require('../../core/runtime');
-const { registerAllTools } = require('../../tools/index');
 const { getConfigManager } = require('../../config/manager');
 const { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } = require('../animations/fish');
 
@@ -130,6 +129,7 @@ function formatUptime(ms: number): string {
 // ─── Main TUI ───────────────────────────────────────────────────
 
 export async function runTUI(): Promise<void> {
+  const { registerAllTools } = require('../../tools/index');
   await registerAllTools();
   
   const startTime = Date.now();
