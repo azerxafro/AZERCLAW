@@ -252,6 +252,21 @@ export class AgentRuntime {
     return this.context.sessionId;
   }
 
+  /**
+   * Replace the entire conversation history.
+   */
+  setHistory(messages: ChatMessage[]): void {
+    this.context.messages = [...messages];
+  }
+
+  /**
+   * Clear conversation history (keeping system prompt).
+   */
+  clearHistory(): void {
+    this.context.messages = [];
+    this.context.currentIteration = 0;
+  }
+
   private async emit(event: AgentEvent): Promise<void> {
     await this.eventHandler(event);
   }

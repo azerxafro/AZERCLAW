@@ -50,7 +50,21 @@ program
 program
   .action(async (opts: any) => {
     const config = getConfigManager();
-    const detected = config.resolveEnvOverrides();
+    config.resolveEnvOverrides();
+
+    // Check for piped input (stdin)
+    if (!process.stdin.isTTY) {
+      let input = '';
+      process.stdin.setEncoding('utf-8');
+      for await (const chunk of process.stdin) {
+        input += chunk;
+      }
+      if (input.trim()) {
+        const { runTask } = require('../src/cli/commands/run');
+        await runTask(input.trim(), opts);
+        return;
+      }
+    }
 
     if (config.isFirstRun()) {
       // First run: show full splash + onboard
@@ -71,6 +85,7 @@ program
   .description('Start an interactive chat session')
   .option('-m, --model <model>', 'Override the default model')
   .option('-p, --provider <provider>', 'Override the default provider')
+  .option('-f, --file <path>', 'Include a file in the conversation context')
   .action(async (opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
@@ -78,6 +93,14 @@ program
     // Apply CLI flag overrides
     if (opts.model || opts.provider) {
       config.applyRuntimeOverrides(opts);
+    }
+    
+    if (opts.file) {
+      const fs = require('fs');
+      if (fs.existsSync(opts.file)) {
+        const content = fs.readFileSync(opts.file, 'utf-8');
+        opts.initialMessage = `I've attached the file: ${opts.file}\n\n\`\`\`\n${content}\n\`\`\``;
+      }
     }
     
     if (!opts.parent?.splash === false) {
@@ -98,23 +121,47 @@ program
 // ─── Run Command ────────────────────────────────────────────────
 
 program
-  .command('run <task>')
+  .command('run [task]')
   .description('Execute a single task')
   .option('-m, --model <model>', 'Override the default model')
   .option('-p, --provider <provider>', 'Override the default provider')
+  .option('-f, --file <path>', 'Include a file in the task context')
   .option('-V, --verbose', 'Show tool calls in detail')
-  .action(async (task: string, opts: any) => {
+  .action(async (task: string | undefined, opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
     
     if (opts.model || opts.provider) {
       config.applyRuntimeOverrides(opts);
     }
+
+    let finalTask = task || '';
+
+    // Handle piped input if task is missing
+    if (!finalTask && !process.stdin.isTTY) {
+      process.stdin.setEncoding('utf-8');
+      for await (const chunk of process.stdin) {
+        finalTask += chunk;
+      }
+    }
+
+    if (!finalTask.trim()) {
+      fishError('No task provided. Usage: azerclaw run "your task" or echo "task" | azerclaw run');
+      return;
+    }
+
+    if (opts.file) {
+      const fs = require('fs');
+      if (fs.existsSync(opts.file)) {
+        const content = fs.readFileSync(opts.file, 'utf-8');
+        finalTask = `Context from file ${opts.file}:\n\`\`\`\n${content}\n\`\`\`\n\nTask: ${finalTask}`;
+      }
+    }
     
     printQuickSplash(VERSION);
     
     const { runTask } = require('../src/cli/commands/run');
-    await runTask(task, opts);
+    await runTask(finalTask.trim(), opts);
   });
 
 // ─── Serve Command ──────────────────────────────────────────────

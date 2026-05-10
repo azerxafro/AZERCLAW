@@ -26,14 +26,14 @@ const { getToolRegistry } = require('../../tools/registry');
 const { shellTool } = require('../../tools/shell');
 const { readFileTool, writeFileTool, listDirTool, searchFilesTool } = require('../../tools/filesystem');
 const { spawnSubAgentTool, webSearchTool, codeAnalysisTool } = require('../../tools/advanced');
-const { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
+const { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox, fishWarn } = require('../animations/fish');
 const { getConfigManager } = require('../../config/manager');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 const EMBER = gradientString(['#fbbf24', '#f59e0b', '#ef4444']);
 
-export async function runChat(options: { model?: string; provider?: string }): Promise<void> {
+export async function runChat(options: { model?: string; provider?: string; initialMessage?: string }): Promise<void> {
   const config = getConfigManager();
 
   // Apply CLI flag overrides
@@ -130,6 +130,17 @@ export async function runChat(options: { model?: string; provider?: string }): P
     prompt: OCEAN('  🐟 > '),
     terminal: true,
   });
+
+  // Process initial message if provided
+  if (options.initialMessage) {
+    messageCount++;
+    console.log(OCEAN('  🐟 > ') + chalk.dim('[initial context attached]'));
+    try {
+      await agent.chat(options.initialMessage);
+    } catch (error: any) {
+      fishError(error.message || 'Failed to process initial message');
+    }
+  }
 
   rl.prompt();
 
