@@ -9,6 +9,12 @@ import { getToolRegistry, ToolResult } from '../tools/registry';
 import { getConfigManager } from '../config/manager';
 import { ChatMessage, CompletionResult, ToolCall } from '../providers/base';
 import { loadAllSkills, formatSkillsForPrompt } from '../skills/loader';
+import {
+  filterToolDefinitionsForSession,
+  isToolAllowedInSession,
+  resolveSandboxMode,
+  shouldSandboxSession,
+} from './sandbox';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -119,17 +125,26 @@ export class AgentRuntime {
   private async agentLoop(): Promise<string> {
     const router = getRouter();
     const registry = getToolRegistry();
+    const configManager = getConfigManager();
     let finalResponse = '';
 
     while (this.context.currentIteration < this.context.maxIterations && !this.aborted) {
       this.context.currentIteration++;
       await this.emit({ type: 'thinking' });
 
+      const runtimeConfig = configManager.getAll();
+      const agentConfig = runtimeConfig.agent || {};
+      const availableTools = filterToolDefinitionsForSession(
+        registry.getDefinitions(),
+        this.context.sessionId,
+        agentConfig
+      );
+
       const result = await router.complete({
         messages: this.context.messages,
         systemPrompt: this.context.systemPrompt,
-        tools: registry.getDefinitions(),
-        maxTokens: getConfigManager().getAll().ai.maxTokens || 2048,
+        tools: availableTools,
+        maxTokens: runtimeConfig.ai.maxTokens || 2048,
       });
 
       // Handle errors from provider
@@ -154,20 +169,36 @@ export class AgentRuntime {
 
         // Execute each tool call
         for (const toolCall of result.toolCalls) {
+          const parsedArgs = this.parseToolArgs(toolCall);
+
           await this.emit({
             type: 'tool_call',
             toolName: toolCall.function.name,
-            toolArgs: JSON.parse(toolCall.function.arguments || '{}'),
+            toolArgs: parsedArgs,
           });
 
           let toolResult: ToolResult;
+          const toolAllowed = isToolAllowedInSession(
+            toolCall.function.name,
+            this.context.sessionId,
+            agentConfig
+          );
 
-          if (toolCall.function.name === 'spawn_sub_agent') {
+          if (!toolAllowed) {
+            toolResult = {
+              success: false,
+              output: '',
+              error: `Tool "${toolCall.function.name}" is blocked by sandbox policy for session "${this.context.sessionId}"`,
+            };
+          } else if (toolCall.function.name === 'spawn_sub_agent') {
             toolResult = await this.handleSubAgent(toolCall);
           } else {
+            const sandboxMode = resolveSandboxMode(agentConfig.sandboxMode);
+            const useVmSandbox = shouldSandboxSession(this.context.sessionId, sandboxMode);
             toolResult = await registry.execute(
               toolCall.function.name,
-              JSON.parse(toolCall.function.arguments || '{}')
+              parsedArgs,
+              { sandbox: useVmSandbox, agentId: this.context.sessionId }
             );
           }
 
@@ -199,15 +230,25 @@ export class AgentRuntime {
    * Spawn a sub-agent for parallel/delegated tasks.
    */
   private async handleSubAgent(toolCall: ToolCall): Promise<ToolResult> {
-    const args = JSON.parse(toolCall.function.arguments || '{}');
+    const args = this.parseToolArgs(toolCall);
+    const task = typeof args.task === 'string' ? args.task : '';
+    const systemPrompt = typeof args.systemPrompt === 'string' ? args.systemPrompt : undefined;
+    const maxIterations = typeof args.maxIterations === 'number' && Number.isFinite(args.maxIterations)
+      ? args.maxIterations
+      : 10;
+
+    if (!task) {
+      return { success: false, output: '', error: 'spawn_sub_agent requires a string "task" argument' };
+    }
+
     const subAgentId = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     
-    await this.emit({ type: 'sub_agent_spawn', subAgentId, content: args.task });
+    await this.emit({ type: 'sub_agent_spawn', subAgentId, content: task });
 
     const subAgent = new AgentRuntime({
       sessionId: subAgentId,
-      systemPrompt: args.systemPrompt || this.context.systemPrompt,
-      maxIterations: args.maxIterations || 10,
+      systemPrompt: systemPrompt || this.context.systemPrompt,
+      maxIterations,
       parentAgentId: this.context.sessionId,
       eventHandler: async (event) => {
         // Prefix sub-agent events
@@ -218,7 +259,7 @@ export class AgentRuntime {
     this.subAgents.set(subAgentId, subAgent);
 
     try {
-      const result = await subAgent.run(args.task);
+      const result = await subAgent.run(task);
       await this.emit({ type: 'sub_agent_done', subAgentId, content: result });
       return { success: true, output: result };
     } catch (error: any) {
@@ -269,5 +310,13 @@ export class AgentRuntime {
 
   private async emit(event: AgentEvent): Promise<void> {
     await this.eventHandler(event);
+  }
+
+  private parseToolArgs(toolCall: ToolCall): Record<string, unknown> {
+    try {
+      return JSON.parse(toolCall.function.arguments || '{}');
+    } catch {
+      return {};
+    }
   }
 }

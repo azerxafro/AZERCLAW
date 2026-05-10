@@ -124,7 +124,20 @@ const AgentConfigSchema = z.object({
   allowShellCommands: z.boolean().default(true),
   allowFileWrite: z.boolean().default(true),
   allowNetworkAccess: z.boolean().default(true),
-  sandboxMode: z.boolean().default(false),
+  // Backward-compatible: supports legacy boolean and new explicit modes
+  sandboxMode: z.union([z.boolean(), z.enum(['off', 'non-main', 'all'])]).default(false),
+  sandboxAllowedTools: z.array(z.string()).default([
+    'read_file',
+    'list_directory',
+    'search_files',
+    'analyze_code',
+    'web_search',
+  ]),
+  sandboxDeniedTools: z.array(z.string()).default([
+    'run_shell',
+    'write_file',
+    'spawn_sub_agent',
+  ]),
 });
 
 // ─── Permissions Config ─────────────────────────────────────────
@@ -227,6 +240,8 @@ export const ConfigSchema = z.object({
     allowFileWrite: true,
     allowNetworkAccess: true,
     sandboxMode: false,
+    sandboxAllowedTools: ['read_file', 'list_directory', 'search_files', 'analyze_code', 'web_search'],
+    sandboxDeniedTools: ['run_shell', 'write_file', 'spawn_sub_agent'],
   })),
   permissions: PermissionsConfigSchema,
   ui: UIConfigSchema.default(() => ({

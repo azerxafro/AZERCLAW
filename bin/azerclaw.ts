@@ -18,6 +18,7 @@
  *   azerclaw config apikey    — Set API key
  *   azerclaw config fallback  — Configure fallback
  *   azerclaw config channels  — DM policy + routing controls
+ *   azerclaw config sandbox   — Session sandbox controls
  *   azerclaw pairing          — Manage DM pairing approvals
  *   azerclaw init             — Initialize project (AZERCLAW.md)
  *   azerclaw models           — Manage AI models
@@ -429,6 +430,71 @@ configChannelsRoutingCmd
     channelsConfigList();
   });
 
+const configSandboxCmd = configCmd
+  .command('sandbox')
+  .description('Manage session sandbox isolation');
+
+configSandboxCmd
+  .command('status')
+  .description('Show sandbox mode and tool policy')
+  .action(() => {
+    const { sandboxStatus } = require('../src/cli/commands/sandbox');
+    sandboxStatus();
+  });
+
+configSandboxCmd
+  .command('mode <mode>')
+  .description('Set sandbox mode (off|non-main|all)')
+  .action((mode: string) => {
+    const { setSandboxMode } = require('../src/cli/commands/sandbox');
+    setSandboxMode(mode);
+  });
+
+const configSandboxAllowCmd = configSandboxCmd
+  .command('allow')
+  .description('Manage sandbox allowed tool list');
+
+configSandboxAllowCmd
+  .command('add <toolName>')
+  .description('Add allowed tool')
+  .action((toolName: string) => {
+    const { addSandboxAllowedTool } = require('../src/cli/commands/sandbox');
+    addSandboxAllowedTool(toolName);
+  });
+
+configSandboxAllowCmd
+  .command('remove <toolName>')
+  .description('Remove allowed tool')
+  .action((toolName: string) => {
+    const { removeSandboxAllowedTool } = require('../src/cli/commands/sandbox');
+    removeSandboxAllowedTool(toolName);
+  });
+
+const configSandboxDenyCmd = configSandboxCmd
+  .command('deny')
+  .description('Manage sandbox denied tool list');
+
+configSandboxDenyCmd
+  .command('add <toolName>')
+  .description('Add denied tool')
+  .action((toolName: string) => {
+    const { addSandboxDeniedTool } = require('../src/cli/commands/sandbox');
+    addSandboxDeniedTool(toolName);
+  });
+
+configSandboxDenyCmd
+  .command('remove <toolName>')
+  .description('Remove denied tool')
+  .action((toolName: string) => {
+    const { removeSandboxDeniedTool } = require('../src/cli/commands/sandbox');
+    removeSandboxDeniedTool(toolName);
+  });
+
+configSandboxCmd.action(() => {
+  const { sandboxStatus } = require('../src/cli/commands/sandbox');
+  sandboxStatus();
+});
+
 // Default config action (no sub-command) shows list
 configCmd.action(() => {
   const { configList } = require('../src/cli/commands/config');
@@ -488,6 +554,7 @@ program
     const fs = require('fs');
     const config = getConfigManager();
     const { auditDmPolicies, applySafeDmDefaults } = require('../src/channels/security');
+    const { auditSandboxPosture, applySafeSandboxDefaults } = require('../src/core/sandbox');
     const issues: string[] = [];
     
     // Check config file permissions
@@ -521,6 +588,21 @@ program
 
     if (opts.fix && dmAudit.failures.length > 0) {
       const changes = applySafeDmDefaults(config);
+      for (const change of changes) {
+        fishInfo(`Fixed: ${change}`);
+      }
+    }
+
+    const sandboxAudit = auditSandboxPosture(config.getAll());
+    for (const issue of sandboxAudit.failures) {
+      issues.push(issue.message);
+    }
+    for (const issue of sandboxAudit.warnings) {
+      issues.push(issue.message);
+    }
+
+    if (opts.fix && sandboxAudit.failures.length > 0) {
+      const changes = applySafeSandboxDefaults(config);
       for (const change of changes) {
         fishInfo(`Fixed: ${change}`);
       }

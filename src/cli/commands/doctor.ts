@@ -8,6 +8,7 @@ const gradientString = require('gradient-string');
 const { getConfigManager } = require('../../config/manager');
 const { getRouter, resetRouter } = require('../../providers/router');
 const { auditDmPolicies, applySafeDmDefaults } = require('../../channels/security');
+const { auditSandboxPosture, applySafeSandboxDefaults } = require('../../core/sandbox');
 const { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation, renderFishProgress } = require('../animations/fish');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
@@ -28,7 +29,7 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
   ]);
   console.log('');
 
-  const totalChecks = 8;
+  const totalChecks = 9;
   let completed = 0;
 
   // 1. Config file
@@ -132,7 +133,27 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
     checks.push({ name: 'DM Policy', status: 'pass', message: 'Safe defaults active' });
   }
 
-  // 8. System info
+  // 8. Sandbox isolation safety
+  renderFishProgress(++completed, totalChecks, 'Sandbox');
+  const sandboxAudit = auditSandboxPosture(config.getAll());
+  if (sandboxAudit.failures.length > 0) {
+    checks.push({
+      name: 'Sandbox',
+      status: 'fail',
+      message: `${sandboxAudit.failures.length} sandbox risk(s)`,
+      fix: () => { applySafeSandboxDefaults(config); },
+    });
+  } else if (sandboxAudit.warnings.length > 0) {
+    checks.push({
+      name: 'Sandbox',
+      status: 'warn',
+      message: `${sandboxAudit.warnings.length} sandbox warning(s)`,
+    });
+  } else {
+    checks.push({ name: 'Sandbox', status: 'pass', message: 'Session isolation is configured safely' });
+  }
+
+  // 9. System info
   renderFishProgress(++completed, totalChecks, 'System');
   const os = require('os');
   checks.push({

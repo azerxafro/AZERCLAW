@@ -161,6 +161,7 @@ export async function runTUI(): Promise<void> {
   let isThinking = false;
 
   const agent = new AgentRuntime({
+    sessionId: 'main:tui',
     eventHandler: async (event: any) => {
       switch (event.type) {
         case 'thinking':

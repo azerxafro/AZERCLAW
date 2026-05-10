@@ -56,6 +56,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   let messageCount = 0;
 
   const agent = new AgentRuntime({
+    sessionId: 'main:chat',
     eventHandler: async (event: any) => {
       switch (event.type) {
         case 'thinking':

@@ -23,6 +23,7 @@ export async function runTask(task: string, options: { model?: string; verbose?:
   console.log('');
 
   const agent = new AgentRuntime({
+    sessionId: 'main:run',
     eventHandler: async (event: any) => {
       switch (event.type) {
         case 'thinking':

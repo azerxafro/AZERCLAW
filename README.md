@@ -121,6 +121,8 @@ azerclaw config get <key>   # Get a config value
 azerclaw config set <k> <v> # Set a config value
 azerclaw config channels list # Show DM policy + routing settings
 azerclaw config channels dm-policy <platform> <pairing|open|closed>
+azerclaw config sandbox status # Show sandbox mode + allowed/denied tools
+azerclaw config sandbox mode <off|non-main|all>
 azerclaw models list        # List available models
 azerclaw models status      # Current model info
 azerclaw doctor             # Health check
@@ -175,6 +177,7 @@ AZERCLAW uses an autonomous agent loop with sub-agent orchestration:
 - **Env sanitization** — sensitive vars stripped from child processes
 - **SSRF protection** — blocks requests to private/internal IPs
 - **DM pairing policy** — default DM access requires explicit approval per sender
+- **Session sandbox modes** — isolate non-main or all sessions with tool allow/deny policy
 
 ## 📦 Skills System
 

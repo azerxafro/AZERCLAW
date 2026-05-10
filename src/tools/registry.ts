@@ -13,6 +13,7 @@ export interface ToolResult {
 export interface ToolExecutionContext {
   agentId?: string;
   timeoutMs?: number; // Default execution timeout
+  sandbox?: boolean;  // Optional per-call sandbox override
 }
 
 export interface Tool {
@@ -57,7 +58,11 @@ class ToolRegistry {
     }));
   }
 
-  async execute(name: string, args: Record<string, unknown>): Promise<ToolResult> {
+  async execute(
+    name: string,
+    args: Record<string, unknown>,
+    context: ToolExecutionContext = {}
+  ): Promise<ToolResult> {
     const tool = this.tools.get(name);
     if (!tool) {
       console.warn(`[ToolRegistry] Attempted to execute unknown tool: ${name}`);
@@ -69,8 +74,9 @@ class ToolRegistry {
     
     try {
       let result: ToolResult;
+      const useSandbox = context.sandbox ?? this.sandboxEnabled;
       
-      if (this.sandboxEnabled) {
+      if (useSandbox) {
         result = await this.executeInSandbox(tool, args);
       } else {
         result = await tool.execute(args);
@@ -132,8 +138,10 @@ let instance: ToolRegistry | null = null;
 export function getToolRegistry(): ToolRegistry {
   if (!instance) {
     const { getConfigManager } = require('../config/manager');
+    const { resolveSandboxMode } = require('../core/sandbox');
     const config = getConfigManager().getAll();
-    instance = new ToolRegistry({ sandbox: config.agent.sandboxMode });
+    const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
+    instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
   }
   return instance;
 }
@@ -157,6 +165,5 @@ export class MockToolRegistry extends ToolRegistry {
     return { success: true, output: `Mock output for ${name}` };
   }
 }
-
 
 

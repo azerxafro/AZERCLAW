@@ -7,6 +7,7 @@
 export * from './core/runtime';
 export * from './core/gateway';
 export * from './core/security';
+export * from './core/sandbox';
 
 // AI Providers
 export * from './providers/base';

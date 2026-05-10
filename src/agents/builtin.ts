@@ -497,7 +497,7 @@ export function createAgent(
   eventHandler: AgentEventHandler
 ): AgentRuntime {
   return new AgentRuntime({
-    sessionId: `${definition.codename}_${Date.now()}`,
+    sessionId: `main:${definition.codename.toLowerCase()}`,
     systemPrompt: definition.systemPrompt,
     maxIterations: definition.maxIterations,
     eventHandler,
