@@ -36,6 +36,22 @@ export class ProviderRouter {
     if (p.ollama.enabled) {
       this.providers.set('ollama', new OllamaProvider(p.ollama));
     }
+    if (p.lmstudio?.enabled) {
+      // LM Studio exposes an OpenAI-compatible API on localhost:1234
+      this.providers.set('lmstudio', new OpenAIProvider({
+        apiKey: 'lm-studio',
+        baseUrl: p.lmstudio.baseUrl || 'http://localhost:1234/v1',
+        defaultModel: p.lmstudio.defaultModel || 'local-model',
+      }));
+    }
+    if (p.localai?.enabled) {
+      // LocalAI exposes an OpenAI-compatible API
+      this.providers.set('localai', new OpenAIProvider({
+        apiKey: 'local-ai',
+        baseUrl: p.localai.baseUrl || 'http://localhost:8080/v1',
+        defaultModel: p.localai.defaultModel || 'local-model',
+      }));
+    }
     if (p.groq.enabled && p.groq.apiKey) {
       // Groq uses OpenAI-compatible API
       this.providers.set('groq', new OpenAIProvider({ apiKey: p.groq.apiKey, baseUrl: p.groq.baseUrl, defaultModel: p.groq.defaultModel }));

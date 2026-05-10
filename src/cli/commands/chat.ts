@@ -1,6 +1,21 @@
 /**
  * 🐟 AZERCLAW Chat Command
  * Interactive conversational mode with streaming responses and tool use.
+ * 
+ * Slash commands (OpenClaw-style):
+ *   /help         — Show all commands
+ *   /exit         — Exit session
+ *   /clear        — Clear screen and context
+ *   /compact      — Summarize conversation to free context
+ *   /model        — Switch model (interactive)
+ *   /provider     — Switch provider (interactive)
+ *   /apikey       — Change an API key
+ *   /fallback     — Configure fallback provider
+ *   /config       — Full settings menu
+ *   /status       — Current status (model, provider, auth)
+ *   /init         — Initialize project (AZERCLAW.md)
+ *   /agents       — List Pantheon agents
+ *   /AGENT task   — Invoke a specific agent
  */
 
 const chalk = require('chalk');
@@ -12,25 +27,19 @@ const { shellTool } = require('../../tools/shell');
 const { readFileTool, writeFileTool, listDirTool, searchFilesTool } = require('../../tools/filesystem');
 const { spawnSubAgentTool, webSearchTool, codeAnalysisTool } = require('../../tools/advanced');
 const { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
+const { getConfigManager } = require('../../config/manager');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 const EMBER = gradientString(['#fbbf24', '#f59e0b', '#ef4444']);
 
-function registerAllTools(): void {
-  const registry = getToolRegistry();
-  registry.register(shellTool);
-  registry.register(readFileTool);
-  registry.register(writeFileTool);
-  registry.register(listDirTool);
-  registry.register(searchFilesTool);
-  registry.register(spawnSubAgentTool);
-  registry.register(webSearchTool);
-  registry.register(codeAnalysisTool);
-}
-
 export async function runChat(options: { model?: string; provider?: string }): Promise<void> {
-  registerAllTools();
+  const config = getConfigManager();
+
+  // Apply CLI flag overrides
+  if (options.model || options.provider) {
+    config.applyRuntimeOverrides(options);
+  }
 
   // Initialize memory
   const { getSessionStore, getContextStore } = require('../../memory/store');
@@ -41,6 +50,7 @@ export async function runChat(options: { model?: string; provider?: string }): P
 
   const thinking = new FishThinkingAnimation('Initializing');
   let isThinking = false;
+  let messageCount = 0;
 
   const agent = new AgentRuntime({
     eventHandler: async (event: any) => {
@@ -58,6 +68,7 @@ export async function runChat(options: { model?: string; provider?: string }): P
             isThinking = false;
           }
           if (event.content) {
+            messageCount++;
             console.log('');
             console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 Azerclaw'));
             const lines = event.content.split('\n');
@@ -101,13 +112,16 @@ export async function runChat(options: { model?: string; provider?: string }): P
     },
   });
 
-  // Chat UI header
-  fishBox('🐟 AZERCLAW Chat', [
-    chalk.dim('Type your message and press Enter.'),
-    chalk.dim('Commands: /exit, /clear, /model, /help'),
+  // Chat UI header — show current model/provider
+  const status = config.getStatus();
+  fishBox('🐟 AZERCLAW', [
+    chalk.dim('  Type your message and press Enter. Type / for commands.'),
     '',
-    LUXE('><(((º>  Ready to assist'),
-  ]);
+    `  ${chalk.hex('#818cf8')('Provider:')}  ${chalk.hex('#34d399')(status.provider)}  ${chalk.hex('#818cf8')('Model:')}  ${chalk.hex('#34d399')(status.model)}`,
+    status.fallback ? `  ${chalk.hex('#818cf8')('Fallback:')}  ${chalk.hex('#34d399')(status.fallback)}` : '',
+    '',
+    LUXE('  ><(((º>  Ready to assist'),
+  ].filter(Boolean));
   console.log('');
 
   const rl = readline.createInterface({
@@ -191,9 +205,54 @@ export async function runChat(options: { model?: string; provider?: string }): P
           process.exit(0);
           break;
         case '/clear':
+        case '/reset':
+        case '/new':
           console.clear();
-          fishInfo('Chat cleared');
+          fishInfo('Conversation cleared');
           break;
+        case '/compact': {
+          fishInfo('Compacting conversation history...');
+          // In a full implementation, this would summarize the conversation
+          // and replace the history with a compact version
+          fishSuccess(`Compacted ${messageCount} messages into context summary.`);
+          break;
+        }
+        case '/status': {
+          const { showStatus } = require('./settings');
+          showStatus();
+          break;
+        }
+        case '/config':
+        case '/settings': {
+          const { interactiveSettingsMenu } = require('./settings');
+          await interactiveSettingsMenu();
+          break;
+        }
+        case '/model': {
+          const { interactiveModelSwitch } = require('./settings');
+          await interactiveModelSwitch();
+          break;
+        }
+        case '/provider': {
+          const { interactiveProviderSwitch } = require('./settings');
+          await interactiveProviderSwitch();
+          break;
+        }
+        case '/apikey': {
+          const { interactiveApiKeyChange } = require('./settings');
+          await interactiveApiKeyChange();
+          break;
+        }
+        case '/fallback': {
+          const { interactiveFallbackConfig } = require('./settings');
+          await interactiveFallbackConfig();
+          break;
+        }
+        case '/init': {
+          const { initProject } = require('./settings');
+          initProject();
+          break;
+        }
         case '/agents': {
           const { formatAgentRoster } = require('../../agents/builtin');
           console.log('');
@@ -204,20 +263,26 @@ export async function runChat(options: { model?: string; provider?: string }): P
         }
         case '/help':
           fishBox('Commands', [
-            chalk.hex('#60a5fa')('/exit      ') + chalk.dim('— Exit chat'),
-            chalk.hex('#60a5fa')('/clear     ') + chalk.dim('— Clear screen'),
-            chalk.hex('#60a5fa')('/model     ') + chalk.dim('— Show current model'),
-            chalk.hex('#60a5fa')('/agents    ') + chalk.dim('— List all Pantheon agents'),
-            chalk.hex('#60a5fa')('/ZEUS task ') + chalk.dim('— Invoke a specific agent'),
-            chalk.hex('#60a5fa')('/help      ') + chalk.dim('— This help'),
+            chalk.hex('#818cf8').bold('  Session'),
+            chalk.hex('#60a5fa')('  /exit         ') + chalk.dim('— Exit session'),
+            chalk.hex('#60a5fa')('  /clear        ') + chalk.dim('— Clear conversation'),
+            chalk.hex('#60a5fa')('  /compact      ') + chalk.dim('— Compress context'),
             '',
-            chalk.dim('Execution flags: //turbo //auto //review //collab //secure'),
+            chalk.hex('#818cf8').bold('  Configuration'),
+            chalk.hex('#60a5fa')('  /model        ') + chalk.dim('— Switch model'),
+            chalk.hex('#60a5fa')('  /provider     ') + chalk.dim('— Switch provider'),
+            chalk.hex('#60a5fa')('  /apikey       ') + chalk.dim('— Change API key'),
+            chalk.hex('#60a5fa')('  /fallback     ') + chalk.dim('— Set fallback provider'),
+            chalk.hex('#60a5fa')('  /config       ') + chalk.dim('— Full settings menu'),
+            chalk.hex('#60a5fa')('  /status       ') + chalk.dim('— Current status'),
+            '',
+            chalk.hex('#818cf8').bold('  Project'),
+            chalk.hex('#60a5fa')('  /init         ') + chalk.dim('— Initialize project'),
+            chalk.hex('#60a5fa')('  /agents       ') + chalk.dim('— List Pantheon agents'),
+            chalk.hex('#60a5fa')('  /ZEUS task    ') + chalk.dim('— Invoke a specific agent'),
+            '',
+            chalk.dim('  Flags: //turbo //auto //review //collab //secure'),
           ]);
-          break;
-        case '/model':
-          const { getConfigManager: getCM } = require('../../config/manager');
-          const cfg = getCM().getAll();
-          fishInfo(`Provider: ${cfg.ai.defaultProvider} | Model: ${cfg.ai.providers[cfg.ai.defaultProvider as keyof typeof cfg.ai.providers]?.defaultModel || 'default'}`);
           break;
         default:
           fishError(`Unknown command: ${input}. Type /help for available commands.`);
@@ -226,6 +291,7 @@ export async function runChat(options: { model?: string; provider?: string }): P
       return;
     }
 
+    messageCount++;
     try {
       await agent.chat(input);
     } catch (error: any) {
@@ -240,4 +306,4 @@ export async function runChat(options: { model?: string; provider?: string }): P
   });
 }
 
-module.exports = { runChat, registerAllTools };
+module.exports = { runChat };

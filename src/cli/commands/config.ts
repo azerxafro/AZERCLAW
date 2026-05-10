@@ -1,12 +1,14 @@
 /**
  * 🐟 AZERCLAW Config Command
  * Manage configuration from the CLI.
+ * Reads from the shared ConfigManager — synchronized with in-session commands.
  */
 
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const { getConfigManager } = require('../../config/manager');
 const { fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
+const { PROVIDER_LABELS } = require('./settings');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 
@@ -54,28 +56,43 @@ export function configSet(keyPath: string, value: string): void {
 export function configList(): void {
   const config = getConfigManager();
   const all = config.getAll();
+  const status = config.getStatus();
+  const fallback = config.getFallbackProvider();
   
   fishBox('🐟 AZERCLAW Configuration', [
     '',
-    chalk.hex('#818cf8')('AI Provider Settings:'),
-    `  Default: ${chalk.hex('#34d399')(all.ai.defaultProvider)}`,
-    `  Fallback: ${chalk.dim(all.ai.fallbackChain.join(' → '))}`,
+    chalk.hex('#818cf8').bold('AI Provider Settings:'),
+    `  Default:    ${chalk.hex('#34d399')(PROVIDER_LABELS[all.ai.defaultProvider] || all.ai.defaultProvider)}`,
+    `  Model:      ${chalk.hex('#34d399')((all.ai.providers as any)[all.ai.defaultProvider]?.defaultModel || 'auto')}`,
+    `  Fallback:   ${chalk.hex('#34d399')(fallback ? `${PROVIDER_LABELS[fallback.name] || fallback.name} (${fallback.config.defaultModel})` : chalk.dim('none'))}`,
+    `  Chain:      ${chalk.dim(all.ai.fallbackChain.join(' → '))}`,
     `  Max Tokens: ${chalk.dim(String(all.ai.maxTokens))}`,
-    `  Temperature: ${chalk.dim(String(all.ai.temperature))}`,
+    `  Temperature:${chalk.dim(String(all.ai.temperature))}`,
     '',
-    chalk.hex('#818cf8')('Configured Providers:'),
+    chalk.hex('#818cf8').bold('Configured Providers:'),
     ...Object.entries(all.ai.providers).map(([name, prov]: [string, any]) => {
+      const isDefault = name === all.ai.defaultProvider;
+      const isFallback = fallback?.name === name;
       const status = prov.enabled ? chalk.hex('#34d399')('●') : chalk.hex('#6b7280')('○');
-      const key = prov.apiKey ? maskKey(prov.apiKey) : chalk.dim('no key');
-      return `  ${status} ${chalk.hex('#e2e8f0')(name.padEnd(12))} ${key}`;
+      const key = prov.apiKey ? maskKey(prov.apiKey) : (name === 'ollama' ? chalk.dim('local') : chalk.dim('no key'));
+      const badge = isDefault ? chalk.hex('#34d399')(' [primary]') : isFallback ? chalk.hex('#06b6d4')(' [fallback]') : '';
+      return `  ${status} ${chalk.hex('#e2e8f0')((PROVIDER_LABELS[name] || name).padEnd(16))} ${key}${badge}`;
     }),
     '',
-    chalk.hex('#818cf8')('Agent Settings:'),
-    `  Name: ${chalk.dim(all.agent.name)}`,
-    `  Max Iterations: ${chalk.dim(String(all.agent.maxIterations))}`,
+    chalk.hex('#818cf8').bold('Agent Settings:'),
+    `  Name:            ${chalk.dim(all.agent.name)}`,
+    `  Max Iterations:  ${chalk.dim(String(all.agent.maxIterations))}`,
     `  Approval Required: ${chalk.dim(String(all.agent.approvalRequired))}`,
     '',
-    chalk.hex('#818cf8')('UI Settings:'),
+    chalk.hex('#818cf8').bold('Permissions:'),
+    `  Auto-Approve:    ${chalk.dim((all.permissions?.autoApprove || []).join(', ') || 'none')}`,
+    `  Require Approval:${chalk.dim((all.permissions?.requireApproval || []).join(', ') || 'none')}`,
+    '',
+    chalk.hex('#818cf8').bold('Auth & Status:'),
+    `  Auth Route:   ${chalk.dim(status.authRoute === 'env_var' ? 'Environment Variable' : status.authRoute === 'api_key' ? 'Config File' : 'Not configured')}`,
+    `  Project:      ${chalk.dim(status.projectConfigured ? 'Configured' : 'Not initialized')}`,
+    '',
+    chalk.hex('#818cf8').bold('UI Settings:'),
     `  Theme: ${chalk.dim(all.ui.theme)}`,
     `  Splash: ${chalk.dim(String(all.ui.showSplash))}`,
     '',

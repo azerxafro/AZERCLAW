@@ -1,19 +1,33 @@
 /**
  * 🐟 AZERCLAW Configuration Manager
- * Handles reading, writing, and validating the config file.
- * Stored at ~/.azerclaw/config.json with 0600 permissions.
+ * 
+ * Layered configuration system (Claude Code / OpenClaw style):
+ *   1. CLI flags (--model, --provider) — runtime overrides
+ *   2. Environment variables (OPENAI_API_KEY, etc.)
+ *   3. Local project settings (.azerclaw/settings.local.json — gitignored)
+ *   4. Project settings (.azerclaw/settings.json — committed to git)
+ *   5. User settings (~/.azerclaw/settings.json — personal defaults)
+ * 
+ * Stored at ~/.azerclaw/settings.json with 0600 permissions.
+ * All layers merge into a single resolved config at runtime.
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { ConfigSchema, AzerclawConfig, ProviderName } from './schema';
+import { ConfigSchema, AzerclawConfig, ProviderName, ProjectSettingsSchema, ProjectSettings } from './schema';
 
 const CONFIG_DIR = path.join(os.homedir(), '.azerclaw');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
+const CONFIG_FILE = path.join(CONFIG_DIR, 'settings.json');
+const LEGACY_CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 const SKILLS_DIR = path.join(CONFIG_DIR, 'skills');
 const MEMORY_DIR = path.join(CONFIG_DIR, 'memory');
 const LOGS_DIR = path.join(CONFIG_DIR, 'logs');
+
+const PROJECT_DIR_NAME = '.azerclaw';
+const PROJECT_SETTINGS_FILE = 'settings.json';
+const PROJECT_LOCAL_SETTINGS_FILE = 'settings.local.json';
+const PROJECT_INSTRUCTIONS_FILE = 'AZERCLAW.md';
 
 // ─── Ensure directories exist ───────────────────────────────────
 
@@ -30,12 +44,33 @@ function ensureDirs(): void {
 class ConfigManager {
   private config: AzerclawConfig;
   private configPath: string;
+  private projectSettings: ProjectSettings | null = null;
+  private localProjectSettings: ProjectSettings | null = null;
+  private runtimeOverrides: Record<string, unknown> = {};
 
   constructor() {
     this.configPath = CONFIG_FILE;
     ensureDirs();
+    this.migrateLegacyConfig();
     this.config = this.load();
+    this.loadProjectSettings();
   }
+
+  // ─── Legacy Migration ───────────────────────────────────────
+
+  /**
+   * Migrate from old config.json to new settings.json if needed.
+   */
+  private migrateLegacyConfig(): void {
+    if (fs.existsSync(LEGACY_CONFIG_FILE) && !fs.existsSync(CONFIG_FILE)) {
+      try {
+        const raw = fs.readFileSync(LEGACY_CONFIG_FILE, 'utf-8');
+        fs.writeFileSync(CONFIG_FILE, raw, { mode: 0o600 });
+      } catch { /* ignore migration errors */ }
+    }
+  }
+
+  // ─── Core Config I/O ───────────────────────────────────────
 
   /**
    * Load config from disk, creating defaults if not found.
@@ -57,6 +92,14 @@ class ConfigManager {
   }
 
   /**
+   * Reload config from disk (useful after external changes).
+   */
+  reload(): void {
+    this.config = this.load();
+    this.loadProjectSettings();
+  }
+
+  /**
    * Save config to disk with secure permissions.
    */
   private save(config?: AzerclawConfig): void {
@@ -68,17 +111,178 @@ class ConfigManager {
     );
   }
 
+  // ─── Project Settings (Layered) ────────────────────────────
+
   /**
-   * Get the full config object.
+   * Load project-level .azerclaw/settings.json and settings.local.json.
+   */
+  private loadProjectSettings(): void {
+    const cwd = process.cwd();
+    const projectDir = path.join(cwd, PROJECT_DIR_NAME);
+
+    // Project settings (shared, committed)
+    const projectFile = path.join(projectDir, PROJECT_SETTINGS_FILE);
+    if (fs.existsSync(projectFile)) {
+      try {
+        const raw = fs.readFileSync(projectFile, 'utf-8');
+        this.projectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
+      } catch { this.projectSettings = null; }
+    }
+
+    // Local project settings (personal, gitignored)
+    const localFile = path.join(projectDir, PROJECT_LOCAL_SETTINGS_FILE);
+    if (fs.existsSync(localFile)) {
+      try {
+        const raw = fs.readFileSync(localFile, 'utf-8');
+        this.localProjectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
+      } catch { this.localProjectSettings = null; }
+    }
+  }
+
+  /**
+   * Get the project instructions file content (AZERCLAW.md).
+   */
+  getProjectInstructions(): string | null {
+    const cwd = process.cwd();
+    const instrFile = path.join(cwd, PROJECT_INSTRUCTIONS_FILE);
+    if (fs.existsSync(instrFile)) {
+      try { return fs.readFileSync(instrFile, 'utf-8'); } catch { return null; }
+    }
+    // Also check .azerclaw/AZERCLAW.md
+    const altFile = path.join(cwd, PROJECT_DIR_NAME, PROJECT_INSTRUCTIONS_FILE);
+    if (fs.existsSync(altFile)) {
+      try { return fs.readFileSync(altFile, 'utf-8'); } catch { return null; }
+    }
+    return null;
+  }
+
+  /**
+   * Initialize project settings directory.
+   */
+  initProject(instructions: string = ''): void {
+    const cwd = process.cwd();
+    const projectDir = path.join(cwd, PROJECT_DIR_NAME);
+    
+    if (!fs.existsSync(projectDir)) {
+      fs.mkdirSync(projectDir, { recursive: true });
+    }
+
+    // Create settings.json
+    const settingsFile = path.join(projectDir, PROJECT_SETTINGS_FILE);
+    if (!fs.existsSync(settingsFile)) {
+      fs.writeFileSync(settingsFile, JSON.stringify({
+        instructions: [],
+        customInstructions: '',
+        allowedTools: [],
+        deniedTools: [],
+        autoApprove: [],
+      }, null, 2));
+    }
+
+    // Create .gitignore for local settings
+    const gitignoreFile = path.join(projectDir, '.gitignore');
+    if (!fs.existsSync(gitignoreFile)) {
+      fs.writeFileSync(gitignoreFile, 'settings.local.json\n');
+    }
+
+    // Create AZERCLAW.md
+    const instrFile = path.join(cwd, PROJECT_INSTRUCTIONS_FILE);
+    if (!fs.existsSync(instrFile)) {
+      const defaultInstructions = instructions || [
+        `# AZERCLAW.md`,
+        ``,
+        `## Project Context`,
+        `<!-- Describe your project here so AZERCLAW understands it -->`,
+        ``,
+        `## Coding Standards`,
+        `<!-- Add your team's coding conventions -->`,
+        ``,
+        `## Common Commands`,
+        `<!-- List frequently used commands -->`,
+        `\`\`\`bash`,
+        `# npm run dev`,
+        `# npm test`,
+        `\`\`\``,
+        ``,
+        `## Important Notes`,
+        `<!-- Add any critical information for the AI agent -->`,
+        ``,
+      ].join('\n');
+      fs.writeFileSync(instrFile, defaultInstructions);
+    }
+
+    this.set('hasCompletedProjectOnboarding', true);
+  }
+
+  /**
+   * Get merged project settings (local overrides project).
+   */
+  getProjectSettings(): ProjectSettings | null {
+    if (!this.projectSettings && !this.localProjectSettings) return null;
+    return { ...this.projectSettings, ...this.localProjectSettings } as ProjectSettings;
+  }
+
+  /**
+   * Check if current directory has project settings.
+   */
+  hasProjectSettings(): boolean {
+    const cwd = process.cwd();
+    return fs.existsSync(path.join(cwd, PROJECT_DIR_NAME, PROJECT_SETTINGS_FILE)) ||
+           fs.existsSync(path.join(cwd, PROJECT_INSTRUCTIONS_FILE));
+  }
+
+  // ─── Runtime Overrides (CLI flags) ─────────────────────────
+
+  /**
+   * Set a runtime override (from CLI flags like --model, --provider).
+   * These take highest priority and don't persist.
+   */
+  setRuntimeOverride(key: string, value: unknown): void {
+    this.runtimeOverrides[key] = value;
+  }
+
+  /**
+   * Apply CLI flag overrides to the active session.
+   */
+  applyRuntimeOverrides(opts: { model?: string; provider?: string }): void {
+    if (opts.provider) {
+      this.runtimeOverrides['ai.defaultProvider'] = opts.provider;
+      this.runtimeOverrides[`ai.providers.${opts.provider}.enabled`] = true;
+    }
+    if (opts.model) {
+      const provider = (opts.provider || this.config.ai.defaultProvider) as ProviderName;
+      this.runtimeOverrides[`ai.providers.${provider}.defaultModel`] = opts.model;
+    }
+  }
+
+  // ─── Config Getters ────────────────────────────────────────
+
+  /**
+   * Get the full config object (with runtime overrides applied).
    */
   getAll(): AzerclawConfig {
-    return JSON.parse(JSON.stringify(this.config));
+    const base = JSON.parse(JSON.stringify(this.config)) as AzerclawConfig;
+    // Apply runtime overrides
+    for (const [keyPath, value] of Object.entries(this.runtimeOverrides)) {
+      const keys = keyPath.split('.');
+      let current: any = base;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (current[keys[i]] === undefined) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = value;
+    }
+    return base;
   }
 
   /**
    * Get a nested config value by dot-path (e.g., "ai.providers.openai.apiKey").
+   * Respects runtime overrides.
    */
   get(keyPath: string): unknown {
+    // Check runtime overrides first
+    if (keyPath in this.runtimeOverrides) return this.runtimeOverrides[keyPath];
+
     const keys = keyPath.split('.');
     let current: any = this.config;
     
@@ -91,7 +295,7 @@ class ConfigManager {
   }
 
   /**
-   * Set a nested config value by dot-path.
+   * Set a nested config value by dot-path (persists to disk).
    */
   set(keyPath: string, value: unknown): void {
     const keys = keyPath.split('.');
@@ -111,6 +315,8 @@ class ConfigManager {
     this.save();
   }
 
+  // ─── Onboarding State ──────────────────────────────────────
+
   /**
    * Check if this is the first run.
    */
@@ -119,19 +325,57 @@ class ConfigManager {
   }
 
   /**
+   * Check if onboarding has been completed.
+   */
+  hasCompletedOnboarding(): boolean {
+    return this.config.hasCompletedOnboarding;
+  }
+
+  /**
    * Mark first run as complete.
    */
   completeFirstRun(): void {
     this.set('firstRun', false);
+    this.set('hasCompletedOnboarding', true);
   }
 
   /**
-   * Get the active provider configuration.
+   * Skip onboarding (e.g., when env keys are auto-detected).
+   */
+  skipOnboarding(): void {
+    this.set('firstRun', false);
+    this.set('hasCompletedOnboarding', true);
+  }
+
+  // ─── Provider Management ───────────────────────────────────
+
+  /**
+   * Get the active provider configuration (respects runtime overrides).
    */
   getActiveProvider(): { name: ProviderName; config: any } {
-    const providerName = this.config.ai.defaultProvider as ProviderName;
-    const providerConfig = this.config.ai.providers[providerName];
+    const all = this.getAll();
+    const providerName = all.ai.defaultProvider as ProviderName;
+    const providerConfig = (all.ai.providers as any)[providerName];
     return { name: providerName, config: providerConfig };
+  }
+
+  /**
+   * Get the fallback provider configuration.
+   */
+  getFallbackProvider(): { name: ProviderName; config: any } | null {
+    const all = this.getAll();
+    const chain = all.ai.fallbackChain;
+    const activeProvider = all.ai.defaultProvider;
+
+    // Find first enabled fallback that isn't the active provider
+    for (const name of chain) {
+      if (name === activeProvider) continue;
+      const provConfig = (all.ai.providers as any)[name];
+      if (provConfig && provConfig.enabled) {
+        return { name: name as ProviderName, config: provConfig };
+      }
+    }
+    return null;
   }
 
   /**
@@ -165,9 +409,47 @@ class ConfigManager {
   }
 
   /**
-   * Resolve provider from environment variables.
+   * Switch the active provider.
    */
-  resolveEnvOverrides(): void {
+  switchProvider(provider: ProviderName): void {
+    const providerConfig = (this.config.ai.providers as any)[provider];
+    if (!providerConfig) throw new Error(`Unknown provider: ${provider}`);
+    this.set('ai.defaultProvider', provider);
+    if (!providerConfig.enabled) {
+      this.set(`ai.providers.${provider}.enabled`, true);
+    }
+  }
+
+  /**
+   * Change the default model for a provider (or the active provider).
+   */
+  setProviderModel(model: string, provider?: ProviderName): void {
+    const target = provider || this.config.ai.defaultProvider as ProviderName;
+    this.set(`ai.providers.${target}.defaultModel`, model);
+  }
+
+  /**
+   * Update the API key for a provider without changing enabled state.
+   */
+  updateProviderKey(provider: ProviderName, apiKey: string): void {
+    this.set(`ai.providers.${provider}.apiKey`, apiKey);
+    if (apiKey) {
+      this.set(`ai.providers.${provider}.enabled`, true);
+    }
+  }
+
+  /**
+   * Set the fallback chain order.
+   */
+  setFallbackChain(chain: string[]): void {
+    this.set('ai.fallbackChain', chain);
+  }
+
+  /**
+   * Auto-detect providers from environment variables.
+   * Returns list of providers that were auto-configured.
+   */
+  resolveEnvOverrides(): string[] {
     const envMap: Record<string, { provider: ProviderName; key: string }> = {
       'AZERCLAW_OPENAI_KEY': { provider: 'openai', key: 'apiKey' },
       'OPENAI_API_KEY': { provider: 'openai', key: 'apiKey' },
@@ -182,14 +464,71 @@ class ConfigManager {
       'OPENROUTER_API_KEY': { provider: 'openrouter', key: 'apiKey' },
     };
 
+    const detected: string[] = [];
     for (const [envVar, { provider, key }] of Object.entries(envMap)) {
       const value = process.env[envVar];
       if (value) {
         this.set(`ai.providers.${provider}.${key}`, value);
         this.set(`ai.providers.${provider}.enabled`, true);
+        if (!detected.includes(provider)) detected.push(provider);
       }
     }
+
+    // If we detected providers and there's no active default, set one
+    if (detected.length > 0) {
+      const currentDefault = this.config.ai.defaultProvider;
+      const currentDefaultEnabled = (this.config.ai.providers as any)[currentDefault]?.enabled;
+      if (!currentDefaultEnabled) {
+        this.set('ai.defaultProvider', detected[0]);
+      }
+    }
+
+    return detected;
   }
+
+  // ─── Status & Diagnostics ──────────────────────────────────
+
+  /**
+   * Get a full status snapshot for /status command.
+   */
+  getStatus(): {
+    version: string;
+    provider: string;
+    model: string;
+    fallback: string | null;
+    authRoute: 'api_key' | 'env_var' | 'none';
+    enabledProviders: string[];
+    projectConfigured: boolean;
+    configFile: string;
+  } {
+    const all = this.getAll();
+    const provider = all.ai.defaultProvider;
+    const provConfig = (all.ai.providers as any)[provider];
+    const model = provConfig?.defaultModel || 'auto';
+    const fallback = this.getFallbackProvider();
+    
+    // Determine auth route
+    let authRoute: 'api_key' | 'env_var' | 'none' = 'none';
+    if (provConfig?.apiKey) {
+      // Check if the key came from env
+      const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY'];
+      const hasEnvKey = envKeys.some(k => process.env[k]);
+      authRoute = hasEnvKey ? 'env_var' : 'api_key';
+    }
+
+    return {
+      version: all.version,
+      provider,
+      model,
+      fallback: fallback ? `${fallback.name} (${fallback.config.defaultModel})` : null,
+      authRoute,
+      enabledProviders: this.getEnabledProviders().map(p => p.name),
+      projectConfigured: this.hasProjectSettings(),
+      configFile: this.configPath,
+    };
+  }
+
+  // ─── Paths ─────────────────────────────────────────────────
 
   /**
    * Get config directory paths.
@@ -201,6 +540,10 @@ class ConfigManager {
       skillsDir: SKILLS_DIR,
       memoryDir: MEMORY_DIR,
       logsDir: LOGS_DIR,
+      projectDir: path.join(process.cwd(), PROJECT_DIR_NAME),
+      projectSettings: path.join(process.cwd(), PROJECT_DIR_NAME, PROJECT_SETTINGS_FILE),
+      projectLocalSettings: path.join(process.cwd(), PROJECT_DIR_NAME, PROJECT_LOCAL_SETTINGS_FILE),
+      projectInstructions: path.join(process.cwd(), PROJECT_INSTRUCTIONS_FILE),
     };
   }
 
@@ -222,6 +565,10 @@ export function getConfigManager(): ConfigManager {
     instance = new ConfigManager();
   }
   return instance;
+}
+
+export function resetConfigManager(): void {
+  instance = null;
 }
 
 export { ConfigManager, CONFIG_DIR, CONFIG_FILE };

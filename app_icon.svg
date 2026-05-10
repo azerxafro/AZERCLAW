@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#09090b" rx="225" ry="225"/>
+  <!-- Gritty textures / background lines -->
+  <path d="M 0,100 L 1024,1100 M 0,200 L 1024,1200" stroke="#1f1f1f" stroke-width="20"/>
+  <path d="M 1024,100 L 0,1100 M 1024,200 L 0,1200" stroke="#1f1f1f" stroke-width="20"/>
+  
+  <g stroke="#ef4444" stroke-width="90" stroke-linecap="round" stroke-linejoin="miter" fill="none">
+    <!-- Left Fish Curve (Sharp/Aggressive) -->
+    <path d="M 380,200 L 220,512 L 380,824" />
+    <!-- Right Fish Curve (Sharp/Aggressive) -->
+    <path d="M 644,200 L 804,512 L 644,824" />
+    <!-- Connecting Line -->
+    <path d="M 150,512 L 874,512" />
+  </g>
+  
+  <!-- "Blood" splatters -->
+  <circle cx="200" cy="800" r="35" fill="#dc2626"/>
+  <path d="M 200,800 L 220,950 L 180,950 Z" fill="#dc2626"/>
+  <circle cx="160" cy="860" r="15" fill="#991b1b"/>
+  <path d="M 160,860 L 170,920 L 150,920 Z" fill="#991b1b"/>
+
+  <circle cx="850" cy="250" r="25" fill="#dc2626"/>
+  <path d="M 850,250 L 870,350 L 830,350 Z" fill="#dc2626"/>
+</svg>

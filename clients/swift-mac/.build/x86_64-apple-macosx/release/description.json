@@ -1,0 +1,796 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+    "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy" : {
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/PrivacyInfo.xcprivacy"
+        }
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream_Starscream.bundle/PrivacyInfo.xcprivacy"
+        }
+      ]
+    }
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.AzerclawApp-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/sources",
+      "importPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/Sources/AzerclawApp/main.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules/Starscream.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "AzerclawApp",
+      "moduleOutputPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules/AzerclawApp.swiftmodule",
+      "objects" : [
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx13.0",
+        "-whole-module-optimization",
+        "-num-threads",
+        "12",
+        "-serialize-diagnostics",
+        "-O",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "AzerclawApp_main",
+        "-parse-as-library",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swift_mac"
+      ],
+      "outputFileMapPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules/AzerclawApp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/Sources/AzerclawApp/main.swift"
+      ],
+      "tempsPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build",
+      "wholeModuleOptimization" : true
+    },
+    "C.Starscream-x86_64-apple-macosx-release.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/sources",
+      "importPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/Compression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/Framer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/Security.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/Server.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/Transport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<Starscream-x86_64-apple-macosx-release.module-resources>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "Starscream",
+      "moduleOutputPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules/Starscream.swiftmodule",
+      "objects" : [
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Compression.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSCompression.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Data+Extensions.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Engine.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/NativeEngine.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSEngine.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPHandler.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPServerHandler.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FrameCollector.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Framer.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/HTTPHandler.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/StringHTTPHandler.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationSecurity.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Security.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Server.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocketServer.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocket.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationTransport.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/TCPTransport.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Transport.swift.o",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/resource_bundle_accessor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx10.13",
+        "-whole-module-optimization",
+        "-num-threads",
+        "12",
+        "-serialize-diagnostics",
+        "-O",
+        "-j12",
+        "-DSWIFT_PACKAGE",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+        "-module-cache-path",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/include/Starscream-Swift.h",
+        "-swift-version",
+        "5",
+        "-plugin-path",
+        "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-suppress-warnings"
+      ],
+      "outputFileMapPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Compression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSCompression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Data+Extensions.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Engine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/NativeEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPServerHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FrameCollector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Framer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/HTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/StringHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationSecurity.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Security.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Server.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocketServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocket.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/TCPTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Transport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/resource_bundle_accessor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules/Starscream.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/Compression.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/Engine.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/Framer.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/Security.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/Server.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/Transport.swift",
+        "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+      ],
+      "tempsPath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "AzerclawApp" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "AzerclawApp",
+      "-package-name",
+      "swift_mac",
+      "-c",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/Sources/AzerclawApp/main.swift",
+      "-I",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx13.0",
+      "-whole-module-optimization",
+      "-num-threads",
+      "12",
+      "-serialize-diagnostics",
+      "-O",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "AzerclawApp_main",
+      "-parse-as-library",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swift_mac",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "Starscream" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "Starscream",
+      "-c",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/Compression.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/Engine.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/Framer.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/Security.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/Server.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/Transport.swift",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/DerivedSources/resource_bundle_accessor.swift",
+      "-I",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Modules",
+      "-target",
+      "x86_64-apple-macosx10.13",
+      "-whole-module-optimization",
+      "-num-threads",
+      "12",
+      "-serialize-diagnostics",
+      "-O",
+      "-j12",
+      "-DSWIFT_PACKAGE",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_AVAILABLE",
+      "-module-cache-path",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/include/Starscream-Swift.h",
+      "-swift-version",
+      "5",
+      "-plugin-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-suppress-warnings",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "AzerclawApp" : [
+      "Starscream"
+    ],
+    "Starscream" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/Sources/AzerclawApp/main.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/sources"
+    },
+    "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Compression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Data+Extensions.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Engine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationHTTPServerHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationSecurity.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FoundationTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/FrameCollector.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Framer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/HTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/NativeEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Security.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Server.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/StringHTTPHandler.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/TCPTransport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/Transport.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSCompression.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WSEngine.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocket.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/WebSocketServer.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/resource_bundle_accessor.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.product/Objects.LinkFileList"
+    },
+    "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/Compression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Compression/WSCompression.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/DataBytes/Data+Extensions.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/Engine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/NativeEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Engine/WSEngine.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FoundationHTTPServerHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/FrameCollector.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/Framer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/HTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Framer/StringHTTPHandler.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/FoundationSecurity.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Security/Security.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/Server.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Server/WebSocketServer.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Starscream/WebSocket.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/FoundationTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/TCPTransport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/checkouts/Starscream/Sources/Transport/Transport.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/DerivedSources/resource_bundle_accessor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/Starscream.build/sources"
+    },
+    "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/swift-version--58304C5D6DBC2206.txt"
+    }
+  }
+}

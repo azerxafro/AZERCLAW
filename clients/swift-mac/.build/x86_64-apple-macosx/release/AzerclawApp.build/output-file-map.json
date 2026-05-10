@@ -1,0 +1,13 @@
+{
+  "": {
+    "dependencies": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/AzerclawApp.d",
+    "object": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/AzerclawApp.o",
+    "swift-dependencies": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/primary.swiftdeps"
+  },
+  "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/Sources/AzerclawApp/main.swift": {
+    "object": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.swift.o",
+    "swiftmodule": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.swiftdeps",
+    "diagnostics": "/Users/Founder/Documents/Github/AZERCLAW/clients/swift-mac/.build/x86_64-apple-macosx/release/AzerclawApp.build/main.dia"
+  }
+}

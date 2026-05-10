@@ -1,0 +1,17 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$DIR/../../../../"
+
+# Start the Node daemon
+cd "$PROJECT_ROOT"
+npx ts-node bin/azerclaw.ts serve -p 8080 &
+SERVER_PID=$!
+
+# Wait a moment for server to start
+sleep 1
+
+# Launch the Swift GUI
+"$DIR/AzerclawApp"
+
+# Cleanup daemon when GUI closes
+kill $SERVER_PID

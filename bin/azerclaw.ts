@@ -7,14 +7,20 @@
  * Inspired by OpenClaw, themed with a fish 🐟 instead of a lobster.
  * 
  * Usage:
- *   azerclaw              — Launch TUI (or onboard if first run)
- *   azerclaw chat         — Interactive chat
- *   azerclaw run "task"   — Execute a task
- *   azerclaw tui          — Premium terminal UI
- *   azerclaw onboard      — Setup wizard
- *   azerclaw config       — Manage configuration
- *   azerclaw models       — Manage AI models
- *   azerclaw doctor       — Health check
+ *   azerclaw                  — Launch interactive session (or onboard if first run)
+ *   azerclaw chat             — Interactive chat
+ *   azerclaw run "task"       — Execute a task
+ *   azerclaw tui              — Premium terminal UI
+ *   azerclaw onboard          — Setup wizard
+ *   azerclaw config           — Manage configuration
+ *   azerclaw config provider  — Switch provider
+ *   azerclaw config model     — Switch model
+ *   azerclaw config apikey    — Set API key
+ *   azerclaw config fallback  — Configure fallback
+ *   azerclaw init             — Initialize project (AZERCLAW.md)
+ *   azerclaw models           — Manage AI models
+ *   azerclaw doctor           — Health check
+ *   azerclaw status           — Show current status
  */
 
 const { Command } = require('commander');
@@ -22,24 +28,29 @@ const chalk = require('chalk');
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
 
 program
   .name('azerclaw')
-  .description('🐟 AZERCLAW — Your AI, Your Keys, Your Way')
+  .description('🐟 AZERCLAW — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
-  .option('--no-color', 'Disable colors');
+  .option('--no-color', 'Disable colors')
+  .hook('preAction', async () => {
+    // Global initialization
+    const { registerAllTools } = require('../src/tools');
+    await registerAllTools();
+  });
 
 // ─── Default Action (no command) ────────────────────────────────
 
 program
   .action(async (opts: any) => {
     const config = getConfigManager();
-    config.resolveEnvOverrides();
+    const detected = config.resolveEnvOverrides();
 
     if (config.isFirstRun()) {
       // First run: show full splash + onboard
@@ -64,12 +75,17 @@ program
     const config = getConfigManager();
     config.resolveEnvOverrides();
     
+    // Apply CLI flag overrides
+    if (opts.model || opts.provider) {
+      config.applyRuntimeOverrides(opts);
+    }
+    
     if (!opts.parent?.splash === false) {
       printQuickSplash(VERSION);
     }
     
     if (config.isFirstRun()) {
-      fishInfo('First time? Run `azerclaw onboard` to configure your AI providers.');
+      fishInfo('First time? Running setup wizard...');
       const { runOnboard } = require('../src/cli/commands/onboard');
       await runOnboard();
       return;
@@ -85,14 +101,34 @@ program
   .command('run <task>')
   .description('Execute a single task')
   .option('-m, --model <model>', 'Override the default model')
+  .option('-p, --provider <provider>', 'Override the default provider')
   .option('-V, --verbose', 'Show tool calls in detail')
   .action(async (task: string, opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
+    
+    if (opts.model || opts.provider) {
+      config.applyRuntimeOverrides(opts);
+    }
+    
     printQuickSplash(VERSION);
     
     const { runTask } = require('../src/cli/commands/run');
     await runTask(task, opts);
+  });
+
+// ─── Serve Command ──────────────────────────────────────────────
+
+program
+  .command('serve')
+  .description('Start the AZERCLAW local WebSocket daemon for desktop apps')
+  .option('-p, --port <port>', 'Port to listen on', '8080')
+  .action((opts: any) => {
+    printQuickSplash(VERSION);
+    const { AzerclawServer } = require('../src/core/server');
+    const port = parseInt(opts.port, 10) || 8080;
+    const server = new AzerclawServer(port);
+    server.start();
   });
 
 // ─── TUI Command ────────────────────────────────────────────────
@@ -100,9 +136,15 @@ program
 program
   .command('tui')
   .description('Launch the premium terminal UI')
-  .action(async () => {
+  .option('-m, --model <model>', 'Override the default model')
+  .option('-p, --provider <provider>', 'Override the default provider')
+  .action(async (opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
+    
+    if (opts.model || opts.provider) {
+      config.applyRuntimeOverrides(opts);
+    }
     
     const { runTUI } = require('../src/cli/commands/tui');
     await runTUI();
@@ -117,6 +159,28 @@ program
     await playSplashScreen(VERSION);
     const { runOnboard } = require('../src/cli/commands/onboard');
     await runOnboard();
+  });
+
+// ─── Init Command (Project) ────────────────────────────────────
+
+program
+  .command('init')
+  .description('Initialize AZERCLAW for this project (creates AZERCLAW.md + .azerclaw/)')
+  .action(() => {
+    const { initProject } = require('../src/cli/commands/settings');
+    initProject();
+  });
+
+// ─── Status Command ─────────────────────────────────────────────
+
+program
+  .command('status')
+  .description('Show current model, provider, auth, and project status')
+  .action(() => {
+    const config = getConfigManager();
+    config.resolveEnvOverrides();
+    const { showStatus } = require('../src/cli/commands/settings');
+    showStatus();
   });
 
 // ─── Config Command ─────────────────────────────────────────────
@@ -155,6 +219,67 @@ configCmd
   .action(() => {
     const { configReset } = require('../src/cli/commands/config');
     configReset();
+  });
+
+configCmd
+  .command('provider [name]')
+  .description('Switch the active AI provider (interactive if no name given)')
+  .action(async (name?: string) => {
+    if (name) {
+      const { cliSwitchProvider } = require('../src/cli/commands/settings');
+      cliSwitchProvider(name);
+    } else {
+      const { interactiveProviderSwitch } = require('../src/cli/commands/settings');
+      await interactiveProviderSwitch();
+    }
+  });
+
+configCmd
+  .command('model [id]')
+  .description('Switch the default model (interactive if no id given)')
+  .option('-p, --provider <provider>', 'Target provider (defaults to active)')
+  .action(async (id?: string, opts?: any) => {
+    if (id) {
+      const { cliSwitchModel } = require('../src/cli/commands/settings');
+      cliSwitchModel(id, opts?.provider);
+    } else {
+      const { interactiveModelSwitch } = require('../src/cli/commands/settings');
+      await interactiveModelSwitch();
+    }
+  });
+
+configCmd
+  .command('apikey [provider] [key]')
+  .description('Set or change an API key (interactive if no args given)')
+  .action(async (provider?: string, key?: string) => {
+    if (provider && key) {
+      const { cliSetApiKey } = require('../src/cli/commands/settings');
+      cliSetApiKey(provider, key);
+    } else {
+      const { interactiveApiKeyChange } = require('../src/cli/commands/settings');
+      await interactiveApiKeyChange();
+    }
+  });
+
+configCmd
+  .command('fallback [provider]')
+  .description('Set or change the fallback provider (interactive if no arg given)')
+  .action(async (provider?: string) => {
+    if (provider) {
+      const { cliSetFallback } = require('../src/cli/commands/settings');
+      cliSetFallback(provider);
+    } else {
+      const { interactiveFallbackConfig } = require('../src/cli/commands/settings');
+      await interactiveFallbackConfig();
+    }
+  });
+
+configCmd
+  .command('settings')
+  .description('Open the full interactive settings menu')
+  .action(async () => {
+    const { interactiveSettingsMenu } = require('../src/cli/commands/settings');
+    await interactiveSettingsMenu();
   });
 
 // Default config action (no sub-command) shows list
@@ -329,8 +454,6 @@ workflowCmd
   .action(async (id: string, token: string) => {
     printQuickSplash(VERSION);
     const { FishboneEngine } = require('../src/workflow/engine');
-    // Note: In a real system, the engine state needs to be persisted to resume across process boundaries.
-    // For now, this invokes the API.
     const engine = new FishboneEngine();
     const resumed = await engine.resume(id, token);
     if (resumed) {
@@ -340,6 +463,103 @@ workflowCmd
     }
   });
 
+// ─── Tools Command ──────────────────────────────────────────────
+
+const toolsCmd = program
+  .command('tools')
+  .description('Manage AZERCLAW tools and plugins');
+
+toolsCmd
+  .command('list')
+  .description('List all registered tools')
+  .action(() => {
+    const { getToolRegistry } = require('../src/tools/registry');
+    const registry = getToolRegistry();
+    const tools = registry.getAll();
+    
+    console.log('');
+    fishInfo(`Registered Tools (${tools.length})`);
+    console.log('');
+    
+    const Table = require('cli-table3');
+    const table = new Table({
+      head: [chalk.hex('#60a5fa')('Name'), chalk.hex('#60a5fa')('Version'), chalk.hex('#60a5fa')('Description')],
+      colWidths: [20, 10, 50],
+      wordWrap: true,
+    });
+
+    tools.forEach((tool: any) => {
+      table.push([
+        chalk.hex('#34d399')(tool.name),
+        chalk.dim(tool.version),
+        tool.description.slice(0, 100) + (tool.description.length > 100 ? '...' : '')
+      ]);
+    });
+
+    console.log(table.toString());
+  });
+
+toolsCmd
+  .command('info <name>')
+  .description('Show detailed information about a tool')
+  .action((name: string) => {
+    const { getToolRegistry } = require('../src/tools/registry');
+    const tool = getToolRegistry().get(name);
+    if (!tool) {
+      fishError(`Tool not found: ${name}`);
+      return;
+    }
+
+    console.log('');
+    console.log(chalk.hex('#60a5fa').bold(`Tool: ${tool.name}`));
+    console.log(chalk.dim(`Version: ${tool.version}`));
+    if (tool.author) console.log(chalk.dim(`Author: ${tool.author}`));
+    console.log('');
+    console.log(tool.description);
+    console.log('');
+    console.log(chalk.hex('#fbbf24')('Parameters:'));
+    console.log(JSON.stringify(tool.parameters, null, 2));
+  });
+
+toolsCmd
+  .command('docs')
+  .description('Generate markdown documentation for all tools')
+  .option('-o, --output <file>', 'Output file path', 'TOOLS.md')
+  .action(async (opts: any) => {
+    const { getToolRegistry } = require('../src/tools/registry');
+    const fs = require('fs');
+    const path = require('path');
+    
+    const tools = getToolRegistry().getAll();
+    let markdown = `# 🐟 AZERCLAW Tools Documentation\n\n`;
+    markdown += `Generated on ${new Date().toLocaleDateString()}\n\n`;
+    
+    tools.forEach((tool: any) => {
+      markdown += `## ${tool.name} (v${tool.version})\n\n`;
+      markdown += `${tool.description}\n\n`;
+      markdown += `### Parameters\n\n\`\`\`json\n${JSON.stringify(tool.parameters, null, 2)}\n\`\`\`\n\n`;
+      markdown += `---\n\n`;
+    });
+
+    
+    const outputPath = path.resolve(process.cwd(), opts.output);
+    fs.writeFileSync(outputPath, markdown);
+    fishSuccess(`Documentation generated at ${outputPath}`);
+  });
+
+toolsCmd
+  .command('install <url_or_path>')
+  .description('Install a tool plugin from a URL or local file (coming soon)')
+  .action((src: string) => {
+    fishInfo(`Plugin installation for '${src}' will be available in the next release.`);
+    fishInfo('For now, manually place your .js/.ts files in the ./plugins directory.');
+  });
+
+toolsCmd.action(() => {
+  program.helpInformation();
+});
+
 // ─── Parse & Run ────────────────────────────────────────────────
+
 
 program.parse(process.argv);

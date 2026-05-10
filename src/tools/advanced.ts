@@ -7,6 +7,7 @@ import { Tool, ToolResult } from './registry';
 
 export const spawnSubAgentTool: Tool = {
   name: 'spawn_sub_agent',
+  version: '1.0.0',
   description: `Spawn a sub-agent to handle a specific subtask in parallel. Use this for:
 - Breaking large tasks into parallel workstreams
 - Delegating research while you continue coding
@@ -42,6 +43,7 @@ The sub-agent has full access to all tools.`,
  */
 export const webSearchTool: Tool = {
   name: 'web_search',
+  version: '1.0.0',
   description: 'Search the web for information. Returns relevant results.',
   parameters: {
     type: 'object',
@@ -72,6 +74,7 @@ export const webSearchTool: Tool = {
  */
 export const codeAnalysisTool: Tool = {
   name: 'analyze_code',
+  version: '1.0.0',
   description: 'Analyze a codebase directory — count files, detect languages, find entry points.',
   parameters: {
     type: 'object',
@@ -102,3 +105,4 @@ export const codeAnalysisTool: Tool = {
     }
   },
 };
+

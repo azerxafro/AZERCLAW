@@ -6,14 +6,13 @@
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const { AgentRuntime } = require('../../core/runtime');
-const { registerAllTools } = require('./chat');
 const { FishThinkingAnimation, fishSuccess, fishError, fishBox } = require('../animations/fish');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 
 export async function runTask(task: string, options: { model?: string; verbose?: boolean }): Promise<void> {
-  registerAllTools();
+
 
   const thinking = new FishThinkingAnimation('Working');
   let isThinking = false;

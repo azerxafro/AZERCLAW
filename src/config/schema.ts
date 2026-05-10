@@ -1,6 +1,13 @@
 /**
  * 🐟 AZERCLAW Configuration Schema
  * Defines the full configuration structure with Zod validation.
+ * 
+ * Layered configuration system (highest priority first):
+ *   1. CLI flags (--model, --provider)
+ *   2. Environment variables (OPENAI_API_KEY, etc.)
+ *   3. Local project settings (.azerclaw/settings.local.json — gitignored)
+ *   4. Project settings (.azerclaw/settings.json — committed to git)
+ *   5. User settings (~/.azerclaw/settings.json — personal defaults)
  */
 
 import { z } from 'zod';
@@ -30,6 +37,18 @@ const GoogleProviderSchema = z.object({
 const OllamaProviderSchema = z.object({
   baseUrl: z.string().default('http://localhost:11434'),
   defaultModel: z.string().default('llama3.1'),
+  enabled: z.boolean().default(false),
+});
+
+const LMStudioProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:1234/v1'),
+  defaultModel: z.string().default(''),
+  enabled: z.boolean().default(false),
+});
+
+const LocalAIProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:8080/v1'),
+  defaultModel: z.string().default(''),
   enabled: z.boolean().default(false),
 });
 
@@ -68,6 +87,8 @@ const ProvidersSchema = z.object({
   anthropic: AnthropicProviderSchema,
   google: GoogleProviderSchema,
   ollama: OllamaProviderSchema,
+  lmstudio: LMStudioProviderSchema,
+  localai: LocalAIProviderSchema,
   groq: GroqProviderSchema,
   deepseek: DeepSeekProviderSchema,
   openrouter: OpenRouterProviderSchema,
@@ -77,6 +98,8 @@ const ProvidersSchema = z.object({
   anthropic: { apiKey: '', baseUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514', enabled: false },
   google: { apiKey: '', defaultModel: 'gemini-2.5-flash', enabled: false },
   ollama: { baseUrl: 'http://localhost:11434', defaultModel: 'llama3.1', enabled: false },
+  lmstudio: { baseUrl: 'http://localhost:1234/v1', defaultModel: '', enabled: false },
+  localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
   groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
   deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
   openrouter: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'anthropic/claude-sonnet-4', enabled: false },
@@ -103,6 +126,20 @@ const AgentConfigSchema = z.object({
   allowNetworkAccess: z.boolean().default(true),
   sandboxMode: z.boolean().default(false),
 });
+
+// ─── Permissions Config ─────────────────────────────────────────
+
+const PermissionsConfigSchema = z.object({
+  allowedTools: z.array(z.string()).default([]),
+  deniedTools: z.array(z.string()).default([]),
+  autoApprove: z.array(z.string()).default([]),
+  requireApproval: z.array(z.string()).default(['write_file', 'run_shell']),
+}).default(() => ({
+  allowedTools: [],
+  deniedTools: [],
+  autoApprove: [],
+  requireApproval: ['write_file', 'run_shell'],
+}));
 
 // ─── UI Config ──────────────────────────────────────────────────
 
@@ -138,6 +175,8 @@ export const ConfigSchema = z.object({
       anthropic: { apiKey: '', baseUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514', enabled: false },
       google: { apiKey: '', defaultModel: 'gemini-2.5-flash', enabled: false },
       ollama: { baseUrl: 'http://localhost:11434', defaultModel: 'llama3.1', enabled: false },
+      lmstudio: { baseUrl: 'http://localhost:1234/v1', defaultModel: '', enabled: false },
+      localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
       groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
       deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
       openrouter: { apiKey: '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'anthropic/claude-sonnet-4', enabled: false },
@@ -154,6 +193,7 @@ export const ConfigSchema = z.object({
     allowNetworkAccess: true,
     sandboxMode: false,
   })),
+  permissions: PermissionsConfigSchema,
   ui: UIConfigSchema.default(() => ({
     theme: 'ocean' as const,
     showSplash: true,
@@ -167,12 +207,27 @@ export const ConfigSchema = z.object({
   })),
   version: z.string().default('1.0.0'),
   firstRun: z.boolean().default(true),
+  hasCompletedOnboarding: z.boolean().default(false),
+  hasCompletedProjectOnboarding: z.boolean().default(false),
 });
+
+// ─── Project Settings Schema ────────────────────────────────────
+// Lighter schema for .azerclaw/settings.json (project-level)
+
+export const ProjectSettingsSchema = z.object({
+  instructions: z.array(z.string()).default([]),
+  allowedTools: z.array(z.string()).default([]),
+  deniedTools: z.array(z.string()).default([]),
+  autoApprove: z.array(z.string()).default([]),
+  customInstructions: z.string().default(''),
+  env: z.record(z.string()).default({}),
+}).partial();
 
 export type AzerclawConfig = z.infer<typeof ConfigSchema>;
 export type AIConfig = z.infer<typeof AIConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
+export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
 // Provider type exports
-export type ProviderName = 'openai' | 'anthropic' | 'google' | 'ollama' | 'groq' | 'deepseek' | 'openrouter' | 'custom';
+export type ProviderName = 'openai' | 'anthropic' | 'google' | 'ollama' | 'lmstudio' | 'localai' | 'groq' | 'deepseek' | 'openrouter' | 'custom';

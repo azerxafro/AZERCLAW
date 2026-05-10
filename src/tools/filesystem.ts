@@ -9,6 +9,7 @@ import { Tool, ToolResult } from './registry';
 
 export const readFileTool: Tool = {
   name: 'read_file',
+  version: '1.0.0',
   description: 'Read the contents of a file from disk.',
   parameters: {
     type: 'object',
@@ -38,6 +39,7 @@ export const readFileTool: Tool = {
 
 export const writeFileTool: Tool = {
   name: 'write_file',
+  version: '1.0.0',
   description: 'Write content to a file. Creates parent directories if needed.',
   parameters: {
     type: 'object',
@@ -64,6 +66,7 @@ export const writeFileTool: Tool = {
 
 export const listDirTool: Tool = {
   name: 'list_directory',
+  version: '1.0.0',
   description: 'List files and directories in a given path.',
   parameters: {
     type: 'object',
@@ -90,6 +93,7 @@ export const listDirTool: Tool = {
 
 export const searchFilesTool: Tool = {
   name: 'search_files',
+  version: '1.0.0',
   description: 'Search for a text pattern in files using grep-like functionality.',
   parameters: {
     type: 'object',
@@ -112,3 +116,4 @@ export const searchFilesTool: Tool = {
     } catch { return { success: true, output: 'No matches found' }; }
   },
 };
+

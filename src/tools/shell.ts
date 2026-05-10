@@ -8,6 +8,7 @@ import { Tool, ToolResult } from './registry';
 
 export const shellTool: Tool = {
   name: 'run_shell',
+  version: '1.0.0',
   description: 'Execute a shell command on the local system. Use this for running scripts, installing packages, git operations, file manipulation, and system tasks.',
   parameters: {
     type: 'object',
