@@ -4,7 +4,7 @@
   "description": "🐟 AZERCLAW — Open-source, BYOK AI agent for your terminal. Your AI, Your Keys, Your Way.",
   "main": "dist/src/index.js",
   "bin": {
-    "azerclaw": "./dist/bin/azerclaw.js"
+    "azerclaw": "dist/bin/azerclaw.js"
   },
   "scripts": {
     "start": "npx tsx bin/azerclaw.ts",
@@ -52,7 +52,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/azerclaw/azerclaw"
+    "url": "git+https://github.com/azerclaw/azerclaw.git"
   },
   "homepage": "https://azerclaw.dev",
   "bugs": {
