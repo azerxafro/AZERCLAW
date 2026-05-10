@@ -1,6 +1,6 @@
 {
   "name": "azerclaw",
-  "version": "1.1.2",
+  "version": "1.1.4-beta",
   "description": "🐟 AZERCLAW — Open-source, BYOK AI agent for your terminal. Your AI, Your Keys, Your Way.",
   "main": "dist/src/index.js",
   "bin": {
