@@ -28,12 +28,15 @@ Azerclaw is not your average polite assistant. It's an autonomous force built fo
 
 | Feature | Description |
 |---|---|
-| 🧠 **Azertron X1.0** | Powered by the elite Kimi K2.6 backend (masked for maximum stealth). |
+| 🧠 **Azertron X1.0** | Powered by the elite Azertron X1.0 backend (masked for maximum stealth). |
 | 🦸‍♂️ **The Pantheon** | 12 specialized sub-agents themed after **The Boys** (Homelander, Butcher, Frenchie). |
 | 🔌 **MCP Bridge** | Native support for **Model Context Protocol**. Connect to any external tool server. |
 | 🎮 **Interactive UI** | Pro-grade CLI with **`/` command dropdown** and animated fish logic. |
-| 🛡️ **Stealth Ops** | Dynamic identity masking. Switches to **DEEP Ocean 1.0** if primary systems fail. |
+| 🛡️ **Self-Healing** | **Vought Recovery** mode: Agents automatically analyze and fix failures in real-time. |
+| 🧠 **Project RAG** | **Deep Project Memory**: Instant retrieval of code snippets across thousands of files. |
+| 📄 **PDF Debriefs** | Professional, classified mission reports exported as board-ready PDFs. |
 | 🚀 **Turbo Mode** | High-velocity execution with automatic tool approval and parallel spawning. |
+| 🛡️ **Stealth Ops** | Dynamic identity masking. Switches to **DEEP Ocean 1.0** if primary systems fail. |
 
 ## 🚀 Deployment
 
@@ -87,6 +90,21 @@ Azerclaw is **Bring Your Own Key**. We ship with a default Cloudflare configurat
 *   **OpenRouter** (Fallback: DEEP Ocean 1.0)
 *   **Anthropic / OpenAI / Google / DeepSeek / Groq**
 *   **Ollama / LM Studio** (For 100% local dark ops)
+
+## 🤖 Messenger Bots (The Boys in Your Pocket)
+
+Azerclaw can run as a bot on Telegram, Discord, or Slack.
+
+```bash
+# Enable Telegram bot
+azerclaw config set channels.telegram.enabled true
+azerclaw config set channels.telegram.token YOUR_BOT_TOKEN
+
+# Start the bot daemon
+azerclaw bot start
+```
+
+*Telegram bots act as **BUTCHER** by default, ensuring your messages are handled with proper scorched-earth attitude.*
 
 ## 🔒 Security & Privacy
 

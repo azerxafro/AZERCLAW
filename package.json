@@ -81,6 +81,7 @@
     "enquirer": "^2.4.1",
     "express": "^5.2.1",
     "figures": "^3.2.0",
+    "flexsearch": "^0.8.212",
     "gradient-string": "^2.0.2",
     "log-symbols": "^4.1.0",
     "lowdb": "^6.1.1",
@@ -88,6 +89,7 @@
     "node-fetch": "^3.3.2",
     "openai": "^4.97.0",
     "ora": "^5.4.1",
+    "pdfkit": "^0.18.0",
     "string-width": "^4.2.3",
     "strip-ansi": "^6.0.1",
     "vm": "^0.1.0",
@@ -98,6 +100,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^22.19.18",
+    "@types/pdfkit": "^0.17.6",
     "@types/ws": "^8.18.1",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",

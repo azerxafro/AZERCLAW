@@ -80,8 +80,14 @@ export abstract class ChannelAdapter {
     let agent = this.agents.get(sessionId);
 
     if (!agent) {
+      const character = this.platform === 'telegram' ? 'BUTCHER' : 'HOMELANDER';
+      const { getAgent } = require('../agents/builtin');
+      const agentDef = getAgent(character);
+
       agent = new AgentRuntime({
         sessionId,
+        character,
+        systemPrompt: agentDef?.systemPrompt,
         eventHandler: async (event: AgentEvent) => {
           if (event.type === 'response' && event.content) {
             await this.send({
@@ -93,7 +99,7 @@ export abstract class ChannelAdapter {
         },
       });
       this.agents.set(sessionId, agent);
-      auditLog('CHANNEL_SESSION_ROUTE', `${this.platform}:${message.channelId} -> ${sessionId}`);
+      auditLog('CHANNEL_SESSION_ROUTE', `${this.platform}:${message.channelId} -> ${sessionId} (as ${character})`);
     }
 
     try {

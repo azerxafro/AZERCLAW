@@ -357,6 +357,21 @@ export async function runTUI(): Promise<void> {
           initProject();
           break;
         }
+        case '/share': {
+          const { runShare } = require('./share');
+          await runShare('main:tui');
+          break;
+        }
+        case '/export': {
+          const { runExport } = require('./export');
+          await runExport('main:tui');
+          break;
+        }
+        case '/plugins': {
+          const { listPlugins } = require('./plugins');
+          await listPlugins();
+          break;
+        }
         case '/agents': {
           const { formatAgentRoster } = require('../../agents/builtin');
           console.log('');
@@ -383,9 +398,12 @@ export async function runTUI(): Promise<void> {
             T.accent('  /fallback     ') + T.dim('Configure fallback provider'),
             T.accent('  /config       ') + T.dim('Full settings menu'),
             T.accent('  /status       ') + T.dim('Current status'),
+            T.accent('  /dashboard    ') + T.dim('Launch Vought HQ'),
+            T.accent('  /share        ') + T.dim('Export session to MD'),
             '',
             T.highlight('  Project'),
             T.accent('  /init         ') + T.dim('Initialize project (AZERCLAW.md)'),
+            T.accent('  /plugins      ') + T.dim('Plugin marketplace'),
             T.accent('  /agents       ') + T.dim('List Pantheon agents'),
             T.accent('  /HOMELANDER task    ') + T.dim('Invoke a specific agent'),
             '',

@@ -5,6 +5,7 @@
  */
 
 import * as http from 'http';
+import chalk from 'chalk';
 import { WebSocketServer, WebSocket } from 'ws';
 import { AgentRuntime } from '../core/runtime';
 import { HeartbeatEngine } from '../scheduler/heartbeat';
@@ -92,6 +93,21 @@ export class Gateway {
       this.broadcast({ type: 'heartbeat', event, details });
     });
     this.heartbeat.start();
+
+    // Connect enabled channels (Azerclaw 2.0)
+    const config = getConfigManager().getAll();
+    const channels = config.channels || {};
+    for (const [platform, channelConfig] of Object.entries(channels)) {
+      if (platform === 'routing') continue;
+      if ((channelConfig as any).enabled && (channelConfig as any).token) {
+        try {
+          await this.connectChannel(platform, channelConfig as any);
+          console.log(chalk.green(`[Gateway] Connected to ${platform}`));
+        } catch (e: any) {
+          console.error(chalk.red(`[Gateway] Failed to connect ${platform}: ${e.message}`));
+        }
+      }
+    }
   }
 
   /**

@@ -62,7 +62,15 @@ export async function runTask(task: string, options: { model?: string; verbose?:
   });
 
   try {
-    await agent.run(task);
+    // Parse flags from task (e.g. "Do X //turbo")
+    const flags: string[] = [];
+    const flagMatches = task.match(/\/\/\w+/g);
+    if (flagMatches) {
+      flagMatches.forEach(f => flags.push(f.slice(2)));
+    }
+    
+    const cleanTask = task.replace(/\/\/\w+/g, '').trim();
+    await agent.run(cleanTask, flags);
     console.log('');
     fishSuccess(`Completed with ${toolCount} tool call(s)`);
   } catch (error: any) {

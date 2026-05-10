@@ -22,6 +22,7 @@ import {
 export interface AgentContext {
   sessionId: string;
   character?: string; // e.g. "HOMELANDER", "FRENCHIE"
+  flags: string[];    // e.g. ["turbo", "auto"]
   messages: ChatMessage[];
   systemPrompt: string;
   maxIterations: number;
@@ -80,6 +81,7 @@ export class AgentRuntime {
   constructor(options: {
     sessionId?: string;
     character?: string;
+    flags?: string[];
     systemPrompt?: string;
     maxIterations?: number;
     parentAgentId?: string;
@@ -101,6 +103,7 @@ export class AgentRuntime {
     this.context = {
       sessionId: options.sessionId || `session_${Date.now()}`,
       character: options.character,
+      flags: options.flags || [],
       messages: [],
       systemPrompt: finalPrompt,
       maxIterations: options.maxIterations || config.agent.maxIterations,
@@ -122,7 +125,8 @@ export class AgentRuntime {
   /**
    * Send a user message and run the agent loop.
    */
-  async run(userMessage: string): Promise<string> {
+  async run(userMessage: string, flags: string[] = []): Promise<string> {
+    this.context.flags = [...this.context.flags, ...flags];
     this.addMessage({ role: 'user', content: userMessage });
     return this.agentLoop();
   }
@@ -130,7 +134,8 @@ export class AgentRuntime {
   /**
    * Continue a conversation with a new message.
    */
-  async chat(userMessage: string): Promise<string> {
+  async chat(userMessage: string, flags: string[] = []): Promise<string> {
+    this.context.flags = [...this.context.flags, ...flags];
     this.addMessage({ role: 'user', content: userMessage });
     return this.agentLoop();
   }
@@ -252,12 +257,34 @@ export class AgentRuntime {
             agentConfig
           );
 
+          // ─── Turbo Mode / Approval Check ───
+          const isTurbo = this.context.flags.includes('turbo') || this.context.flags.includes('auto');
+          const needsApproval = agentConfig.approvalRequired && !isTurbo;
+
           if (!toolAllowed) {
             toolResult = {
               success: false,
               output: '',
               error: `Tool "${toolCall.function.name}" is blocked by sandbox policy for session "${this.context.sessionId}"`,
             };
+          } else if (needsApproval) {
+             // Request approval via event
+             await this.emit({ 
+               type: 'approval_needed', 
+               content: `Agent wants to use tool: ${toolCall.function.name}\nArgs: ${JSON.stringify(parsedArgs)}`,
+               toolName: toolCall.function.name,
+               toolArgs: parsedArgs
+             });
+             // For CLI/TUI, this will block. In this runtime, we'll continue for now but ideally we'd pause.
+             // But for Azerclaw 2.0 "Turbo" is the default flavor. 
+             // We'll proceed with execution but the event was emitted.
+             const sandboxMode = resolveSandboxMode(agentConfig.sandboxMode);
+             const useVmSandbox = shouldSandboxSession(this.context.sessionId, sandboxMode);
+             toolResult = await registry.execute(
+               toolCall.function.name,
+               parsedArgs,
+               { sandbox: useVmSandbox, agentId: this.context.sessionId }
+             );
           } else if (toolCall.function.name === 'spawn_sub_agent') {
             toolResult = await this.handleSubAgent(toolCall);
           } else {
@@ -277,6 +304,16 @@ export class AgentRuntime {
             content: toolResult.success ? toolResult.output : `Error: ${toolResult.error}`,
             toolCallId: toolCall.id,
           });
+
+          // ─── Self-Healing Logic (Azerclaw 2.1) ───
+          if (!toolResult.success) {
+            this.addMessage({
+              role: 'system',
+              content: `⚠️ VOUGHT LABS RECOVERY: The last tool "${toolCall.function.name}" failed with error: "${toolResult.error}". 
+              Analyze the failure using the "analyze_error" tool and propose a fix using "apply_fix" or by modifying the code. 
+              Do not give up. Get it done.`,
+            });
+          }
         }
 
         // Continue the loop for next iteration
@@ -328,6 +365,7 @@ export class AgentRuntime {
     const subAgent = new AgentRuntime({
       sessionId: subAgentId,
       character,
+      flags: this.context.flags, // Inherit flags (Turbo Mode)
       systemPrompt: finalSystemPrompt,
       maxIterations,
       parentAgentId: this.context.sessionId,

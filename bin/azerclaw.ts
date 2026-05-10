@@ -852,6 +852,60 @@ toolsCmd.action(() => {
   program.helpInformation();
 });
 
+// ─── Bot Command ─────────────────────────────────────────────
+
+const botCmd = program
+  .command('bot')
+  .description('Manage messenger bots (Telegram, Discord, Slack)');
+
+botCmd
+  .command('start')
+  .description('Start all enabled bot channels')
+  .option('-p, --port <port>', 'Gateway port', '3142')
+  .action(async (opts: any) => {
+    const { startBot } = require('../src/cli/commands/bot');
+    await startBot({ port: parseInt(opts.port, 10) });
+  });
+
+// ─── Export Command ─────────────────────────────────────────────
+
+program
+  .command('export [sessionId]')
+  .description('Export a session as a professional PDF Mission Debrief')
+  .action(async (sessionId: string | undefined) => {
+    const { runExport } = require('../src/cli/commands/export');
+    await runExport(sessionId);
+  });
+
+// ─── Share Command ──────────────────────────────────────────────
+
+program
+  .command('share [sessionId]')
+  .description('Export a session as a shareable markdown file')
+  .action(async (sessionId: string | undefined) => {
+    const { runShare } = require('../src/cli/commands/share');
+    await runShare(sessionId);
+  });
+
+// ─── Plugin Commands ───────────────────────────────────────────
+
+const plugins = program.command('plugin')
+  .description('Manage community plugins');
+
+plugins.command('list')
+  .description('List available community plugins')
+  .action(async () => {
+    const { listPlugins } = require('../src/cli/commands/plugins');
+    await listPlugins();
+  });
+
+plugins.command('install <name>')
+  .description('Install a community plugin')
+  .action(async (name: string) => {
+    const { installPlugin } = require('../src/cli/commands/plugins');
+    await installPlugin(name);
+  });
+
 // ─── MCP Commands ──────────────────────────────────────────────
 
 const mcp = program.command('mcp')

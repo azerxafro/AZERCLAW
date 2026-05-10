@@ -357,6 +357,8 @@ module.exports = {
   fishInfo,
   fishWarn,
   fishBox,
+  speak,
+  CHARACTER_VOICES,
   OCEAN_GRADIENT,
   GOLD_GRADIENT,
   NEON_GRADIENT,

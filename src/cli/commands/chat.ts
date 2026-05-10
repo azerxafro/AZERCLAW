@@ -148,7 +148,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   const commands = [
     '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
     '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
-    '/dashboard',
+    '/dashboard', '/share', '/export', '/plugins',
     '/HOMELANDER', '/FRENCHIE', '/MOTHERS_MILK', '/BLACK_NOIR', '/A_TRAIN', 
     '/TECH_KNIGHT', '/ASHLEY', '/SISTER_SAGE', '/BUTCHER', '/DOPPELGANGER', '/STAN_EDGAR', '/THE_DEEP'
   ];
@@ -469,6 +469,21 @@ export async function runChat(options: { model?: string; provider?: string; init
           }
           break;
         }
+        case '/share': {
+          const { runShare } = require('./share');
+          await runShare(session.id);
+          break;
+        }
+        case '/export': {
+          const { runExport } = require('./export');
+          await runExport(session.id);
+          break;
+        }
+        case '/plugins': {
+          const { listPlugins } = require('./plugins');
+          await listPlugins();
+          break;
+        }
         case '/agents': {
           const { formatAgentRoster } = require('../../agents/builtin');
           console.log('');
@@ -506,9 +521,12 @@ export async function runChat(options: { model?: string; provider?: string; init
             chalk.hex('#60a5fa')('  /config       ') + chalk.dim('— Full settings menu'),
             chalk.hex('#60a5fa')('  /status       ') + chalk.dim('— Current status'),
             chalk.hex('#60a5fa')('  /dashboard    ') + chalk.dim('— Launch Vought HQ'),
+            chalk.hex('#60a5fa')('  /share        ') + chalk.dim('— Export session to MD'),
+            chalk.hex('#60a5fa')('  /export       ') + chalk.dim('— Export mission to PDF'),
             '',
             chalk.hex('#818cf8').bold('  Project'),
             chalk.hex('#60a5fa')('  /init         ') + chalk.dim('— Initialize project'),
+            chalk.hex('#60a5fa')('  /plugins      ') + chalk.dim('— Plugin marketplace'),
             chalk.hex('#60a5fa')('  /agents       ') + chalk.dim('— List Pantheon agents'),
             chalk.hex('#60a5fa')('  /HOMELANDER task    ') + chalk.dim('— Invoke a specific agent'),
             '',
@@ -525,7 +543,15 @@ export async function runChat(options: { model?: string; provider?: string; init
 
     messageCount++;
     try {
-      await agent.chat(input);
+      // Parse flags from message (e.g. "Do X //turbo")
+      const flags: string[] = [];
+      const flagMatches = input.match(/\/\/\w+/g);
+      if (flagMatches) {
+        flagMatches.forEach(f => flags.push(f.slice(2)));
+      }
+      
+      const cleanInput = input.replace(/\/\/\w+/g, '').trim();
+      await agent.chat(cleanInput, flags);
     } catch (error: any) {
       fishError(error.message || 'Something went wrong');
     }

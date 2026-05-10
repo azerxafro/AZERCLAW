@@ -101,3 +101,60 @@ export const patternSpotterTool: Tool = {
     }
   }
 };
+
+/**
+ * RECOVERY: analyze_error
+ * Help the agent understand why a command failed.
+ */
+export const analyzeErrorTool: Tool = {
+  name: 'analyze_error',
+  version: '2.1.0',
+  description: 'Analyze the last failed tool execution to determine the root cause (e.g. missing dependency, syntax error, permission issue).',
+  parameters: {
+    type: 'object',
+    properties: {
+      error: { type: 'string', description: 'The error message to analyze' },
+      context: { type: 'string', description: 'Surrounding code or command context' },
+    },
+    required: ['error'],
+  },
+  async execute(args: Record<string, unknown>): Promise<ToolResult> {
+    const error = args.error as string;
+    // This tool is mostly a prompt-helper, but we can add logic to check system logs or environment
+    return {
+      success: true,
+      output: `Analyzing error: "${error}".\nPossible causes:\n1. Missing dependency (check package.json/pip)\n2. Syntax error in recently edited file\n3. Path mismatch\n4. Permissions (check sudo/chmod)`,
+    };
+  }
+};
+
+/**
+ * RECOVERY: apply_fix
+ * Automatically fix a common error.
+ */
+export const applyFixTool: Tool = {
+  name: 'apply_fix',
+  version: '2.1.0',
+  description: 'Apply a diabolical fix for a detected error (e.g. install missing package, fix syntax).',
+  parameters: {
+    type: 'object',
+    properties: {
+      fixCommand: { type: 'string', description: 'The shell command to run to fix the issue' },
+      explanation: { type: 'string', description: 'Why this fix is necessary' },
+    },
+    required: ['fixCommand'],
+  },
+  async execute(args: Record<string, unknown>): Promise<ToolResult> {
+    const { execSync } = require('child_process');
+    try {
+      const output = execSync(args.fixCommand as string, { encoding: 'utf-8' });
+      return {
+        success: true,
+        output: `Fix applied successfully: ${args.fixCommand}\n\nOutput:\n${output}`,
+      };
+    } catch (e: any) {
+      return { success: false, output: '', error: `Fix failed: ${e.message}` };
+    }
+  }
+};
+

@@ -58,6 +58,7 @@ const MCP_DIRECTORY = [
     description: 'Remote control for Antigravity IDE (open files, sync context)',
     command: 'npm',
     args: ['run', 'mcp:antigravity'],
+    env: { PWD: '/Users/Founder/Documents/Github/AZERCLAW' }
   }
 ];
 
@@ -80,7 +81,7 @@ export async function listMCPDirectory(): Promise<void> {
 }
 
 export async function addMCPServer(name: string): Promise<void> {
-  const server = MCP_DIRECTORY.find(s => s.name === name);
+  const server = MCP_DIRECTORY.find(s => s.name === name) as any;
   if (!server) {
     fishError(`Server "${name}" not found in directory. Use azerclaw mcp add-custom instead.`);
     return;
@@ -92,6 +93,7 @@ export async function addMCPServer(name: string): Promise<void> {
   mcpServers[name] = {
     command: server.command,
     args: server.args,
+    env: server.env || {},
     enabled: true,
   };
 
