@@ -38,7 +38,7 @@ if (!process.stdout.isTTY) {
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '1.6.1';
+const VERSION = '2.1.0';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
