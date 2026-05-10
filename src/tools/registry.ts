@@ -3,6 +3,9 @@
  * Manages all available tools that the agent can use.
  */
 
+import { getConfigManager } from '../config/manager';
+import { resolveSandboxMode } from '../core/sandbox';
+
 export interface ToolResult {
   success: boolean;
   output: string;
@@ -137,8 +140,6 @@ class ToolRegistry {
 let instance: ToolRegistry | null = null;
 export function getToolRegistry(): ToolRegistry {
   if (!instance) {
-    const { getConfigManager } = require('../config/manager');
-    const { resolveSandboxMode } = require('../core/sandbox');
     const config = getConfigManager().getAll();
     const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
     instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
@@ -165,5 +166,4 @@ export class MockToolRegistry extends ToolRegistry {
     return { success: true, output: `Mock output for ${name}` };
   }
 }
-
 

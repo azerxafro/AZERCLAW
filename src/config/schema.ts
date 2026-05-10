@@ -107,7 +107,7 @@ const ProvidersSchema = z.object({
 }));
 
 const AIConfigSchema = z.object({
-  defaultProvider: z.string().default('openrouter'),
+  defaultProvider: z.string().default('custom'),
   fallbackChain: z.array(z.string()).default(['openrouter', 'openai', 'anthropic', 'google']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
