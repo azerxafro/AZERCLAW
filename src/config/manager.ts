@@ -15,6 +15,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { EventEmitter } from 'events';
 import { ConfigSchema, AzerclawConfig, ProviderName, ProjectSettingsSchema, ProjectSettings } from './schema';
 
 const CONFIG_DIR = path.join(os.homedir(), '.azerclaw');
@@ -41,14 +42,16 @@ function ensureDirs(): void {
 
 // ─── Config Manager ─────────────────────────────────────────────
 
-class ConfigManager {
+class ConfigManager extends EventEmitter {
   private config: AzerclawConfig;
   private configPath: string;
   private projectSettings: ProjectSettings | null = null;
   private localProjectSettings: ProjectSettings | null = null;
   private runtimeOverrides: Record<string, unknown> = {};
+  private watcher: fs.FSWatcher | null = null;
 
   constructor() {
+    super();
     this.configPath = CONFIG_FILE;
     ensureDirs();
     this.migrateLegacyConfig();
@@ -97,6 +100,34 @@ class ConfigManager {
   reload(): void {
     this.config = this.load();
     this.loadProjectSettings();
+    this.emit('change');
+  }
+
+  /**
+   * Start watching the config file for external changes to synchronize apps/CLI.
+   */
+  watch(): void {
+    if (this.watcher) return;
+    try {
+      if (fs.existsSync(this.configPath)) {
+        this.watcher = fs.watch(this.configPath, (eventType) => {
+          if (eventType === 'change') {
+            // Debounce to prevent multiple rapid reloads on a single write
+            setTimeout(() => this.reload(), 100);
+          }
+        });
+      }
+    } catch { /* ignore watcher setup errors */ }
+  }
+
+  /**
+   * Stop watching the config file.
+   */
+  unwatch(): void {
+    if (this.watcher) {
+      this.watcher.close();
+      this.watcher = null;
+    }
   }
 
   /**

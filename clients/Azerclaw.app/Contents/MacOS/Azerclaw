@@ -4,7 +4,7 @@ PROJECT_ROOT="$DIR/../../../../"
 
 # Start the Node daemon
 cd "$PROJECT_ROOT"
-npx ts-node bin/azerclaw.ts serve -p 8080 &
+node dist/bin/azerclaw.js serve -p 8080 &
 SERVER_PID=$!
 
 # Wait a moment for server to start

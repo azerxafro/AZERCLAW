@@ -41,6 +41,9 @@ export async function runChat(options: { model?: string; provider?: string; init
     config.applyRuntimeOverrides(options);
   }
 
+  const { registerAllTools } = require('../../tools/index');
+  await registerAllTools();
+
   // Initialize memory
   const { getSessionStore, getContextStore } = require('../../memory/store');
   const sessionStore = getSessionStore();
@@ -113,16 +116,28 @@ export async function runChat(options: { model?: string; provider?: string; init
   });
 
   // Chat UI header — show current model/provider
-  const status = config.getStatus();
-  fishBox('🐟 AZERCLAW', [
-    chalk.dim('  Type your message and press Enter. Type / for commands.'),
-    '',
-    `  ${chalk.hex('#818cf8')('Provider:')}  ${chalk.hex('#34d399')(status.provider)}  ${chalk.hex('#818cf8')('Model:')}  ${chalk.hex('#34d399')(status.model)}`,
-    status.fallback ? `  ${chalk.hex('#818cf8')('Fallback:')}  ${chalk.hex('#34d399')(status.fallback)}` : '',
-    '',
-    LUXE('  ><(((º>  Ready to assist'),
-  ].filter(Boolean));
-  console.log('');
+  const renderHeader = () => {
+    const status = config.getStatus();
+    fishBox('🐟 AZERCLAW', [
+      chalk.dim('  Type your message and press Enter. Type / for commands.'),
+      '',
+      `  ${chalk.hex('#818cf8')('Provider:')}  ${chalk.hex('#34d399')(status.provider)}  ${chalk.hex('#818cf8')('Model:')}  ${chalk.hex('#34d399')(status.model)}`,
+      status.fallback ? `  ${chalk.hex('#818cf8')('Fallback:')}  ${chalk.hex('#34d399')(status.fallback)}` : '',
+      '',
+      LUXE('  ><(((º>  Ready to assist'),
+    ].filter(Boolean));
+    console.log('');
+  };
+
+  renderHeader();
+
+  // Watch for external config changes (app sync)
+  config.watch();
+  config.on('change', () => {
+    const { resetRouter } = require('../../providers/router');
+    resetRouter();
+    // Silently updated runtime config
+  });
 
   const rl = readline.createInterface({
     input: process.stdin,

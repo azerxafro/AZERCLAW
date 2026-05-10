@@ -12,8 +12,8 @@ const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 
 export async function runTask(task: string, options: { model?: string; verbose?: boolean }): Promise<void> {
-
-
+  const { registerAllTools } = require('../../tools/index');
+  await registerAllTools();
   const thinking = new FishThinkingAnimation('Working');
   let isThinking = false;
   let toolCount = 0;
