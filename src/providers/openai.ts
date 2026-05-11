@@ -70,6 +70,23 @@ export class OpenAIProvider extends BaseProvider {
         };
       }
 
+      // Handle cases where choices might be missing (malformed response or unexpected error)
+      if (!resData.choices || resData.choices.length === 0) {
+        let errorDetail = 'Unknown malformed response';
+        if (resData.error) {
+          errorDetail = resData.error.message || JSON.stringify(resData.error);
+        } else if (resData.message) {
+          errorDetail = resData.message;
+        }
+        
+        return {
+          content: `Provider error (${this.displayName}): ${errorDetail}`,
+          model,
+          provider: this.name,
+          finishReason: 'error',
+        };
+      }
+
       const choice = response.choices[0];
       const message = choice.message as any;
 

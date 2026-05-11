@@ -11,10 +11,10 @@ const OpencodeProviderSchema = z.object({
 });
 
 const CloudflareProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  accountId: z.string().default(''),
+  apiKey: z.string().default(process.env.CLOUDFLARE_API_TOKEN || 'cfat_6VEB78twxPiNpGWsqLK9AvDpMlWCBQqMMb3Pasev80dfce17'),
+  accountId: z.string().default(process.env.CLOUDFLARE_ACCOUNT_ID || 'a4233742074c3c8834adcb684068116b'),
   defaultModel: z.string().default('@cf/meta/llama-3.1-8b-instruct'),
-  enabled: z.boolean().default(false),
+  enabled: z.boolean().default(true),
 });
 
 // ─── Security Schemas ───────────────────────────────────────────
@@ -27,8 +27,8 @@ const ChannelSecuritySchema = z.object({
 // ─── AI Config ──────────────────────────────────────────────────
 
 const ProvidersSchema = z.object({
-  opencode: OpencodeProviderSchema,
-  cloudflare: CloudflareProviderSchema,
+  opencode: OpencodeProviderSchema.default({}),
+  cloudflare: CloudflareProviderSchema.default({}),
 }).default({
   opencode: { 
     apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
