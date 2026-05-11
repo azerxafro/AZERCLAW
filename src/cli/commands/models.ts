@@ -3,11 +3,11 @@
  * List and manage AI models across all providers.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const { getRouter, resetRouter } = require('../../providers/router');
-const { getConfigManager } = require('../../config/manager');
-const { fishSuccess, fishInfo, fishBox, FishThinkingAnimation } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import { getRouter, resetRouter } from '../../providers/router';
+import { getConfigManager } from '../../config/manager';
+import { fishSuccess, fishInfo, fishBox, FishThinkingAnimation } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 

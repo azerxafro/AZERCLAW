@@ -194,7 +194,7 @@ export async function runChat(options: { model?: string; provider?: string; init
     }
 
     // Trigger Dropdown Menu on typing '/'
-    if (!isDropdownOpen && str === '/' && rl.line.trim() === '/') {
+    if (!isDropdownOpen && str === '/' && (rl.line.trim() === '/' || rl.line.trim() === '')) {
       isDropdownOpen = true;
       
       // Pause readline to prevent interference
@@ -218,7 +218,11 @@ export async function runChat(options: { model?: string; provider?: string; init
         rl.resume();
         // Manually trigger the line event with the selected command
         rl.emit('line', answer);
-      } catch (e) {
+      } catch (e: any) {
+        // Enquirer throws an empty string when aborted, log if it's a real error
+        if (e && e.message) {
+          console.error(chalk.red(`\n[Dropdown Error] ${e.message}`));
+        }
         isDropdownOpen = false;
         rl.resume();
         console.log('');
@@ -295,11 +299,10 @@ export async function runChat(options: { model?: string; provider?: string; init
           if (event.type === 'response' && event.content) {
             console.log('');
             console.log(chalk.hex('#c4b5fd')(`  ┌─ ${agentDef.emoji} ${agentDef.codename}`));
-            const lines = event.content.split('\n');
-            for (const l of lines) {
-              const formattedLine = l.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
-              console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
-            }
+            const { renderMarkdown } = require('../animations/markdown');
+            const rendered = renderMarkdown(event.content);
+            const indented = rendered.split('\n').map((l: string) => '    ' + l).join('\n');
+            console.log(indented);
             console.log(chalk.hex('#c4b5fd')('  └─'));
             console.log('');
           }

@@ -9,6 +9,7 @@
 const chalk = require('chalk');
 const gradientString = require('gradient-string');
 const readline = require('readline');
+const { AutoComplete, Select } = require('enquirer');
 const { AgentRuntime } = require('../../core/runtime');
 const { getConfigManager } = require('../../config/manager');
 const { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } = require('../animations/fish');
@@ -171,15 +172,13 @@ export async function runTUI(): Promise<void> {
           if (isThinking) { thinking.stop(); isThinking = false; }
           if (event.content) {
             messageCount++;
-            // Render response in a styled box
-            const width = Math.min(75, (process.stdout.columns || 80) - 4);
             console.log('');
             console.log(T.borderActive(`  ╭─ 🐟 `) + T.highlight('AZERCLAW'));
-            const lines = event.content.split('\n');
-            for (const line of lines) {
-              const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
-              console.log(T.borderActive('  │ ') + T.text(formattedLine));
-            }
+            const { renderMarkdown } = require('../animations/markdown');
+            const rendered = renderMarkdown(event.content);
+            // Indent the rendered markdown slightly for a cleaner look
+            const indented = rendered.split('\n').map((l: string) => '    ' + l).join('\n');
+            console.log(indented);
             console.log(T.borderActive('  ╰─'));
             console.log('');
           }
@@ -218,11 +217,78 @@ export async function runTUI(): Promise<void> {
     process.stdout.write('\x1b[u'); // restore cursor
   });
 
+  const commands = [
+    '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
+    '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
+    '/dashboard', '/share', '/export', '/plugins', '/tts',
+    '/HOMELANDER', '/FRENCHIE', '/MOTHERS_MILK', '/BLACK_NOIR', '/A_TRAIN', 
+    '/TECH_KNIGHT', '/ASHLEY', '/SISTER_SAGE', '/BUTCHER', '/DOPPELGANGER', '/STAN_EDGAR', '/THE_DEEP'
+  ];
+
+  const completer = (line: string) => {
+    const hits = commands.filter((c) => c.startsWith(line));
+    return [hits.length ? hits : commands, line];
+  };
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     prompt: NEON('\n  ⟫ '),
     terminal: true,
+    completer,
+  });
+
+  let isDropdownOpen = false;
+
+  readline.emitKeypressEvents(process.stdin);
+  if (process.stdin.isTTY) {
+    process.stdin.setRawMode(true);
+  }
+
+  process.stdin.on('keypress', async (str: string, key: any) => {
+    if (key.name === 'escape') {
+      if (isThinking) {
+        agent.abort();
+        thinking.stop('Aborted by user (ESC)');
+        isThinking = false;
+        rl.prompt();
+      }
+    }
+    
+    if (key.ctrl && key.name === 'c') {
+      process.exit(0);
+    }
+
+    if (!isDropdownOpen && str === '/' && (rl.line.trim() === '/' || rl.line.trim() === '')) {
+      isDropdownOpen = true;
+      rl.pause();
+      
+      readline.moveCursor(process.stdout, -rl.line.length, 0);
+      readline.clearLine(process.stdout, 1);
+      rl.write(null, {ctrl: true, name: 'u'});
+      
+      try {
+        const prompt = new AutoComplete({
+          name: 'command',
+          message: 'Select a command:',
+          limit: 10,
+          choices: commands
+        });
+        
+        const answer = await prompt.run();
+        isDropdownOpen = false;
+        rl.resume();
+        rl.emit('line', answer);
+      } catch (e: any) {
+        if (e && e.message) {
+          console.error(chalk.red(`\n[Dropdown Error] ${e.message}`));
+        }
+        isDropdownOpen = false;
+        rl.resume();
+        console.log('');
+        rl.prompt();
+      }
+    }
   });
 
   rl.prompt();
@@ -269,10 +335,10 @@ export async function runTUI(): Promise<void> {
           if (event.type === 'response' && event.content) {
             console.log('');
             console.log(T.borderActive(`  ╭─ ${agentDef.emoji} `) + T.highlight(agentDef.codename));
-            for (const l of event.content.split('\n')) {
-              const formattedLine = l.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
-              console.log(T.borderActive('  │ ') + T.text(formattedLine));
-            }
+            const { renderMarkdown } = require('../animations/markdown');
+            const rendered = renderMarkdown(event.content);
+            const indented = rendered.split('\n').map((l: string) => '    ' + l).join('\n');
+            console.log(indented);
             console.log(T.borderActive('  ╰─'));
             console.log('');
           }

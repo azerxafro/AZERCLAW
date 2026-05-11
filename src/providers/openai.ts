@@ -216,14 +216,24 @@ export class OpenAIProvider extends BaseProvider {
     }
   }
 
-  private formatMessages(options: CompletionOptions): ChatMessage[] {
-    const messages: ChatMessage[] = [];
+  private formatMessages(options: CompletionOptions): any[] {
+    const messages: any[] = [];
     
     if (options.systemPrompt) {
       messages.push({ role: 'system', content: options.systemPrompt });
     }
     
-    messages.push(...options.messages);
+    for (const msg of options.messages) {
+      const formattedMsg: any = {
+        role: msg.role,
+        content: msg.content,
+      };
+      if (msg.name) formattedMsg.name = msg.name;
+      if (msg.toolCallId) formattedMsg.tool_call_id = msg.toolCallId;
+      if (msg.toolCalls) formattedMsg.tool_calls = msg.toolCalls;
+      
+      messages.push(formattedMsg);
+    }
     return messages;
   }
 

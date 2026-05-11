@@ -23,7 +23,7 @@ export class VoughtHQ {
     this.app.use(express.static(path.join(process.cwd(), 'dist/dashboard')));
     
     // Fallback for SPA
-    this.app.get('*', (req, res) => {
+    this.app.use((req, res) => {
       res.sendFile(path.join(process.cwd(), 'dist/dashboard/index.html'));
     });
   }

@@ -1,6 +1,6 @@
 {
   "name": "azerclaw",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "🐟 AZERCLAW — Open-source, BYOK AI agent for your terminal. Your AI, Your Keys, Your Way.",
   "main": "dist/src/index.js",
   "bin": {
@@ -85,6 +85,8 @@
     "gradient-string": "^2.0.2",
     "log-symbols": "^4.1.0",
     "lowdb": "^6.1.1",
+    "marked": "^15.0.12",
+    "marked-terminal": "^7.3.0",
     "nanoid": "^3.3.11",
     "node-fetch": "^3.3.2",
     "openai": "^4.97.0",
@@ -99,6 +101,8 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/gradient-string": "^1.1.6",
+    "@types/marked-terminal": "^6.1.1",
     "@types/node": "^22.19.18",
     "@types/pdfkit": "^0.17.6",
     "@types/ws": "^8.18.1",
