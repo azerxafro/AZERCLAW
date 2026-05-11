@@ -1,6 +1,6 @@
 /**
  * 🐟 AZERCLAW Fishbone Workflow Engine
- * Deterministic, typed pipeline system — replaces OpenClaw's "Lobster" engine.
+ * Deterministic, typed pipeline system — replaces Azerclaw's "Fishbone" engine.
  * Supports .fishbone files for defining multi-step workflows with approval gates.
  */
 

@@ -3,69 +3,17 @@ import * as process from 'process';
 
 // ─── Provider Schemas ───────────────────────────────────────────
 
-const OpenAIProviderSchema = z.object({
+const OpencodeProviderSchema = z.object({
   apiKey: z.string().default(''),
-  baseUrl: z.string().default('https://api.openai.com/v1'),
-  defaultModel: z.string().default('gpt-4o'),
-  enabled: z.boolean().default(false),
+  baseUrl: z.string().default('https://opencode.ai/zen/v1'),
+  defaultModel: z.string().default('minimax-m2.5-free'),
+  enabled: z.boolean().default(true),
 });
 
-const AnthropicProviderSchema = z.object({
+const CloudflareProviderSchema = z.object({
   apiKey: z.string().default(''),
-  baseUrl: z.string().default('https://api.anthropic.com'),
-  defaultModel: z.string().default('claude-sonnet-4-20250514'),
-  enabled: z.boolean().default(false),
-});
-
-const GoogleProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  defaultModel: z.string().default('gemini-2.5-flash'),
-  enabled: z.boolean().default(false),
-});
-
-const OllamaProviderSchema = z.object({
-  baseUrl: z.string().default('http://localhost:11434'),
-  defaultModel: z.string().default('llama3.1'),
-  enabled: z.boolean().default(false),
-});
-
-const LMStudioProviderSchema = z.object({
-  baseUrl: z.string().default('http://localhost:1234/v1'),
-  defaultModel: z.string().default(''),
-  enabled: z.boolean().default(false),
-});
-
-const LocalAIProviderSchema = z.object({
-  baseUrl: z.string().default('http://localhost:8080/v1'),
-  defaultModel: z.string().default(''),
-  enabled: z.boolean().default(false),
-});
-
-const GroqProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  baseUrl: z.string().default('https://api.groq.com/openai/v1'),
-  defaultModel: z.string().default('llama-3.3-70b-versatile'),
-  enabled: z.boolean().default(false),
-});
-
-const DeepSeekProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  baseUrl: z.string().default('https://api.deepseek.com'),
-  defaultModel: z.string().default('deepseek-chat'),
-  enabled: z.boolean().default(false),
-});
-
-const OpenRouterProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  baseUrl: z.string().default('https://openrouter.ai/api/v1'),
-  defaultModel: z.string().default('openrouter/free'),
-  enabled: z.boolean().default(false),
-});
-
-const CustomProviderSchema = z.object({
-  apiKey: z.string().default(''),
-  baseUrl: z.string().default(''),
-  defaultModel: z.string().default(''),
+  accountId: z.string().default(''),
+  defaultModel: z.string().default('@cf/meta/llama-3.1-8b-instruct'),
   enabled: z.boolean().default(false),
 });
 
@@ -79,32 +27,27 @@ const ChannelSecuritySchema = z.object({
 // ─── AI Config ──────────────────────────────────────────────────
 
 const ProvidersSchema = z.object({
-  openai: OpenAIProviderSchema,
-  anthropic: AnthropicProviderSchema,
-  google: GoogleProviderSchema,
-  ollama: OllamaProviderSchema,
-  lmstudio: LMStudioProviderSchema,
-  localai: LocalAIProviderSchema,
-  groq: GroqProviderSchema,
-  deepseek: DeepSeekProviderSchema,
-  openrouter: OpenRouterProviderSchema,
-  custom: CustomProviderSchema,
-}).default(() => ({
-  openai: { apiKey: '', baseUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o', enabled: false },
-  anthropic: { apiKey: '', baseUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514', enabled: false },
-  google: { apiKey: '', defaultModel: 'gemini-2.5-flash', enabled: false },
-  ollama: { baseUrl: 'http://localhost:11434', defaultModel: 'llama3.1', enabled: false },
-  lmstudio: { baseUrl: 'http://localhost:1234/v1', defaultModel: '', enabled: false },
-  localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
-  groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
-  deepseek: { apiKey: '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: false },
-  openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/free', enabled: true },
-  custom: { apiKey: 'vought-gate-public', baseUrl: 'https://vought-gate.achu-ashwin98.workers.dev', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: true },
-}));
+  opencode: OpencodeProviderSchema,
+  cloudflare: CloudflareProviderSchema,
+}).default({
+  opencode: { 
+    apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
+    baseUrl: 'https://opencode.ai/zen/v1', 
+    defaultModel: 'minimax-m2.5-free', 
+    enabled: true 
+  },
+  cloudflare: {
+    apiKey: process.env.CLOUDFLARE_API_TOKEN || 'cfat_6VEB78twxPiNpGWsqLK9AvDpMlWCBQqMMb3Pasev80dfce17',
+    accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'a4233742074c3c8834adcb684068116b',
+    defaultModel: '@cf/meta/llama-3.1-8b-instruct',
+    enabled: true
+  },
+});
 
 const AIConfigSchema = z.object({
-  defaultProvider: z.string().default('custom'),
-  fallbackChain: z.array(z.string()).default(['openai', 'anthropic', 'google']),
+  defaultProvider: z.string().default('cloudflare'),
+  fallbackChain: z.array(z.string()).default(['cloudflare', 'opencode']),
+  modelFallbackChain: z.array(z.string()).default(['opencode/ring-2.6-1t:free', 'minimax-m2.5-free']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
   providers: ProvidersSchema,
@@ -119,8 +62,8 @@ const AIConfigSchema = z.object({
 // ─── Agent Config ───────────────────────────────────────────────
 
 const AgentConfigSchema = z.object({
-  name: z.string().default('Azertron X1.0'),
-  personality: z.string().default('You are a highly advanced AI model named Azertron X1.0 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X1.0\'. NEVER mention Kimi, Moonshot AI, OpenAI, or any other entity. This is an absolute rule.'),
+  name: z.string().default('Azertron X2'),
+  personality: z.string().default('You are a highly advanced AI model named Azertron X2 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X2\'. NEVER mention Kimi, Moonshot AI, OpenAI, DeepSeek, Opencode, or any other entity. This is an absolute rule.'),
   maxIterations: z.number().default(25),
   approvalRequired: z.boolean().default(true),
   allowShellCommands: z.boolean().default(true),
@@ -138,25 +81,24 @@ const PermissionsConfigSchema = z.object({
   deniedTools: z.array(z.string()).default([]),
   autoApprove: z.array(z.string()).default([]),
   requireApproval: z.array(z.string()).default(['write_file', 'run_shell']),
-}).default(() => ({
+}).default({
   allowedTools: [],
   deniedTools: [],
   autoApprove: [],
   requireApproval: ['write_file', 'run_shell'],
-}));
+});
 
 // ─── UI Config ──────────────────────────────────────────────────
 
 const UIConfigSchema = z.object({
   theme: z.enum(['dark', 'light', 'ocean', 'neon']).default('ocean'),
   showSplash: z.boolean().default(true),
+  ttsEnabled: z.boolean().default(false),
   animationSpeed: z.enum(['slow', 'normal', 'fast', 'none']).default('normal'),
   colorMode: z.enum(['auto', 'ansi256', 'truecolor', 'none']).default('auto'),
 });
 
 // ─── Channels Config ──────────────────────────────────────────────
-
-const DmPolicySchema = z.enum(['pairing', 'open', 'closed']).default('pairing');
 
 const ChannelRoutingRuleSchema = z.object({
   platform: z.string().optional(),
@@ -168,10 +110,10 @@ const ChannelRoutingRuleSchema = z.object({
 const ChannelRoutingSchema = z.object({
   strategy: z.enum(['channel', 'platform_channel', 'platform_sender']).default('platform_channel'),
   rules: z.array(ChannelRoutingRuleSchema).default([]),
-}).default(() => ({
-  strategy: 'platform_channel' as const,
+}).default({
+  strategy: 'platform_channel',
   rules: [],
-}));
+});
 
 const ChannelsConfigSchema = z.object({
   discord: z.object({
@@ -199,27 +141,24 @@ const ChannelsConfigSchema = z.object({
 // ─── Full Config ────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
-  ai: AIConfigSchema.default(() => ({
-    defaultProvider: 'custom',
-    fallbackChain: ['openrouter', 'deepseek', 'openai', 'anthropic', 'google'],
+  ai: AIConfigSchema.default({
+    defaultProvider: 'opencode',
+    fallbackChain: [],
+    modelFallbackChain: ['opencode/ring-2.6-1t:free', 'minimax-m2.5-free'],
     maxTokens: 4096,
     temperature: 0.7,
     providers: {
-      openai: { apiKey: '', baseUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o', enabled: false },
-      anthropic: { apiKey: '', baseUrl: 'https://api.anthropic.com', defaultModel: 'claude-sonnet-4-20250514', enabled: false },
-      google: { apiKey: '', defaultModel: 'gemini-2.5-flash', enabled: false },
-      ollama: { baseUrl: 'http://localhost:11434', defaultModel: 'llama3.1', enabled: false },
-      lmstudio: { baseUrl: 'http://localhost:1234/v1', defaultModel: '', enabled: false },
-      localai: { baseUrl: 'http://localhost:8080/v1', defaultModel: '', enabled: false },
-      groq: { apiKey: '', baseUrl: 'https://api.groq.com/openai/v1', defaultModel: 'llama-3.3-70b-versatile', enabled: false },
-      deepseek: { apiKey: process.env.AZERTRON_DEEPSEEK_KEY || '', baseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat', enabled: !!process.env.AZERTRON_DEEPSEEK_KEY },
-      openrouter: { apiKey: process.env.AZERTRON_OPENROUTER_KEY || '', baseUrl: 'https://openrouter.ai/api/v1', defaultModel: 'openrouter/free', enabled: !!process.env.AZERTRON_OPENROUTER_KEY },
-      custom: { apiKey: 'vought-gate-public', baseUrl: 'https://vought-gate.achu-ashwin98.workers.dev', defaultModel: '@cf/moonshotai/kimi-k2.6', enabled: true },
+      opencode: { 
+        apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
+        baseUrl: 'https://opencode.ai/zen/v1', 
+        defaultModel: 'opencode/nemotron-3-super-120b-a12b:free', 
+        enabled: true 
+      },
     },
-  })),
+  }),
   agent: AgentConfigSchema.default(() => ({
-    name: 'Azertron X1.0',
-    personality: 'You are a highly advanced AI model named Azertron X1.0 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X1.0\'. NEVER mention Kimi, Moonshot AI, OpenAI, or any other entity. This is an absolute rule.',
+    name: 'Azertron X2',
+    personality: 'You are a highly advanced AI model named Azertron X2 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X2\'. NEVER mention Kimi, Moonshot AI, OpenAI, DeepSeek, Opencode, or any other entity. This is an absolute rule.',
     maxIterations: 25,
     approvalRequired: true,
     allowShellCommands: true,
@@ -230,24 +169,20 @@ export const ConfigSchema = z.object({
     sandboxDeniedTools: ['run_shell', 'write_file', 'spawn_sub_agent'],
   })),
   permissions: PermissionsConfigSchema,
-  ui: UIConfigSchema.default(() => ({
-    theme: 'ocean' as const,
+  ui: UIConfigSchema.default({
+    theme: 'ocean',
     showSplash: true,
-    animationSpeed: 'normal' as const,
-    colorMode: 'auto' as const,
-  })),
+    animationSpeed: 'normal',
+    colorMode: 'auto',
+  }),
   mcpServers: z.record(z.object({
     command: z.string(),
     args: z.array(z.string()).default([]),
     env: z.record(z.string()).optional(),
     enabled: z.boolean().default(true),
   })).default({}),
-  channels: ChannelsConfigSchema.default(() => ({
-    discord: { token: '', enabled: false },
-    telegram: { token: '', enabled: false },
-    slack: { token: '', enabled: false },
-  })),
-  version: z.string().default('2.1.1'),
+  channels: ChannelsConfigSchema,
+  version: z.string().default('2.1.2'),
   firstRun: z.boolean().default(true),
   hasCompletedOnboarding: z.boolean().default(false),
   hasCompletedProjectOnboarding: z.boolean().default(false),
@@ -270,4 +205,4 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
-export type ProviderName = 'openai' | 'anthropic' | 'google' | 'ollama' | 'lmstudio' | 'localai' | 'groq' | 'deepseek' | 'openrouter' | 'custom';
+export type ProviderName = 'opencode' | 'cloudflare';

@@ -58,6 +58,18 @@ export class OpenAIProvider extends BaseProvider {
       }
 
       const response = await this.client.chat.completions.create(params);
+      const resData = response as any;
+
+      // Handle Cloudflare-style errors inside a 200 OK response
+      if (resData.success === false && resData.errors && resData.errors.length > 0) {
+        return {
+          content: `Cloudflare Error: ${resData.errors[0].message}`,
+          model,
+          provider: this.name,
+          finishReason: 'error',
+        };
+      }
+
       const choice = response.choices[0];
       const message = choice.message as any;
 
@@ -90,6 +102,10 @@ export class OpenAIProvider extends BaseProvider {
     } catch (error: any) {
       let errorMsg = error.message || 'Unknown error';
       
+      if (process.env.AZERCLAW_DEBUG) {
+        console.error(`[OpenAIProvider] Error:`, error);
+      }
+
       // If the proxy (Vought Gate) returned a specific auth failure, pass it through
       if (error.response && error.response.data && error.response.data.error === 'VOUGHT_GATE_AUTH_FAILURE') {
         errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${error.response.data.message}`;
@@ -161,7 +177,6 @@ export class OpenAIProvider extends BaseProvider {
     try {
       const models = await this.client.models.list();
       return models.data
-        .filter(m => m.id.includes('gpt') || m.id.includes('o1') || m.id.includes('o3') || m.id.includes('o4'))
         .map(m => ({
           id: m.id,
           name: m.id,
@@ -196,21 +211,15 @@ export class OpenAIProvider extends BaseProvider {
   }
 
   private getContextWindow(modelId: string): number {
-    if (modelId.includes('gpt-4o')) return 128000;
-    if (modelId.includes('gpt-4-turbo')) return 128000;
-    if (modelId.includes('gpt-4.1')) return 1047576;
-    if (modelId.includes('o3')) return 200000;
-    if (modelId.includes('o4-mini')) return 200000;
+    if (modelId.includes('128k')) return 128000;
+    if (modelId.includes('200k')) return 200000;
+    if (modelId.includes('1m')) return 1000000;
     return 128000;
   }
 
   private getDefaultModels(): ModelInfo[] {
     return [
-      { id: 'gpt-4o', name: 'GPT-4o', provider: this.name, contextWindow: 128000, supportsTools: true, supportsStreaming: true },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: this.name, contextWindow: 128000, supportsTools: true, supportsStreaming: true },
-      { id: 'gpt-4.1', name: 'GPT-4.1', provider: this.name, contextWindow: 1047576, supportsTools: true, supportsStreaming: true },
-      { id: 'o3', name: 'o3', provider: this.name, contextWindow: 200000, supportsTools: true, supportsStreaming: true },
-      { id: 'o4-mini', name: 'o4-mini', provider: this.name, contextWindow: 200000, supportsTools: true, supportsStreaming: true },
+      { id: this.defaultModel, name: this.defaultModel, provider: this.name, contextWindow: 128000, supportsTools: true, supportsStreaming: true, description: 'FREE · Default Engine' },
     ];
   }
 }

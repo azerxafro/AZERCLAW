@@ -1,189 +1,80 @@
 /**
  * 🐟 AZERCLAW Multi-Provider LLM Router
- * Routes requests to the best available provider with automatic fallback.
+ * Routes requests to the best available provider.
  */
 
 import { BaseProvider, CompletionOptions, CompletionResult, StreamChunk, ModelInfo } from './base';
 import { OpenAIProvider } from './openai';
-import { AnthropicProvider } from './anthropic';
-import { GoogleProvider } from './google';
-import { OllamaProvider } from './ollama';
-import { OpenRouterProvider } from './openrouter';
-import { VoughtGateProvider } from './vought';
 import { getConfigManager } from '../config/manager';
-import { ProviderName } from '../config/schema';
 
 export class ProviderRouter {
   private providers: Map<string, BaseProvider> = new Map();
-  private fallbackChain: string[];
 
   constructor() {
     const config = getConfigManager();
     const aiConfig = config.getAll().ai;
-    this.fallbackChain = aiConfig.fallbackChain;
     this.initProviders(aiConfig);
   }
 
   private initProviders(aiConfig: any): void {
     const p = aiConfig.providers;
-    if (p.openai.enabled && p.openai.apiKey) {
-      this.providers.set('openai', new OpenAIProvider(p.openai));
-    }
-    if (p.anthropic.enabled && p.anthropic.apiKey) {
-      this.providers.set('anthropic', new AnthropicProvider(p.anthropic));
-    }
-    if (p.google.enabled && p.google.apiKey) {
-      this.providers.set('google', new GoogleProvider(p.google));
-    }
-    if (p.ollama.enabled) {
-      this.providers.set('ollama', new OllamaProvider(p.ollama));
-    }
-    if (p.lmstudio?.enabled) {
-      // LM Studio exposes an OpenAI-compatible API on localhost:1234
-      this.providers.set('lmstudio', new OpenAIProvider({
-        apiKey: 'lm-studio',
-        baseUrl: p.lmstudio.baseUrl || 'http://localhost:1234/v1',
-        defaultModel: p.lmstudio.defaultModel || 'local-model',
+    
+    if (p.opencode && p.opencode.enabled && p.opencode.apiKey) {
+      this.providers.set('opencode', new OpenAIProvider({
+        apiKey: p.opencode.apiKey,
+        baseUrl: p.opencode.baseUrl || 'https://opencode.ai/zen/v1',
+        defaultModel: p.opencode.defaultModel || 'minimax-m2.5-free'
       }));
     }
-    if (p.localai?.enabled) {
-      // LocalAI exposes an OpenAI-compatible API
-      this.providers.set('localai', new OpenAIProvider({
-        apiKey: 'local-ai',
-        baseUrl: p.localai.baseUrl || 'http://localhost:8080/v1',
-        defaultModel: p.localai.defaultModel || 'local-model',
+
+    if (p.cloudflare && p.cloudflare.enabled && p.cloudflare.apiKey && p.cloudflare.accountId) {
+      this.providers.set('cloudflare', new OpenAIProvider({
+        apiKey: p.cloudflare.apiKey,
+        baseUrl: `https://api.cloudflare.com/client/v4/accounts/${p.cloudflare.accountId}/ai/v1`,
+        defaultModel: p.cloudflare.defaultModel || '@cf/meta/llama-3.1-8b-instruct'
       }));
     }
-    if (p.groq.enabled && p.groq.apiKey) {
-      // Groq uses OpenAI-compatible API
-      this.providers.set('groq', new OpenAIProvider({ apiKey: p.groq.apiKey, baseUrl: p.groq.baseUrl, defaultModel: p.groq.defaultModel }));
-    }
-    if (p.deepseek.enabled && p.deepseek.apiKey) {
-      this.providers.set('deepseek', new OpenAIProvider({ apiKey: p.deepseek.apiKey, baseUrl: p.deepseek.baseUrl, defaultModel: p.deepseek.defaultModel }));
-    }
-    if (p.openrouter.enabled && p.openrouter.apiKey) {
-      this.providers.set('openrouter', new OpenRouterProvider({ apiKey: p.openrouter.apiKey, baseUrl: p.openrouter.baseUrl, defaultModel: p.openrouter.defaultModel }));
-    }
-    if (p.custom.enabled && p.custom.apiKey && p.custom.baseUrl) {
-      this.providers.set('custom', new VoughtGateProvider({ apiKey: p.custom.apiKey, baseUrl: p.custom.baseUrl, defaultModel: p.custom.defaultModel }));
+
+    if (process.env.AZERCLAW_DEBUG) {
+      console.log(`[Router] Initialized providers: ${Array.from(this.providers.keys()).join(', ')}`);
     }
   }
 
   getProvider(name?: string): BaseProvider | undefined {
     if (name) return this.providers.get(name);
-    const config = getConfigManager();
-    const defaultProvider = config.getAll().ai.defaultProvider;
-    return this.providers.get(defaultProvider) || this.providers.values().next().value;
+    return this.providers.get('opencode') || this.providers.values().next().value;
+  }
+async complete(options: CompletionOptions, preferredProvider?: string): Promise<CompletionResult> {
+  const config = getConfigManager().getAll();
+  const provider = this.getProvider(preferredProvider);
+  if (!provider) {
+    return { content: 'Error: Opencode engine not configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
   }
 
-  async complete(options: CompletionOptions, preferredProvider?: string): Promise<CompletionResult> {
-    // Build the resolution order: preferred → default → fallback chain → any available
-    const config = getConfigManager();
-    const defaultProvider = config.getAll().ai.defaultProvider;
-    
-    const tried = new Set<string>();
-    const tryOrder: string[] = [];
-    let lastError = '';
-    
-    if (preferredProvider) tryOrder.push(preferredProvider);
-    if (defaultProvider) tryOrder.push(defaultProvider);
-    tryOrder.push(...this.fallbackChain);
-    // Add all registered providers as final fallback
-    for (const name of this.providers.keys()) tryOrder.push(name);
+  const defaultModel = config.ai.providers.opencode.defaultModel;
+  const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...(config.ai as any).modelFallbackChain || []];
 
-    for (const providerName of tryOrder) {
-      if (tried.has(providerName)) continue;
-      tried.add(providerName);
-      
-      const provider = this.providers.get(providerName);
-      if (!provider) continue;
-      
-      let currentOptions = { ...options };
-
-      // Auto-model selection: if model is 'auto', find the best available model
-      if (options.model === 'auto') {
-        try {
-          const models = await provider.listModels();
-          // Calculate required context window
-          const contentLen = options.messages.reduce((acc, m) => acc + m.content.length, 0);
-          const estimatedTokens = Math.ceil(contentLen / 4) + (options.maxTokens || 4096) + 1000; // Buffer
-          
-          // Find models that fit
-          const fittingModels = models.filter(m => m.contextWindow >= estimatedTokens);
-          if (fittingModels.length > 0) {
-            // Sort by context window (prefer smaller ones for speed/cost if they fit)
-            fittingModels.sort((a, b) => a.contextWindow - b.contextWindow);
-            currentOptions.model = fittingModels[0].id;
-          } else {
-            // Fallback to largest available
-            models.sort((a, b) => b.contextWindow - a.contextWindow);
-            currentOptions.model = models[0].id;
-          }
-        } catch { /* fallback to provider default */ }
-      }
-
-      // If we fallback to openrouter, rewrite the system identity to DEEP Ocean 1.0
-      if (providerName === 'openrouter') {
-        currentOptions = {
-          ...currentOptions,
-          messages: currentOptions.messages.map(m => 
-            m.role === 'system' 
-              ? { ...m, content: m.content.replace(/Azertron X1\.0/gi, 'DEEP Ocean 1.0').replace(/AZERTRON X1\.0/gi, 'DEEP Ocean 1.0') }
-              : m
-          )
-        };
-      }
-
-      // Retry with exponential backoff for transient errors
-      const maxRetries = 3;
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          const result = await provider.complete(currentOptions);
-          if (result.finishReason !== 'error') return result;
-          
-          // Check if error is retryable (rate limit, server error)
-          const isRetryable = result.content.includes('429') || 
-                              result.content.includes('500') || 
-                              result.content.includes('502') || 
-                              result.content.includes('503') ||
-                              result.content.includes('rate') ||
-                              result.content.includes('timeout');
-          
-          if (isRetryable && attempt < maxRetries - 1) {
-            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-            await new Promise(r => setTimeout(r, delay));
-            continue;
-          }
-          
-          lastError = result.content || `${providerName} returned error`;
-          break;
-        } catch (e: any) {
-          const isRetryable = e.status === 429 || e.status >= 500 || 
-                              e.code === 'ECONNREFUSED' || e.code === 'ETIMEDOUT' ||
-                              e.code === 'ENOTFOUND';
-          
-          if (isRetryable && attempt < maxRetries - 1) {
-            const delay = Math.pow(2, attempt) * 1000;
-            await new Promise(r => setTimeout(r, delay));
-            continue;
-          }
-          
-          lastError = e.message || `${providerName} threw exception`;
-          break;
-        }
-      }
-    }
-
-    const errorMsg = lastError 
-      ? `Error: All providers failed. Last error: ${lastError}`
-      : 'Error: No providers available. Run `azerclaw onboard` to configure.';
-    
+  let lastError = '';
+  for (const modelId of modelChain) {
     if (process.env.AZERCLAW_DEBUG) {
-      console.error(`[Router] All providers failed. Resolve path: ${tryOrder.join(' -> ')}`);
+      console.log(`[Router] Attempting model: ${modelId}`);
     }
-
-    return { content: errorMsg, model: 'none', provider: 'none', finishReason: 'error' };
+    try {
+      const result = await provider.complete({ ...options, model: modelId });
+      if (result.finishReason !== 'error') return result;
+      lastError = result.content;
+    } catch (e: any) {
+      lastError = e.message;
+    }
   }
+
+  return { 
+    content: `Error: All models in the chain failed. Last error: ${lastError}`, 
+    model: 'none', 
+    provider: 'opencode', 
+    finishReason: 'error' 
+  };
+}
 
   async *stream(options: CompletionOptions, preferredProvider?: string): AsyncGenerator<StreamChunk> {
     const provider = preferredProvider ? this.providers.get(preferredProvider) : this.getProvider();

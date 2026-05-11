@@ -1,6 +1,6 @@
 /**
  * 🐟 AZERCLAW Skills System
- * Load and execute SKILL.md files compatible with the OpenClaw ecosystem.
+ * Load and execute SKILL.md files compatible with the Azerclaw ecosystem.
  */
 
 import * as fs from 'fs';

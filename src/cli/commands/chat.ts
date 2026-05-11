@@ -2,7 +2,7 @@
  * 🐟 AZERCLAW Chat Command
  * Interactive conversational mode with streaming responses and tool use.
  * 
- * Slash commands (OpenClaw-style):
+ * Slash commands (Azerclaw-style):
  *   /help         — Show all commands
  *   /exit         — Exit session
  *   /clear        — Clear screen and context
@@ -148,7 +148,7 @@ export async function runChat(options: { model?: string; provider?: string; init
   const commands = [
     '/help', '/exit', '/clear', '/compact', '/model', '/provider', 
     '/apikey', '/fallback', '/config', '/status', '/init', '/agents',
-    '/dashboard', '/share', '/export', '/plugins',
+    '/dashboard', '/share', '/export', '/plugins', '/tts',
     '/HOMELANDER', '/FRENCHIE', '/MOTHERS_MILK', '/BLACK_NOIR', '/A_TRAIN', 
     '/TECH_KNIGHT', '/ASHLEY', '/SISTER_SAGE', '/BUTCHER', '/DOPPELGANGER', '/STAN_EDGAR', '/THE_DEEP'
   ];
@@ -407,6 +407,18 @@ export async function runChat(options: { model?: string; provider?: string; init
           initProject();
           break;
         }
+        case '/tts': {
+          const current = config.get('ui.ttsEnabled') as boolean;
+          config.set('ui.ttsEnabled', !current);
+          if (!current) {
+            fishSuccess('TTS Enabled 🔊');
+            const { speak } = require('../animations/fish');
+            speak('Voice engagement protocol active. Welcome back, Homelander.', 'HOMELANDER');
+          } else {
+            fishSuccess('TTS Disabled 🔇');
+          }
+          break;
+        }
         case '/history': {
           const recentSessions = sessionStore.getRecent(10);
           if (recentSessions.length === 0) {
@@ -523,6 +535,7 @@ export async function runChat(options: { model?: string; provider?: string; init
             chalk.hex('#60a5fa')('  /dashboard    ') + chalk.dim('— Launch Vought HQ'),
             chalk.hex('#60a5fa')('  /share        ') + chalk.dim('— Export session to MD'),
             chalk.hex('#60a5fa')('  /export       ') + chalk.dim('— Export mission to PDF'),
+            chalk.hex('#60a5fa')('  /tts          ') + chalk.dim('— Toggle character voices'),
             '',
             chalk.hex('#818cf8').bold('  Project'),
             chalk.hex('#60a5fa')('  /init         ') + chalk.dim('— Initialize project'),

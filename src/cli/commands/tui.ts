@@ -372,6 +372,18 @@ export async function runTUI(): Promise<void> {
           await listPlugins();
           break;
         }
+        case '/tts': {
+          const current = config.get('ui.ttsEnabled') as boolean;
+          config.set('ui.ttsEnabled', !current);
+          if (!current) {
+            T.success('TTS Enabled 🔊');
+            const { speak } = require('../animations/fish');
+            speak('Voice engagement protocol active. Welcome back, Homelander.', 'HOMELANDER');
+          } else {
+            T.success('TTS Disabled 🔇');
+          }
+          break;
+        }
         case '/agents': {
           const { formatAgentRoster } = require('../../agents/builtin');
           console.log('');
@@ -400,6 +412,8 @@ export async function runTUI(): Promise<void> {
             T.accent('  /status       ') + T.dim('Current status'),
             T.accent('  /dashboard    ') + T.dim('Launch Vought HQ'),
             T.accent('  /share        ') + T.dim('Export session to MD'),
+            T.accent('  /export       ') + T.dim('Export mission to PDF'),
+            T.accent('  /tts          ') + T.dim('Toggle character voices'),
             '',
             T.highlight('  Project'),
             T.accent('  /init         ') + T.dim('Initialize project (AZERCLAW.md)'),

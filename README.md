@@ -16,7 +16,7 @@
 [![BYOK](https://img.shields.io/badge/BYOK-Bring%20Your%20Own%20Key-red.svg)](#-byok-providers)
 
 *An autonomous, uncensored AI agent gateway for your terminal.*
-*Powered by **Azertron X1.0** (The Upgrade) and the **Compound V** Toolset.*
+*Powered by **Azertron X2** (The Upgrade) and the **Compound V** Toolset.*
 
 </div>
 
@@ -28,7 +28,7 @@ Azerclaw is not your average polite assistant. It's an autonomous force built fo
 
 | Feature | Description |
 |---|---|
-| 🧠 **Azertron X1.0** | Powered by the elite Azertron X1.0 backend (masked for maximum stealth). |
+| 🧠 **Azertron X2** | Powered by the official DeepSeek V3/R1 logic engine (native & ultra-fast). |
 | 🦸‍♂️ **The Pantheon** | 12 specialized sub-agents themed after **The Boys** (Homelander, Butcher, Frenchie). |
 | 🔌 **MCP Bridge** | Native support for **Model Context Protocol**. Connect to any external tool server. |
 | 🎮 **Interactive UI** | Pro-grade CLI with **`/` command dropdown** and animated fish logic. |
@@ -86,7 +86,7 @@ azerclaw mcp add github
 
 Azerclaw is **Bring Your Own Key**. We ship with a default Cloudflare configuration for instant access, but you can plug in any provider:
 
-*   **Cloudflare Workers AI** (Default: Azertron X1.0)
+*   **Cloudflare Workers AI** (Default: Azertron X2)
 *   **OpenRouter** (Fallback: DEEP Ocean 1.0)
 *   **Anthropic / OpenAI / Google / DeepSeek / Groq**
 *   **Ollama / LM Studio** (For 100% local dark ops)

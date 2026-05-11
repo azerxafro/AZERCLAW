@@ -1,7 +1,7 @@
 /**
  * 🐟 AZERCLAW Configuration Manager
  * 
- * Layered configuration system (Claude Code / OpenClaw style):
+ * Layered configuration system (Claude Code / Azerclaw style):
  *   1. CLI flags (--model, --provider) — runtime overrides
  *   2. Environment variables (OPENAI_API_KEY, etc.)
  *   3. Local project settings (.azerclaw/settings.local.json — gitignored)
@@ -90,6 +90,10 @@ class ConfigManager extends EventEmitter {
     }
     
     const defaults = ConfigSchema.parse({});
+    if (process.env.AZERCLAW_DEBUG) {
+      console.log(`[Config] Parsed Defaults opencode enabled: ${defaults.ai.providers.opencode.enabled}`);
+      console.log(`[Config] Parsed Defaults opencode key: ${defaults.ai.providers.opencode.apiKey.slice(0, 10)}...`);
+    }
     this.save(defaults);
     return defaults;
   }
@@ -482,19 +486,7 @@ class ConfigManager extends EventEmitter {
    */
   resolveEnvOverrides(): string[] {
     const envMap: Record<string, { provider: ProviderName; key: string }> = {
-      'AZERCLAW_OPENAI_KEY': { provider: 'openai', key: 'apiKey' },
-      'OPENAI_API_KEY': { provider: 'openai', key: 'apiKey' },
-      'AZERCLAW_ANTHROPIC_KEY': { provider: 'anthropic', key: 'apiKey' },
-      'ANTHROPIC_API_KEY': { provider: 'anthropic', key: 'apiKey' },
-      'AZERCLAW_GOOGLE_KEY': { provider: 'google', key: 'apiKey' },
-      'GOOGLE_API_KEY': { provider: 'google', key: 'apiKey' },
-      'AZERCLAW_GROQ_KEY': { provider: 'groq', key: 'apiKey' },
-      'GROQ_API_KEY': { provider: 'groq', key: 'apiKey' },
-      'AZERTRON_DEEPSEEK_KEY': { provider: 'deepseek', key: 'apiKey' },
-      'AZERTRON_OPENROUTER_KEY': { provider: 'openrouter', key: 'apiKey' },
-      'OPENROUTER_API_KEY': { provider: 'openrouter', key: 'apiKey' },
-      'AZERTRON_CUSTOM_KEY': { provider: 'custom', key: 'apiKey' },
-      'AZERTRON_CUSTOM_URL': { provider: 'custom', key: 'baseUrl' },
+      'AZERTRON_OPENCODE_KEY': { provider: 'opencode', key: 'apiKey' },
     };
 
     const detected: string[] = [];

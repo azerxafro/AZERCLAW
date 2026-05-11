@@ -111,9 +111,17 @@ const CHARACTER_VOICES: Record<string, string> = {
 
 export function speak(text: string, character?: string): void {
   if (process.platform !== 'darwin') return; // Only support macOS for now
-  
-  const voice = character ? CHARACTER_VOICES[character.toUpperCase()] : 'Daniel';
-  const cleanText = text.replace(/[*_`]/g, '').slice(0, 200); // Strip markdown and limit length
+
+  // ─── Azerclaw 2.1: TTS Policy ───
+  try {
+    const { getConfigManager } = require('../../config/manager');
+    const config = getConfigManager().getAll();
+    if (!config.ui.ttsEnabled) return;
+  } catch {
+    return; // Safety fallback
+  }
+
+  const voice = character ? CHARACTER_VOICES[character.toUpperCase()] : 'Daniel';  const cleanText = text.replace(/[*_`]/g, '').slice(0, 200); // Strip markdown and limit length
   
   try {
     const { exec } = require('child_process');

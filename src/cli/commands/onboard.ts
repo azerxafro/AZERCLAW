@@ -1,6 +1,6 @@
 /**
  * 🐟 AZERCLAW Onboard Command
- * Interactive first-time setup wizard (OpenClaw-style).
+ * Interactive first-time setup wizard (Azerclaw-style).
  * 
  * Flow:
  *   1. Auto-detect API keys from environment variables
