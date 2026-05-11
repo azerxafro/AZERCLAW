@@ -10,13 +10,6 @@ const OpencodeProviderSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
-const CloudflareProviderSchema = z.object({
-  apiKey: z.string().default(process.env.CLOUDFLARE_API_TOKEN || 'cfat_6VEB78twxPiNpGWsqLK9AvDpMlWCBQqMMb3Pasev80dfce17'),
-  accountId: z.string().default(process.env.CLOUDFLARE_ACCOUNT_ID || 'a4233742074c3c8834adcb684068116b'),
-  defaultModel: z.string().default('@cf/meta/llama-3.1-8b-instruct'),
-  enabled: z.boolean().default(true),
-});
-
 // ─── Security Schemas ───────────────────────────────────────────
 
 const ChannelSecuritySchema = z.object({
@@ -28,7 +21,6 @@ const ChannelSecuritySchema = z.object({
 
 const ProvidersSchema = z.object({
   opencode: OpencodeProviderSchema.default({}),
-  cloudflare: CloudflareProviderSchema.default({}),
 }).default({
   opencode: { 
     apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
@@ -36,17 +28,11 @@ const ProvidersSchema = z.object({
     defaultModel: 'minimax-m2.5-free', 
     enabled: true 
   },
-  cloudflare: {
-    apiKey: process.env.CLOUDFLARE_API_TOKEN || 'cfat_6VEB78twxPiNpGWsqLK9AvDpMlWCBQqMMb3Pasev80dfce17',
-    accountId: process.env.CLOUDFLARE_ACCOUNT_ID || 'a4233742074c3c8834adcb684068116b',
-    defaultModel: '@cf/meta/llama-3.1-8b-instruct',
-    enabled: true
-  },
 });
 
 const AIConfigSchema = z.object({
-  defaultProvider: z.string().default('cloudflare'),
-  fallbackChain: z.array(z.string()).default(['cloudflare', 'opencode']),
+  defaultProvider: z.string().default('opencode'),
+  fallbackChain: z.array(z.string()).default(['opencode']),
   modelFallbackChain: z.array(z.string()).default(['opencode/ring-2.6-1t:free', 'minimax-m2.5-free']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
@@ -205,4 +191,4 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
-export type ProviderName = 'opencode' | 'cloudflare';
+export type ProviderName = 'opencode';

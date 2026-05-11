@@ -27,18 +27,6 @@ export class ProviderRouter {
       }));
     }
 
-    if (p.cloudflare && p.cloudflare.enabled && p.cloudflare.apiKey && p.cloudflare.accountId) {
-      const cloudflareProvider = new OpenAIProvider({
-        apiKey: p.cloudflare.apiKey,
-        baseUrl: `https://api.cloudflare.com/client/v4/accounts/${p.cloudflare.accountId}/ai/v1`,
-        defaultModel: p.cloudflare.defaultModel || '@cf/meta/llama-3.1-8b-instruct'
-      });
-      // Override name and displayName for correct identification
-      (cloudflareProvider as any).name = 'cloudflare';
-      (cloudflareProvider as any).displayName = 'Cloudflare';
-      this.providers.set('cloudflare', cloudflareProvider);
-    }
-
     if (process.env.AZERCLAW_DEBUG) {
       console.log(`[Router] Initialized providers: ${Array.from(this.providers.keys()).join(', ')}`);
     }
