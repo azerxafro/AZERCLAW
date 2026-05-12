@@ -58,11 +58,17 @@ export class OpenAIProvider extends BaseProvider {
       }
 
       const response = await this.client.chat.completions.create(params);
-      const resData = response as Record<string, unknown>;
+      const resData = response as unknown as {
+        success?: boolean;
+        errors?: Array<{ message: string }>;
+        choices?: Array<any>;
+        error?: any;
+        message?: string;
+      };
 
       // Handle Cloudflare-style errors inside a 200 OK response
       if (resData.success === false && Array.isArray(resData.errors) && resData.errors.length > 0) {
-        const firstError = resData.errors[0] as { message: string };
+        const firstError = resData.errors[0];
         return {
           content: `Cloudflare Error: ${firstError.message}`,
           model,
@@ -77,7 +83,7 @@ export class OpenAIProvider extends BaseProvider {
         if (resData.error) {
           errorDetail = (resData.error as { message?: string }).message || JSON.stringify(resData.error);
         } else if (resData.message) {
-          errorDetail = resData.message as string;
+          errorDetail = resData.message;
         }
         
         return {
@@ -89,12 +95,17 @@ export class OpenAIProvider extends BaseProvider {
       }
 
       const choice = response.choices[0];
-      const message = choice.message as Record<string, unknown>;
+      const message = choice.message as unknown as {
+        content?: string | null;
+        reasoning_content?: string | null;
+        thought?: string | null;
+        tool_calls?: any[];
+      };
 
       // Extract content, falling back to reasoning/thought if content is null
       let content = message.content || '';
       if (!content && (message.reasoning_content || message.thought)) {
-        content = message.reasoning_content || message.thought;
+        content = message.reasoning_content || message.thought || '';
       }
 
       return {
