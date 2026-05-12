@@ -1,7 +1,7 @@
-const chalk = require('chalk');
-const { getConfigManager } = require('../../config/manager');
-const { resolveSandboxMode } = require('../../core/sandbox');
-const { fishSuccess, fishError, fishBox, fishInfo } = require('../animations/fish');
+import chalk from 'chalk';
+import { getConfigManager } from '../../config/manager';
+import { resolveSandboxMode } from '../../core/sandbox';
+import { fishSuccess, fishError, fishBox, fishInfo } from '../animations/fish';
 
 const VALID_MODES = ['off', 'non-main', 'all'];
 
@@ -90,11 +90,3 @@ export function removeSandboxDeniedTool(toolName: string): void {
   fishInfo(`Removed denied tool: ${toolName}`);
 }
 
-module.exports = {
-  sandboxStatus,
-  setSandboxMode,
-  addSandboxAllowedTool,
-  removeSandboxAllowedTool,
-  addSandboxDeniedTool,
-  removeSandboxDeniedTool,
-};

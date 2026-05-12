@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import chalk from 'chalk';
-const { fishBox, fishSuccess, fishError, fishInfo, fishWarn } = require('../animations/fish');
+import { fishBox, fishSuccess, fishError, fishInfo, fishWarn } from '../animations/fish';
 
 const PLUGINS_DIR = path.join(os.homedir(), '.azerclaw', 'plugins');
 

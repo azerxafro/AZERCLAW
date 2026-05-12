@@ -6,13 +6,13 @@
  * All config changes reflect immediately via shared ConfigManager singleton.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const readline = require('readline');
-const { AutoComplete, Select } = require('enquirer');
-const { AgentRuntime } = require('../../core/runtime');
-const { getConfigManager } = require('../../config/manager');
-const { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import * as readline from 'readline';
+import { AutoComplete, Select } from 'enquirer';
+import { AgentRuntime } from '../../core/runtime';
+import { getConfigManager } from '../../config/manager';
+import { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -517,5 +517,3 @@ export async function runTUI(): Promise<void> {
     process.exit(0);
   });
 }
-
-module.exports = { runTUI };

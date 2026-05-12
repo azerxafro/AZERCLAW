@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as os from 'os';
 import PDFDocument from 'pdfkit';
 import chalk from 'chalk';
-const { getSessionStore } = require('../../memory/store');
-const { fishBox, fishSuccess, fishError } = require('../animations/fish');
+import { getSessionStore } from '../../memory/store';
+import { fishBox, fishSuccess, fishError } from '../animations/fish';
 
 const EXPORTS_DIR = path.join(os.homedir(), '.azerclaw', 'exports');
 

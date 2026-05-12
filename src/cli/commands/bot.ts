@@ -3,9 +3,9 @@
  * Manages messenger bots (Telegram, Discord, Slack).
  */
 
-const { Gateway } = require('../../core/gateway');
-const { playSplashScreen, printQuickSplash, fishSuccess, fishError, fishInfo } = require('../animations/fish');
-const { getConfigManager } = require('../../config/manager');
+import { Gateway } from '../../core/gateway';
+import { playSplashScreen, printQuickSplash, fishSuccess, fishError, fishInfo } from '../animations/fish';
+import { getConfigManager } from '../../config/manager';
 
 export async function startBot(options: { port?: number }): Promise<void> {
   const config = getConfigManager().getAll();

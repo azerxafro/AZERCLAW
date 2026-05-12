@@ -4,11 +4,11 @@
  * Reads from the shared ConfigManager — synchronized with in-session commands.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const { getConfigManager } = require('../../config/manager');
-const { fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
-const { PROVIDER_LABELS } = require('./settings');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import { getConfigManager } from '../../config/manager';
+import { fishSuccess, fishError, fishInfo, fishBox } from '../animations/fish';
+import { PROVIDER_LABELS } from './settings';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 
@@ -119,5 +119,3 @@ function maskKey(key: string): string {
   if (!key || key.length < 8) return chalk.dim('****');
   return chalk.dim(`${key.slice(0, 4)}${'*'.repeat(Math.min(20, key.length - 8))}${key.slice(-4)}`);
 }
-
-module.exports = { configGet, configSet, configList, configReset };

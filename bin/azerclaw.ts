@@ -29,8 +29,8 @@ process.env.NODE_NO_WARNINGS = '1';
  *   azerclaw status           — Show current status
  */
 
-const { Command } = require('commander');
-const chalk = require('chalk');
+import { Command } from 'commander';
+import chalk from 'chalk';
 
 // Disable colors and animations if output is piped
 if (!process.stdout.isTTY) {
@@ -38,8 +38,8 @@ if (!process.stdout.isTTY) {
   process.env.FORCE_COLOR = '0';
 }
 
-const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
-const { getConfigManager } = require('../src/config/manager');
+import { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } from '../src/cli/animations/fish';
+import { getConfigManager } from '../src/config/manager';
 
 const VERSION = '2.1.4';
 const program = new Command();

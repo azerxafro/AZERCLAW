@@ -14,13 +14,13 @@
  *   9. Summary + next steps
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const Enquirer = require('enquirer');
-const { getConfigManager } = require('../../config/manager');
-const { resetRouter } = require('../../providers/router');
-const { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation } = require('../animations/fish');
-const { PROVIDER_MODELS, PROVIDER_LABELS } = require('./settings');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import Enquirer from 'enquirer';
+import { getConfigManager } from '../../config/manager';
+import { resetRouter } from '../../providers/router';
+import { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation } from '../animations/fish';
+import { PROVIDER_MODELS, PROVIDER_LABELS } from './settings';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -536,5 +536,3 @@ async function configureFallback(config: any, enabledProviders: string[]): Promi
   config.setFallbackChain(chain);
   fishSuccess(`Fallback: ${PROVIDER_LABELS[fallbackProvider] || fallbackProvider}`);
 }
-
-module.exports = { runOnboard };

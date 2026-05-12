@@ -3,10 +3,10 @@
  * Execute a single task and exit.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const { AgentRuntime } = require('../../core/runtime');
-const { FishThinkingAnimation, fishSuccess, fishError, fishBox } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import { AgentRuntime } from '../../core/runtime';
+import { FishThinkingAnimation, fishSuccess, fishError, fishBox } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -78,5 +78,3 @@ export async function runTask(task: string, options: { model?: string; verbose?:
     process.exit(1);
   }
 }
-
-module.exports = { runTask };

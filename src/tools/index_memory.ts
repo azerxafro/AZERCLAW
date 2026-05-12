@@ -7,7 +7,7 @@ import { Tool, ToolResult } from './registry';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-const { Index } = require('flexsearch');
+import { Index } from 'flexsearch';
 
 const INDEX_FILE = path.join(os.homedir(), '.azerclaw', 'memory', 'project_index.json');
 let searchIndex: any = null;

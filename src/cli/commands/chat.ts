@@ -18,17 +18,17 @@
  *   /AGENT task   — Invoke a specific agent
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const readline = require('readline');
-const { AutoComplete, Select } = require('enquirer');
-const { AgentRuntime } = require('../../core/runtime');
-const { getToolRegistry } = require('../../tools/registry');
-const { shellTool } = require('../../tools/shell');
-const { readFileTool, writeFileTool, listDirTool, searchFilesTool } = require('../../tools/filesystem');
-const { spawnSubAgentTool, webSearchTool, codeAnalysisTool } = require('../../tools/advanced');
-const { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox, fishWarn } = require('../animations/fish');
-const { getConfigManager } = require('../../config/manager');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import * as readline from 'readline';
+import { AutoComplete, Select } from 'enquirer';
+import { AgentRuntime } from '../../core/runtime';
+import { getToolRegistry } from '../../tools/registry';
+import { shellTool } from '../../tools/shell';
+import { readFileTool, writeFileTool, listDirTool, searchFilesTool } from '../../tools/filesystem';
+import { spawnSubAgentTool, webSearchTool, codeAnalysisTool } from '../../tools/advanced';
+import { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox, fishWarn } from '../animations/fish';
+import { getConfigManager } from '../../config/manager';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -580,5 +580,3 @@ export async function runChat(options: { model?: string; provider?: string; init
     process.exit(0);
   });
 }
-
-module.exports = { runChat };

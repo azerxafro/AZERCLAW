@@ -3,13 +3,13 @@
  * Health check and auto-repair for the AZERCLAW installation.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const { getConfigManager } = require('../../config/manager');
-const { getRouter, resetRouter } = require('../../providers/router');
-const { auditDmPolicies, applySafeDmDefaults } = require('../../channels/security');
-const { auditSandboxPosture, applySafeSandboxDefaults } = require('../../core/sandbox');
-const { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation, renderFishProgress } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import { getConfigManager } from '../../config/manager';
+import { getRouter, resetRouter } from '../../providers/router';
+import { auditDmPolicies, applySafeDmDefaults } from '../../channels/security';
+import { auditSandboxPosture, applySafeSandboxDefaults } from '../../core/sandbox';
+import { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation, renderFishProgress } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 
@@ -222,5 +222,3 @@ export async function runDoctor(options: { fix?: boolean }): Promise<void> {
     fishSuccess(`All ${passed} checks passed! 🐟`);
   }
 }
-
-module.exports = { runDoctor };

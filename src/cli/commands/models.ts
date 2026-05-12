@@ -81,5 +81,3 @@ export async function modelsList(): Promise<void> {
     spinner.fail('Failed to fetch models');
   }
 }
-
-module.exports = { modelsStatus, modelsList };

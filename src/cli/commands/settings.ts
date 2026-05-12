@@ -18,12 +18,12 @@
  *   azerclaw config apikey [provider] [key]
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const Enquirer = require('enquirer');
-const { getConfigManager } = require('../../config/manager');
-const { resetRouter } = require('../../providers/router');
-const { fishSuccess, fishError, fishInfo, fishBox, fishWarn } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import Enquirer from 'enquirer';
+import { getConfigManager } from '../../config/manager';
+import { resetRouter } from '../../providers/router';
+import { fishSuccess, fishError, fishInfo, fishBox, fishWarn } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -31,7 +31,7 @@ const BLOOD = gradientString(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
 
 // ─── Known Models Per Provider ──────────────────────────────────
 
-const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
+export const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
   openai: [
     { name: 'GPT-4o', id: 'gpt-4o', hint: 'Best all-around' },
     { name: 'GPT-4o Mini', id: 'gpt-4o-mini', hint: 'Fast & cheap' },
@@ -84,7 +84,7 @@ const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }
   custom: [],
 };
 
-const PROVIDER_LABELS: Record<string, string> = {
+export const PROVIDER_LABELS: Record<string, string> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google Gemini',
@@ -569,18 +569,3 @@ function maskKey(key: string): string {
   return `${key.slice(0, 4)}${'*'.repeat(Math.min(16, key.length - 8))}${key.slice(-4)}`;
 }
 
-module.exports = {
-  interactiveProviderSwitch,
-  interactiveModelSwitch,
-  interactiveApiKeyChange,
-  interactiveFallbackConfig,
-  interactiveSettingsMenu,
-  showStatus,
-  initProject,
-  cliSwitchProvider,
-  cliSwitchModel,
-  cliSetApiKey,
-  cliSetFallback,
-  PROVIDER_MODELS,
-  PROVIDER_LABELS,
-};

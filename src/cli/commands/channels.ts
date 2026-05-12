@@ -1,6 +1,6 @@
-const chalk = require('chalk');
-const { getConfigManager } = require('../../config/manager');
-const { fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
+import chalk from 'chalk';
+import { getConfigManager } from '../../config/manager';
+import { fishSuccess, fishError, fishInfo, fishBox } from '../animations/fish';
 
 const CHANNELS = ['discord', 'telegram', 'slack'];
 const DM_POLICIES = ['pairing', 'open', 'closed'];
@@ -185,13 +185,3 @@ export function removeRoutingRule(
   fishSuccess(`Removed routing rule(s) for session ${sessionId}`);
 }
 
-module.exports = {
-  channelsConfigList,
-  setChannelDmPolicy,
-  addChannelAllowFrom,
-  removeChannelAllowFrom,
-  listChannelAllowFrom,
-  setRoutingStrategy,
-  addRoutingRule,
-  removeRoutingRule,
-};
