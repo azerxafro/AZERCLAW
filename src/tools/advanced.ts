@@ -54,12 +54,17 @@ export const webSearchTool: Tool = {
     required: ['query'],
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
-    // Uses DuckDuckGo HTML search (no API key needed)
-    const query = encodeURIComponent(args.query as string);
+    const rawQuery = args.query as string;
+    if (!rawQuery || typeof rawQuery !== 'string' || rawQuery.trim().length === 0) {
+      return { success: false, output: '', error: 'web_search requires a non-empty "query" string' };
+    }
+    // Clamp maxResults to a safe integer (1-20) to prevent shell injection
+    const maxResults = Math.max(1, Math.min(20, Math.floor(Number(args.maxResults) || 5)));
+    const query = encodeURIComponent(rawQuery);
     try {
       const { execSync } = require('child_process');
       const result = execSync(
-        `curl -sL "https://html.duckduckgo.com/html/?q=${query}" | grep -oP '<a rel="nofollow" class="result__a" href="[^"]*">[^<]*</a>' | head -${(args.maxResults as number) || 5} | sed 's/<[^>]*>//g'`,
+        `curl -sL "https://html.duckduckgo.com/html/?q=${query}" | grep -oP '<a rel="nofollow" class="result__a" href="[^"]*">[^<]*</a>' | head -${maxResults} | sed 's/<[^>]*>//g'`,
         { encoding: 'utf-8', timeout: 10000 }
       );
       return { success: true, output: result.trim() || 'No results found' };
@@ -85,7 +90,21 @@ export const codeAnalysisTool: Tool = {
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
     const { execSync } = require('child_process');
-    const dir = args.path as string;
+    const path = require('path');
+    const fs = require('fs');
+    const rawDir = args.path as string;
+    if (!rawDir || typeof rawDir !== 'string') {
+      return { success: false, output: '', error: 'analyze_code requires a "path" string' };
+    }
+    // Resolve to absolute path and validate it exists — prevents shell metacharacter injection
+    const dir = path.resolve(rawDir);
+    if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+      return { success: false, output: '', error: `Directory not found: ${dir}` };
+    }
+    // Reject paths with shell metacharacters
+    if (/[;|&$`\\"'(){}\[\]!#~]/.test(dir)) {
+      return { success: false, output: '', error: 'Path contains invalid characters' };
+    }
     try {
       const analysis = execSync(`
         echo "=== Directory: ${dir} ==="

@@ -137,7 +137,7 @@ export const ConfigSchema = z.object({
       opencode: { 
         apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
         baseUrl: 'https://opencode.ai/zen/v1', 
-        defaultModel: 'opencode/nemotron-3-super-120b-a12b:free', 
+        defaultModel: 'minimax-m2.5-free', 
         enabled: true 
       },
     },
@@ -168,7 +168,7 @@ export const ConfigSchema = z.object({
     enabled: z.boolean().default(true),
   })).default({}),
   channels: ChannelsConfigSchema,
-  version: z.string().default('2.1.2'),
+  version: z.string().default('2.1.4'),
   firstRun: z.boolean().default(true),
   hasCompletedOnboarding: z.boolean().default(false),
   hasCompletedProjectOnboarding: z.boolean().default(false),

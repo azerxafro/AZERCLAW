@@ -138,11 +138,21 @@ class ToolRegistry {
 }
 
 let instance: ToolRegistry | null = null;
+let creating = false;
 export function getToolRegistry(): ToolRegistry {
   if (!instance) {
-    const config = getConfigManager().getAll();
-    const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
-    instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+    if (creating) {
+      // Re-entrant call during construction — return a bare instance to avoid infinite loop
+      return new ToolRegistry({ sandbox: false });
+    }
+    creating = true;
+    try {
+      const config = getConfigManager().getAll();
+      const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
+      instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+    } finally {
+      creating = false;
+    }
   }
   return instance;
 }

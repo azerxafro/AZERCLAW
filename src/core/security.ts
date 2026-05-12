@@ -82,8 +82,10 @@ export function auditLog(event: string, details?: string): void {
   try {
     fs.mkdirSync(SECURITY_DIR, { recursive: true, mode: 0o700 });
     fs.appendFileSync(AUDIT_LOG, entry, { mode: 0o600 });
-  } catch {
-    // Silently fail — never block operations for audit logging
+  } catch (error: unknown) {
+    if (process.env.AZERCLAW_DEBUG) {
+      console.warn(`[Security] Failed to write audit log: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 

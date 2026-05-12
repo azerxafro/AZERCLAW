@@ -24,7 +24,19 @@ export const reverseEngineerTool: Tool = {
     required: ['path'],
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
-    const filePath = args.path as string;
+    const path = require('path');
+    const fs = require('fs');
+    const rawPath = args.path as string;
+    if (!rawPath || typeof rawPath !== 'string') {
+      return { success: false, output: '', error: 'reverse_engineer requires a "path" string' };
+    }
+    const filePath = path.resolve(rawPath);
+    if (!fs.existsSync(filePath)) {
+      return { success: false, output: '', error: `File not found: ${filePath}` };
+    }
+    if (/[;|&$`\\"'(){}\[\]!#~]/.test(filePath)) {
+      return { success: false, output: '', error: 'Path contains invalid characters' };
+    }
     try {
       const stats = execSync(`ls -lh "${filePath}"`, { encoding: 'utf-8' });
       const strings = execSync(`strings "${filePath}" | head -n 50`, { encoding: 'utf-8' });
@@ -57,7 +69,19 @@ export const stealthAuditTool: Tool = {
     required: ['target'],
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
-    const target = args.target as string;
+    const path = require('path');
+    const fs = require('fs');
+    const rawTarget = args.target as string;
+    if (!rawTarget || typeof rawTarget !== 'string') {
+      return { success: false, output: '', error: 'stealth_audit requires a "target" string' };
+    }
+    const target = path.resolve(rawTarget);
+    if (!fs.existsSync(target)) {
+      return { success: false, output: '', error: `Target not found: ${target}` };
+    }
+    if (/[;|&$`\\"'(){}\[\]!#~]/.test(target)) {
+      return { success: false, output: '', error: 'Target path contains invalid characters' };
+    }
     try {
       // Basic secret sniffing
       const secretScan = execSync(`grep -rEi "api_key|secret|password|token" "${target}" --exclude-dir=node_modules | head -n 20`, { encoding: 'utf-8' });
@@ -89,7 +113,19 @@ export const patternSpotterTool: Tool = {
     required: ['path'],
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
-    const filePath = args.path as string;
+    const path = require('path');
+    const fs = require('fs');
+    const rawPath = args.path as string;
+    if (!rawPath || typeof rawPath !== 'string') {
+      return { success: false, output: '', error: 'pattern_spotter requires a "path" string' };
+    }
+    const filePath = path.resolve(rawPath);
+    if (!fs.existsSync(filePath)) {
+      return { success: false, output: '', error: `File not found: ${filePath}` };
+    }
+    if (/[;|&$`\\"'(){}\[\]!#~]/.test(filePath)) {
+      return { success: false, output: '', error: 'Path contains invalid characters' };
+    }
     try {
       const patterns = execSync(`sort "${filePath}" | uniq -c | sort -rn | head -n 20`, { encoding: 'utf-8' });
       return {

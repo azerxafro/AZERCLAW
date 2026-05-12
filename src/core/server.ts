@@ -13,11 +13,16 @@ interface ClientMessage {
   payload?: any;
 }
 
+// 30 minutes of inactivity before an agent is considered orphaned
+const AGENT_TIMEOUT_MS = 30 * 60 * 1000;
+
 export class AzerclawServer {
   private wss: WebSocketServer;
   private server: http.Server;
   private port: number;
   private agents: Map<string, AgentRuntime> = new Map();
+  private agentLastActivity: Map<string, number> = new Map();
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(port: number = 8080) {
     this.port = port;
@@ -28,6 +33,40 @@ export class AzerclawServer {
 
     this.wss = new WebSocketServer({ server: this.server });
     this.setupWebSockets();
+  }
+
+  /**
+   * Safely send a message to a WebSocket client, checking readyState first.
+   */
+  private safeSend(ws: WebSocket, data: string): void {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(data);
+    }
+  }
+
+  /**
+   * Mark an agent session as recently active.
+   */
+  private touchAgent(sessionId: string): void {
+    this.agentLastActivity.set(sessionId, Date.now());
+  }
+
+  /**
+   * Sweep and clean up orphaned agent sessions that exceeded the inactivity timeout.
+   */
+  private cleanupOrphanedAgents(): void {
+    const now = Date.now();
+    for (const [sessionId, lastActive] of this.agentLastActivity) {
+      if (now - lastActive > AGENT_TIMEOUT_MS) {
+        const agent = this.agents.get(sessionId);
+        if (agent) {
+          agent.abort();
+          console.log(`🧹 Cleaned up orphaned agent: ${sessionId}`);
+        }
+        this.agents.delete(sessionId);
+        this.agentLastActivity.delete(sessionId);
+      }
+    }
   }
 
   private setupWebSockets() {
@@ -43,7 +82,7 @@ export class AzerclawServer {
 
           switch (msg.type) {
             case 'ping':
-              ws.send(JSON.stringify({ type: 'pong' }));
+              this.safeSend(ws, JSON.stringify({ type: 'pong' }));
               break;
 
             case 'start_chat':
@@ -51,37 +90,39 @@ export class AzerclawServer {
               agent = new AgentRuntime({
                 sessionId,
                 eventHandler: async (event) => {
-                  ws.send(JSON.stringify(event));
+                  this.safeSend(ws, JSON.stringify(event));
                 }
               });
               this.agents.set(sessionId, agent);
-              ws.send(JSON.stringify({ type: 'system', payload: 'Agent ready. Scorched earth protocol engaged.' }));
+              this.touchAgent(sessionId);
+              this.safeSend(ws, JSON.stringify({ type: 'system', payload: 'Agent ready. Scorched earth protocol engaged.' }));
               break;
 
             case 'chat_message':
               if (!agent) {
-                ws.send(JSON.stringify({ type: 'error', payload: 'Chat not started. Send start_chat first.' }));
+                this.safeSend(ws, JSON.stringify({ type: 'error', payload: 'Chat not started. Send start_chat first.' }));
                 return;
               }
+              this.touchAgent(sessionId);
               try {
                 await agent.chat(msg.payload.message);
               } catch (e: any) {
-                ws.send(JSON.stringify({ type: 'error', payload: e.message }));
+                this.safeSend(ws, JSON.stringify({ type: 'error', payload: e.message }));
               }
               break;
 
             case 'abort':
               if (agent) {
                 agent.abort();
-                ws.send(JSON.stringify({ type: 'system', payload: 'Operation aborted.' }));
+                this.safeSend(ws, JSON.stringify({ type: 'system', payload: 'Operation aborted.' }));
               }
               break;
 
             default:
-              ws.send(JSON.stringify({ type: 'error', payload: 'Unknown message type.' }));
+              this.safeSend(ws, JSON.stringify({ type: 'error', payload: 'Unknown message type.' }));
           }
         } catch (e: any) {
-          ws.send(JSON.stringify({ type: 'error', payload: 'Invalid JSON payload.' }));
+          this.safeSend(ws, JSON.stringify({ type: 'error', payload: 'Invalid JSON payload.' }));
         }
       });
 
@@ -89,18 +130,28 @@ export class AzerclawServer {
         console.log('❌ Client disconnected.');
         if (agent) agent.abort();
         this.agents.delete(sessionId);
+        this.agentLastActivity.delete(sessionId);
       });
     });
   }
 
   public start() {
+    // Start orphaned agent cleanup sweeper (runs every 5 minutes)
+    this.cleanupInterval = setInterval(() => this.cleanupOrphanedAgents(), 5 * 60 * 1000);
+
     this.server.listen(this.port, () => {
       console.log(`\n🔪 AZERCLAW Daemon (Diabolical Edition) running on ws://localhost:${this.port}\n`);
     });
   }
 
   public stop() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
     this.agents.forEach(agent => agent.abort());
+    this.agents.clear();
+    this.agentLastActivity.clear();
     this.wss.close();
     this.server.close();
   }

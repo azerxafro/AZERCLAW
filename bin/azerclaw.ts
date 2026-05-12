@@ -41,7 +41,7 @@ if (!process.stdout.isTTY) {
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '2.1.1';
+const VERSION = '2.1.4';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
@@ -79,11 +79,16 @@ program
 
     // Check for piped input (stdin)
     if (!process.stdin.isTTY) {
-      let input = '';
-      process.stdin.setEncoding('utf-8');
-      for await (const chunk of process.stdin) {
-        input += chunk;
-      }
+      const input: string = await new Promise((resolve) => {
+        let data = '';
+        process.stdin.setEncoding('utf-8');
+        process.stdin.on('data', (chunk: string) => { data += chunk; });
+        process.stdin.on('end', () => resolve(data));
+        process.stdin.on('error', () => resolve(data));
+        // Safety timeout: prevent hanging if stdin is open but never sends EOF
+        setTimeout(() => { process.stdin.pause(); resolve(data); }, 1000);
+        process.stdin.resume();
+      });
       if (input.trim()) {
         const { runTask } = require('../src/cli/commands/run');
         await runTask(input.trim(), opts);
@@ -128,7 +133,7 @@ program
       }
     }
     
-    if (!opts.parent?.splash === false) {
+    if (program.opts().splash !== false) {
       printQuickSplash(VERSION);
     }
     
@@ -164,10 +169,16 @@ program
 
     // Handle piped input if task is missing
     if (!finalTask && !process.stdin.isTTY) {
-      process.stdin.setEncoding('utf-8');
-      for await (const chunk of process.stdin) {
-        finalTask += chunk;
-      }
+      finalTask = await new Promise((resolve) => {
+        let data = '';
+        process.stdin.setEncoding('utf-8');
+        process.stdin.on('data', (chunk: string) => { data += chunk; });
+        process.stdin.on('end', () => resolve(data));
+        process.stdin.on('error', () => resolve(data));
+        // Safety timeout: prevent hanging if stdin is open but never sends EOF
+        setTimeout(() => { process.stdin.pause(); resolve(data); }, 1000);
+        process.stdin.resume();
+      });
     }
 
     if (!finalTask.trim()) {

@@ -58,12 +58,13 @@ export class OpenAIProvider extends BaseProvider {
       }
 
       const response = await this.client.chat.completions.create(params);
-      const resData = response as any;
+      const resData = response as Record<string, unknown>;
 
       // Handle Cloudflare-style errors inside a 200 OK response
-      if (resData.success === false && resData.errors && resData.errors.length > 0) {
+      if (resData.success === false && Array.isArray(resData.errors) && resData.errors.length > 0) {
+        const firstError = resData.errors[0] as { message: string };
         return {
-          content: `Cloudflare Error: ${resData.errors[0].message}`,
+          content: `Cloudflare Error: ${firstError.message}`,
           model,
           provider: this.name,
           finishReason: 'error',
@@ -74,9 +75,9 @@ export class OpenAIProvider extends BaseProvider {
       if (!resData.choices || resData.choices.length === 0) {
         let errorDetail = 'Unknown malformed response';
         if (resData.error) {
-          errorDetail = resData.error.message || JSON.stringify(resData.error);
+          errorDetail = (resData.error as { message?: string }).message || JSON.stringify(resData.error);
         } else if (resData.message) {
-          errorDetail = resData.message;
+          errorDetail = resData.message as string;
         }
         
         return {
@@ -88,7 +89,7 @@ export class OpenAIProvider extends BaseProvider {
       }
 
       const choice = response.choices[0];
-      const message = choice.message as any;
+      const message = choice.message as Record<string, unknown>;
 
       // Extract content, falling back to reasoning/thought if content is null
       let content = message.content || '';
@@ -98,14 +99,14 @@ export class OpenAIProvider extends BaseProvider {
 
       return {
         content,
-        toolCalls: message.tool_calls?.map((tc: any) => ({
+        toolCalls: Array.isArray(message.tool_calls) ? message.tool_calls.map((tc: any) => ({
           id: tc.id,
           type: 'function' as const,
           function: {
             name: tc.function.name,
             arguments: tc.function.arguments,
           },
-        })),
+        })) : undefined,
         usage: response.usage ? {
           promptTokens: response.usage.prompt_tokens,
           completionTokens: response.usage.completion_tokens,
@@ -116,18 +117,19 @@ export class OpenAIProvider extends BaseProvider {
         finishReason: choice.finish_reason === 'tool_calls' ? 'tool_calls' : 
                       choice.finish_reason === 'length' ? 'length' : 'stop',
       };
-    } catch (error: any) {
-      let errorMsg = error.message || 'Unknown error';
+    } catch (error: unknown) {
+      let errorMsg = error instanceof Error ? error.message : 'Unknown error';
       
       if (process.env.AZERCLAW_DEBUG) {
         console.error(`[OpenAIProvider] Error:`, error);
       }
 
       // If the proxy (Vought Gate) returned a specific auth failure, pass it through
-      if (error.response && error.response.data && error.response.data.error === 'VOUGHT_GATE_AUTH_FAILURE') {
-        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${error.response.data.message}`;
-      } else if (error.error && error.error.error === 'VOUGHT_GATE_AUTH_FAILURE') {
-        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${error.error.message}`;
+      const errObj = error as Record<string, any>;
+      if (errObj.response?.data?.error === 'VOUGHT_GATE_AUTH_FAILURE') {
+        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${errObj.response.data.message}`;
+      } else if (errObj.error?.error === 'VOUGHT_GATE_AUTH_FAILURE') {
+        errorMsg = `VOUGHT_GATE_AUTH_FAILURE: ${errObj.error.message}`;
       }
 
       return {
@@ -185,8 +187,8 @@ export class OpenAIProvider extends BaseProvider {
           yield { type: 'done' };
         }
       }
-    } catch (error: any) {
-      yield { type: 'error', error: error.message || 'Unknown error' };
+    } catch (error: unknown) {
+      yield { type: 'error', error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -209,22 +211,27 @@ export class OpenAIProvider extends BaseProvider {
 
   async validateConnection(): Promise<{ valid: boolean; error?: string }> {
     try {
-      await this.client.models.list();
+      await Promise.race([
+        this.client.models.list(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timed out (10s)')), 10000)
+        ),
+      ]);
       return { valid: true };
-    } catch (error: any) {
-      return { valid: false, error: error.message || 'Connection failed' };
+    } catch (error: unknown) {
+      return { valid: false, error: error instanceof Error ? error.message : 'Connection failed' };
     }
   }
 
-  private formatMessages(options: CompletionOptions): any[] {
-    const messages: any[] = [];
+  private formatMessages(options: CompletionOptions): OpenAI.ChatCompletionMessageParam[] {
+    const messages: OpenAI.ChatCompletionMessageParam[] = [];
     
     if (options.systemPrompt) {
       messages.push({ role: 'system', content: options.systemPrompt });
     }
     
     for (const msg of options.messages) {
-      const formattedMsg: any = {
+      const formattedMsg: Record<string, unknown> = {
         role: msg.role,
         content: msg.content,
       };
@@ -232,7 +239,7 @@ export class OpenAIProvider extends BaseProvider {
       if (msg.toolCallId) formattedMsg.tool_call_id = msg.toolCallId;
       if (msg.toolCalls) formattedMsg.tool_calls = msg.toolCalls;
       
-      messages.push(formattedMsg);
+      messages.push(formattedMsg as unknown as OpenAI.ChatCompletionMessageParam);
     }
     return messages;
   }

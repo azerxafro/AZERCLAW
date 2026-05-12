@@ -6,6 +6,7 @@
 import { BaseProvider, CompletionOptions, CompletionResult, StreamChunk, ModelInfo } from './base';
 import { OpenAIProvider } from './openai';
 import { getConfigManager } from '../config/manager';
+import { AIConfig } from '../config/schema';
 
 export class ProviderRouter {
   private providers: Map<string, BaseProvider> = new Map();
@@ -16,8 +17,8 @@ export class ProviderRouter {
     this.initProviders(aiConfig);
   }
 
-  private initProviders(aiConfig: any): void {
-    const p = aiConfig.providers;
+  private initProviders(aiConfig: AIConfig): void {
+    const p = aiConfig.providers as Record<string, any>;
     
     if (p.opencode && p.opencode.enabled && p.opencode.apiKey) {
       this.providers.set('opencode', new OpenAIProvider({
@@ -46,15 +47,17 @@ export class ProviderRouter {
       return { content: 'Error: No AI engine configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
     }
 
-    const providerName = preferredProvider || (provider as any).name || config.ai.defaultProvider;
-    const providerConfig = (config.ai.providers as any)[providerName] || (config.ai.providers as any).opencode;
+    const providerName = preferredProvider || (provider as BaseProvider).name || config.ai.defaultProvider;
+    const providerConfig = (config.ai.providers as Record<string, any>)[providerName] || (config.ai.providers as Record<string, any>).opencode;
     const defaultModel = providerConfig?.defaultModel;
     
-    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...(config.ai as any).modelFallbackChain || []];
+    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...((config.ai as Record<string, any>).modelFallbackChain || [])];
 
     let lastError = '';
+    let attempted = false;
     for (const modelId of modelChain) {
       if (!modelId) continue;
+      attempted = true;
       if (process.env.AZERCLAW_DEBUG) {
         console.log(`[Router] Attempting model: ${modelId} on ${providerName}`);
       }
@@ -62,9 +65,18 @@ export class ProviderRouter {
         const result = await provider.complete({ ...options, model: modelId });
         if (result.finishReason !== 'error') return result;
         lastError = result.content;
-      } catch (e: any) {
-        lastError = e.message;
+      } catch (e: unknown) {
+        lastError = e instanceof Error ? e.message : String(e);
       }
+    }
+
+    if (!attempted) {
+      return {
+        content: 'Error: No model configured. Run `azerclaw config model <model-id>` or `azerclaw onboard`.',
+        model: 'none',
+        provider: providerName,
+        finishReason: 'error'
+      };
     }
 
     return { 
