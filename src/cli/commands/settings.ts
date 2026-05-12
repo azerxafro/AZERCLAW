@@ -64,7 +64,13 @@ export const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: s
     { name: 'Claude Sonnet 4', id: 'anthropic/claude-sonnet-4', hint: 'Via OpenRouter' },
     { name: 'GPT-4o', id: 'openai/gpt-4o', hint: 'Via OpenRouter' },
     { name: 'Gemini 2.5 Pro', id: 'google/gemini-2.5-pro', hint: 'Via OpenRouter' },
-    { name: 'Llama 3.3 70B', id: 'meta-llama/llama-3.3-70b-instruct', hint: 'Via OpenRouter' },
+    { name: 'Llama 3.3 70B (Free)', id: 'meta-llama/llama-3.3-70b-instruct:free', hint: 'Free via OpenRouter' },
+  ],
+  pollinations: [
+    { name: 'OpenAI (default)', id: 'openai', hint: 'Free, no key required' },
+    { name: 'OpenAI Large', id: 'openai-large', hint: 'Free, larger context' },
+    { name: 'Mistral', id: 'mistral', hint: 'Free' },
+    { name: 'Llama', id: 'llama', hint: 'Free' },
   ],
   ollama: [
     { name: 'Llama 3.1', id: 'llama3.1', hint: 'General purpose' },
@@ -91,6 +97,7 @@ export const PROVIDER_LABELS: Record<string, string> = {
   groq: 'Groq',
   deepseek: 'DeepSeek',
   openrouter: 'OpenRouter',
+  pollinations: 'Pollinations (Free)',
   ollama: 'Ollama (Local)',
   lmstudio: 'LM Studio (Local)',
   localai: 'LocalAI (Local)',

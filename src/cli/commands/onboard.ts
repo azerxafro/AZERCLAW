@@ -33,6 +33,7 @@ const PROVIDERS = [
   { name: 'Groq', value: 'groq', hint: 'Llama 3.3, Mixtral (fast inference)', keyPrefix: 'gsk_', envVar: 'GROQ_API_KEY', local: false },
   { name: 'DeepSeek', value: 'deepseek', hint: 'DeepSeek V3, R1', keyPrefix: 'sk-', envVar: '', local: false },
   { name: 'OpenRouter', value: 'openrouter', hint: '100+ models via one key', keyPrefix: 'sk-or-', envVar: 'OPENROUTER_API_KEY', local: false },
+  { name: 'Pollinations (Free)', value: 'pollinations', hint: 'Free, no API key required — OpenAI-compatible cloud', keyPrefix: '', envVar: '', local: false },
   { name: 'Ollama (Local)', value: 'ollama', hint: 'Free, runs on your machine — port 11434', keyPrefix: '', envVar: '', local: true },
   { name: 'LM Studio (Local)', value: 'lmstudio', hint: 'Free, runs on your machine — port 1234', keyPrefix: '', envVar: '', local: true },
   { name: 'LocalAI (Local)', value: 'localai', hint: 'Free, runs on your machine — port 8080', keyPrefix: '', envVar: '', local: true },

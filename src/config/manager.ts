@@ -487,6 +487,14 @@ class ConfigManager extends EventEmitter {
   resolveEnvOverrides(): string[] {
     const envMap: Record<string, { provider: ProviderName; key: string }> = {
       'AZERTRON_OPENCODE_KEY': { provider: 'opencode', key: 'apiKey' },
+      'OPENCODE_API_KEY':     { provider: 'opencode', key: 'apiKey' },
+      'OPENAI_API_KEY':       { provider: 'openai', key: 'apiKey' },
+      'ANTHROPIC_API_KEY':    { provider: 'anthropic', key: 'apiKey' },
+      'GOOGLE_API_KEY':       { provider: 'google', key: 'apiKey' },
+      'GEMINI_API_KEY':       { provider: 'google', key: 'apiKey' },
+      'GROQ_API_KEY':         { provider: 'groq', key: 'apiKey' },
+      'DEEPSEEK_API_KEY':     { provider: 'deepseek', key: 'apiKey' },
+      'OPENROUTER_API_KEY':   { provider: 'openrouter', key: 'apiKey' },
     };
 
     const detected: string[] = [];

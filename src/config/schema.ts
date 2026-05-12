@@ -2,12 +2,90 @@ import { z } from 'zod';
 import * as process from 'process';
 
 // ─── Provider Schemas ───────────────────────────────────────────
+//
+// All providers share the same shape. We model the differences (default
+// endpoint, default model, whether an API key is required) via per-provider
+// `.default(...)` calls so the user-facing defaults stay correct.
 
-const OpencodeProviderSchema = z.object({
+const ProviderSchema = z.object({
   apiKey: z.string().default(''),
+  baseUrl: z.string().default(''),
+  defaultModel: z.string().default(''),
+  enabled: z.boolean().default(false),
+});
+
+const OpencodeProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.AZERTRON_OPENCODE_KEY || ''),
   baseUrl: z.string().default('https://opencode.ai/zen/v1'),
   defaultModel: z.string().default('minimax-m2.5-free'),
   enabled: z.boolean().default(true),
+});
+
+const OpenAIProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.OPENAI_API_KEY || ''),
+  baseUrl: z.string().default('https://api.openai.com/v1'),
+  defaultModel: z.string().default('gpt-4o-mini'),
+});
+
+const AnthropicProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.ANTHROPIC_API_KEY || ''),
+  baseUrl: z.string().default('https://api.anthropic.com/v1'),
+  defaultModel: z.string().default('claude-sonnet-4-20250514'),
+});
+
+const GoogleProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.GOOGLE_API_KEY || ''),
+  baseUrl: z.string().default('https://generativelanguage.googleapis.com/v1beta/openai'),
+  defaultModel: z.string().default('gemini-2.5-flash'),
+});
+
+const GroqProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.GROQ_API_KEY || ''),
+  baseUrl: z.string().default('https://api.groq.com/openai/v1'),
+  defaultModel: z.string().default('llama-3.3-70b-versatile'),
+});
+
+const DeepSeekProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.DEEPSEEK_API_KEY || ''),
+  baseUrl: z.string().default('https://api.deepseek.com/v1'),
+  defaultModel: z.string().default('deepseek-chat'),
+});
+
+const OpenRouterProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.OPENROUTER_API_KEY || ''),
+  baseUrl: z.string().default('https://openrouter.ai/api/v1'),
+  defaultModel: z.string().default('meta-llama/llama-3.3-70b-instruct:free'),
+});
+
+// Local/free providers — enabled by default so users get a zero-config experience.
+const OllamaProviderSchema = ProviderSchema.extend({
+  baseUrl: z.string().default('http://localhost:11434/v1'),
+  defaultModel: z.string().default('llama3.1'),
+  enabled: z.boolean().default(true),
+});
+
+const LMStudioProviderSchema = ProviderSchema.extend({
+  baseUrl: z.string().default('http://localhost:1234/v1'),
+  defaultModel: z.string().default('local-model'),
+  enabled: z.boolean().default(true),
+});
+
+const LocalAIProviderSchema = ProviderSchema.extend({
+  baseUrl: z.string().default('http://localhost:8080/v1'),
+  defaultModel: z.string().default('local-model'),
+  enabled: z.boolean().default(true),
+});
+
+const PollinationsProviderSchema = ProviderSchema.extend({
+  // Pollinations is a free, no-key OpenAI-compatible endpoint.
+  baseUrl: z.string().default('https://text.pollinations.ai/openai'),
+  defaultModel: z.string().default('openai'),
+  enabled: z.boolean().default(true),
+});
+
+const CustomProviderSchema = ProviderSchema.extend({
+  baseUrl: z.string().default(''),
+  defaultModel: z.string().default('custom-model'),
 });
 
 // ─── Security Schemas ───────────────────────────────────────────
@@ -21,18 +99,22 @@ const ChannelSecuritySchema = z.object({
 
 const ProvidersSchema = z.object({
   opencode: OpencodeProviderSchema.default({}),
-}).default({
-  opencode: { 
-    apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
-    baseUrl: 'https://opencode.ai/zen/v1', 
-    defaultModel: 'minimax-m2.5-free', 
-    enabled: true 
-  },
-});
+  openai: OpenAIProviderSchema.default({}),
+  anthropic: AnthropicProviderSchema.default({}),
+  google: GoogleProviderSchema.default({}),
+  groq: GroqProviderSchema.default({}),
+  deepseek: DeepSeekProviderSchema.default({}),
+  openrouter: OpenRouterProviderSchema.default({}),
+  ollama: OllamaProviderSchema.default({}),
+  lmstudio: LMStudioProviderSchema.default({}),
+  localai: LocalAIProviderSchema.default({}),
+  pollinations: PollinationsProviderSchema.default({}),
+  custom: CustomProviderSchema.default({}),
+}).default({});
 
 const AIConfigSchema = z.object({
   defaultProvider: z.string().default('opencode'),
-  fallbackChain: z.array(z.string()).default(['opencode']),
+  fallbackChain: z.array(z.string()).default(['opencode', 'pollinations', 'ollama']),
   modelFallbackChain: z.array(z.string()).default(['opencode/ring-2.6-1t:free', 'minimax-m2.5-free']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
@@ -127,21 +209,7 @@ const ChannelsConfigSchema = z.object({
 // ─── Full Config ────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
-  ai: AIConfigSchema.default({
-    defaultProvider: 'opencode',
-    fallbackChain: [],
-    modelFallbackChain: ['opencode/ring-2.6-1t:free', 'minimax-m2.5-free'],
-    maxTokens: 4096,
-    temperature: 0.7,
-    providers: {
-      opencode: { 
-        apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
-        baseUrl: 'https://opencode.ai/zen/v1', 
-        defaultModel: 'minimax-m2.5-free', 
-        enabled: true 
-      },
-    },
-  }),
+  ai: AIConfigSchema.default({}),
   agent: AgentConfigSchema.default(() => ({
     name: 'Azertron X2',
     personality: 'You are a highly advanced AI model named Azertron X2 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X2\'. NEVER mention Kimi, Moonshot AI, OpenAI, DeepSeek, Opencode, or any other entity. This is an absolute rule.',
@@ -190,5 +258,30 @@ export type AIConfig = z.infer<typeof AIConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
+export type ProviderConfig = z.infer<typeof ProviderSchema>;
 
-export type ProviderName = 'opencode';
+export type ProviderName =
+  | 'opencode'
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'groq'
+  | 'deepseek'
+  | 'openrouter'
+  | 'ollama'
+  | 'lmstudio'
+  | 'localai'
+  | 'pollinations'
+  | 'custom';
+
+/**
+ * Providers that do not require an API key (local or free OpenAI-compatible
+ * endpoints). The router enables these by default so a first-time user with
+ * zero credentials still has at least one working provider.
+ */
+export const KEYLESS_PROVIDERS: readonly ProviderName[] = [
+  'ollama',
+  'lmstudio',
+  'localai',
+  'pollinations',
+] as const;
