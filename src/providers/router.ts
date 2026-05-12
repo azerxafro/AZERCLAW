@@ -75,12 +75,18 @@ export class ProviderRouter {
       return { content: 'Error: No AI engine configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
     }
 
-    const providerName = preferredProvider || provider.name || config.ai.defaultProvider;
+    // `provider.name` is the SDK class name (e.g. "openai") and is the same for every
+    // OpenAI-compatible provider, so we never use it to resolve the active provider name.
+    const providerName = preferredProvider || config.ai.defaultProvider;
     const providers = config.ai.providers as ProvidersMap;
     const providerConfig = providers[providerName as keyof ProvidersMap] ?? providers.opencode;
     const defaultModel = providerConfig?.defaultModel;
 
-    const modelFallbacks = ((config.ai as { modelFallbackChain?: string[] }).modelFallbackChain) || [];
+    // The global `modelFallbackChain` contains opencode-specific model IDs and would
+    // 404 against any other backend (e.g. Pollinations), so it is only applied when
+    // the active provider is opencode.
+    const globalFallbacks = ((config.ai as { modelFallbackChain?: string[] }).modelFallbackChain) || [];
+    const modelFallbacks = providerName === 'opencode' ? globalFallbacks : [];
     const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...modelFallbacks];
 
     let lastError = '';
