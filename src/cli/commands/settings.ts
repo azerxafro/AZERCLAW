@@ -23,7 +23,17 @@ import gradientString from 'gradient-string';
 import Enquirer from 'enquirer';
 import { getConfigManager } from '../../config/manager';
 import { resetRouter } from '../../providers/router';
+import { KEYLESS_PROVIDERS } from '../../config/schema';
+import type { AIConfig, ProviderConfig, ProviderName } from '../../config/schema';
 import { fishSuccess, fishError, fishInfo, fishBox, fishWarn } from '../animations/fish';
+
+/** Typed accessor for a provider entry inside `ai.providers`. */
+function getProviderConfig(aiConfig: AIConfig, name: string): ProviderConfig | undefined {
+  return (aiConfig.providers as Record<string, ProviderConfig | undefined>)[name];
+}
+
+/** Providers that do not require an API key (ollama, lmstudio, localai, pollinations). */
+const KEYLESS_PROVIDER_SET = new Set<string>(KEYLESS_PROVIDERS);
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -134,7 +144,7 @@ export async function interactiveSettingsMenu(): Promise<void> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
   const currentProvider = aiConfig.defaultProvider;
-  const currentModel = (aiConfig.providers as any)[currentProvider]?.defaultModel || 'default';
+  const currentModel = getProviderConfig(aiConfig, currentProvider)?.defaultModel || 'default';
   const fallback = config.getFallbackProvider();
 
   fishBox('⚙️  Configuration', [
@@ -182,7 +192,7 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
   const allProviders = Object.keys(aiConfig.providers);
 
   const choices = allProviders.map((p: string) => {
-    const prov = (aiConfig.providers as any)[p];
+    const prov = getProviderConfig(aiConfig, p);
     const isActive = p === aiConfig.defaultProvider;
     const isEnabled = prov?.enabled;
     const status = isActive
@@ -205,9 +215,9 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
       choices,
     }).run();
 
-    const provConfig = (aiConfig.providers as any)[selected];
+    const provConfig = getProviderConfig(aiConfig, selected);
 
-    if (selected !== 'ollama' && selected !== 'lmstudio' && selected !== 'localai' && (!provConfig?.apiKey || provConfig.apiKey === '')) {
+    if (!KEYLESS_PROVIDER_SET.has(selected) && (!provConfig?.apiKey || provConfig.apiKey === '')) {
       fishWarn(`${PROVIDER_LABELS[selected] || selected} has no API key configured.`);
       const setKey: boolean = await new Enquirer.Confirm({
         name: 'setKey',
@@ -222,7 +232,7 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
         }).run();
 
         if (apiKey) {
-          config.updateProviderKey(selected as any, apiKey);
+          config.updateProviderKey(selected as ProviderName, apiKey);
           fishSuccess(`API key set for ${PROVIDER_LABELS[selected] || selected}`);
         } else {
           fishError('No key provided. Provider switch aborted.');
@@ -234,10 +244,10 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
       }
     }
 
-    config.switchProvider(selected as any);
+    config.switchProvider(selected as ProviderName);
     resetRouter();
 
-    const newModel = (config.getAll().ai.providers as any)[selected]?.defaultModel || 'default';
+    const newModel = getProviderConfig(config.getAll().ai, selected)?.defaultModel || 'default';
     fishSuccess(`Switched to ${PROVIDER_LABELS[selected] || selected} (model: ${newModel})`);
     return true;
   } catch { return false; }
@@ -249,7 +259,7 @@ export async function interactiveModelSwitch(): Promise<boolean> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
   const currentProvider = aiConfig.defaultProvider;
-  const currentModel = (aiConfig.providers as any)[currentProvider]?.defaultModel || 'default';
+  const currentModel = getProviderConfig(aiConfig, currentProvider)?.defaultModel || 'default';
 
   fishInfo(`Current: ${PROVIDER_LABELS[currentProvider] || currentProvider} → ${currentModel}`);
 
@@ -301,11 +311,11 @@ export async function interactiveModelSwitch(): Promise<boolean> {
 export async function interactiveApiKeyChange(): Promise<boolean> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
-  const allProviders = Object.keys(aiConfig.providers).filter((p) => !['ollama', 'lmstudio', 'localai'].includes(p));
+  const allProviders = Object.keys(aiConfig.providers).filter((p) => !KEYLESS_PROVIDER_SET.has(p));
 
   const choices = allProviders.map((p: string) => {
-    const prov = (aiConfig.providers as any)[p];
-    const hasKey = prov?.apiKey && prov.apiKey.length > 0;
+    const prov = getProviderConfig(aiConfig, p);
+    const hasKey = !!prov?.apiKey && prov.apiKey.length > 0;
     const status = hasKey
       ? chalk.hex('#34d399')(`● ${maskKey(prov.apiKey)}`)
       : chalk.hex('#6b7280')('○ no key');
@@ -333,7 +343,7 @@ export async function interactiveApiKeyChange(): Promise<boolean> {
       return false;
     }
 
-    config.updateProviderKey(selected as any, apiKey);
+    config.updateProviderKey(selected as ProviderName, apiKey);
     resetRouter();
     fishSuccess(`API key updated for ${PROVIDER_LABELS[selected] || selected}: ${maskKey(apiKey)}`);
     return true;
@@ -360,9 +370,9 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     fishInfo(`Current fallback: ${PROVIDER_LABELS[currentFallback.name] || currentFallback.name} (${currentFallback.config.defaultModel})`);
   }
 
-  const candidates = enabledProviders.filter((p: any) => p.name !== activeProvider);
+  const candidates = enabledProviders.filter((p) => p.name !== activeProvider);
   const choices = [
-    ...candidates.map((p: any) => ({
+    ...candidates.map((p) => ({
       name: p.name,
       message: `${(PROVIDER_LABELS[p.name] || p.name).padEnd(22)} ${chalk.dim(`model: ${p.config.defaultModel || 'default'}`)}`,
       hint: currentFallback?.name === p.name ? chalk.hex('#34d399')(' ● current fallback') : '',
@@ -384,7 +394,7 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     }
 
     const chain = [activeProvider, selected, ...enabledProviders
-      .map((p: any) => p.name)
+      .map((p) => p.name)
       .filter((n: string) => n !== activeProvider && n !== selected)
     ];
     config.setFallbackChain(chain);
@@ -526,26 +536,26 @@ export function initProject(): void {
 export function cliSwitchProvider(providerName: string): void {
   const config = getConfigManager();
   try {
-    config.switchProvider(providerName as any);
+    config.switchProvider(providerName as ProviderName);
     resetRouter();
-    const model = (config.getAll().ai.providers as any)[providerName]?.defaultModel || 'default';
+    const model = getProviderConfig(config.getAll().ai, providerName)?.defaultModel || 'default';
     fishSuccess(`Switched to ${PROVIDER_LABELS[providerName] || providerName} (model: ${model})`);
-  } catch (e: any) {
-    fishError(e.message);
+  } catch (e: unknown) {
+    fishError(e instanceof Error ? e.message : String(e));
   }
 }
 
 export function cliSwitchModel(modelId: string, providerName?: string): void {
   const config = getConfigManager();
   const provider = providerName || config.getAll().ai.defaultProvider;
-  config.setProviderModel(modelId, provider as any);
+  config.setProviderModel(modelId, provider as ProviderName);
   resetRouter();
   fishSuccess(`Model set to ${modelId} on ${PROVIDER_LABELS[provider] || provider}`);
 }
 
 export function cliSetApiKey(providerName: string, apiKey: string): void {
   const config = getConfigManager();
-  config.updateProviderKey(providerName as any, apiKey);
+  config.updateProviderKey(providerName as ProviderName, apiKey);
   resetRouter();
   fishSuccess(`API key updated for ${PROVIDER_LABELS[providerName] || providerName}: ${maskKey(apiKey)}`);
 }
