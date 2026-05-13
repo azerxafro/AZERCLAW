@@ -159,14 +159,15 @@ export class AgentRuntime {
    * Core agent loop — iterates until task completion or max iterations.
    */
   private async agentLoop(): Promise<string> {
-    const router = getRouter();
-    const registry = getToolRegistry();
     const configManager = getConfigManager();
     const store = getSessionStore();
     let finalResponse = '';
 
     while (this.context.currentIteration < this.context.maxIterations && !this.aborted) {
+      const router = getRouter();
+      const registry = getToolRegistry();
       const runtimeConfig = configManager.getAll();
+
       const aiConfig = runtimeConfig.ai || {};
       
       // Budget Check

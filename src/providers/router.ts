@@ -115,13 +115,18 @@ export class ProviderRouter {
       if (!modelId) continue;
       attempted = true;
       if (process.env.AZERCLAW_DEBUG) {
-        console.log(`[Router] Attempting model: ${modelId} on ${providerName}`);
+        console.log(`[Router] Attempting model: ${modelId} on ${providerName}...`);
       }
       try {
+        const start = Date.now();
         const result = await provider.complete({ ...options, model: modelId });
+        if (process.env.AZERCLAW_DEBUG) {
+          console.log(`[Router] Model ${modelId} finished in ${Date.now() - start}ms (finishReason: ${result.finishReason})`);
+        }
         if (result.finishReason !== 'error') return result;
         lastError = result.content;
       } catch (e: unknown) {
+
         lastError = e instanceof Error ? e.message : String(e);
       }
     }
