@@ -17,7 +17,7 @@ import { AzerclawServer } from '../src/core/server';
 import { printQuickSplash } from '../src/cli/animations/fish';
 
 export async function runOpencode() {
-  const VERSION = '2.1.9';
+  const VERSION = '2.2.0';
   const program = new Command();
 
   program
