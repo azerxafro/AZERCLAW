@@ -139,8 +139,10 @@ export class AzerclawServer {
     // Start orphaned agent cleanup sweeper (runs every 5 minutes)
     this.cleanupInterval = setInterval(() => this.cleanupOrphanedAgents(), 5 * 60 * 1000);
 
+    const brand = process.argv[1].includes('opencode') ? 'OPENCODE' : 'AZERCLAW';
+    const icon = brand === 'OPENCODE' ? '🔷' : '🔪';
     this.server.listen(this.port, () => {
-      console.log(`\n🔪 AZERCLAW Daemon (Diabolical Edition) running on ws://localhost:${this.port}\n`);
+      console.log(`\n${icon} ${brand} Daemon running on ws://localhost:${this.port}\n`);
     });
   }
 

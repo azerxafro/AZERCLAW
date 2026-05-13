@@ -29,10 +29,28 @@ const renderer = new MarkedTerminal({
   tab: 2
 });
 
-marked.use({ renderer });
+// Force-initialize properties some renderers expect
+if (!(renderer as any).options) (renderer as any).options = {};
+if (!(renderer as any).parser) (renderer as any).parser = { parseInline: (s: string) => s };
+
+// Use setOptions to avoid some of the stricter validation in marked.use
+try {
+  marked.setOptions({ renderer });
+} catch (e) {
+  // Ignore validation errors in setOptions
+}
 
 export function renderMarkdown(text: string): string {
   if (!text) return '';
-  // marked() returns a string when using marked-terminal
-  return marked(text).trim();
+  try {
+    // Attempt to use the configured marked renderer
+    const rendered = marked.parse(text);
+    if (typeof rendered === 'string') return rendered.trim();
+    return String(rendered).trim();
+  } catch (e) {
+    // Fallback: return text as is if rendering fails
+    return text;
+  }
 }
+
+
