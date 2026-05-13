@@ -41,14 +41,14 @@ if (!process.stdout.isTTY) {
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '2.1.8';
+const VERSION = '2.1.9';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
 
 program
   .name('azerclaw')
-  .description('🐟 AZERCLAW v2.1.8 — Diabolical AI · Scorched Earth · Your Way')
+  .description('🐟 AZERCLAW v2.1.9 — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')
