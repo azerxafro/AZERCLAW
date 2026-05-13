@@ -73,7 +73,9 @@ class ToolRegistry {
     }
     
     const startTime = Date.now();
-    console.log(`[ToolRegistry] Executing '${name}' (v${tool.version})...`);
+    if (process.env.AZERCLAW_DEBUG) {
+      console.log(`[ToolRegistry] Executing '${name}' (v${tool.version})...`);
+    }
     
     try {
       let result: ToolResult;
@@ -86,7 +88,9 @@ class ToolRegistry {
       }
       
       const duration = Date.now() - startTime;
-      console.log(`[ToolRegistry] '${name}' completed in ${duration}ms. Success: ${result.success}`);
+      if (process.env.AZERCLAW_DEBUG) {
+        console.log(`[ToolRegistry] '${name}' completed in ${duration}ms. Success: ${result.success}`);
+      }
       
       // Telemetry hook (local only as per AZERCLAW policy)
       this.logTelemetry(name, duration, result.success);
@@ -94,10 +98,13 @@ class ToolRegistry {
       return result;
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      console.error(`[ToolRegistry] '${name}' failed in ${duration}ms:`, error.message);
+      if (process.env.AZERCLAW_DEBUG) {
+        console.error(`[ToolRegistry] '${name}' failed in ${duration}ms:`, error.message);
+      }
       this.logTelemetry(name, duration, false, error.message);
       return { success: false, output: '', error: error.message || 'Tool execution failed' };
     }
+
   }
 
   private async executeInSandbox(tool: Tool, args: Record<string, unknown>): Promise<ToolResult> {

@@ -64,9 +64,10 @@ export const webSearchTool: Tool = {
     try {
       const { execSync } = require('child_process');
       const result = execSync(
-        `curl -sL "https://html.duckduckgo.com/html/?q=${query}" | grep -oP '<a rel="nofollow" class="result__a" href="[^"]*">[^<]*</a>' | head -${maxResults} | sed 's/<[^>]*>//g'`,
+        `curl -sL "https://html.duckduckgo.com/html/?q=${query}" | perl -nle 'while (/<a rel="nofollow" class="result__a" href="[^"]*">([^<]*)<\\/a>/g) { print $1 }' | head -${maxResults}`,
         { encoding: 'utf-8', timeout: 10000 }
       );
+
       return { success: true, output: result.trim() || 'No results found' };
     } catch {
       return { success: true, output: 'Web search unavailable in current environment' };

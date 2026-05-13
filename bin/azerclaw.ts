@@ -572,6 +572,33 @@ program
     await runDoctor(opts);
   });
 
+// ─── Update Command ─────────────────────────────────────────────
+
+program
+  .command('update')
+  .description('Upgrade AZERCLAW to the latest version')
+  .action(async () => {
+    printQuickSplash(VERSION);
+    const chalk = require('chalk');
+    const { fishInfo, fishSuccess, fishError } = require('../src/cli/animations/fish');
+    
+    fishInfo('Initiating scorched-earth update... 🐟🔥');
+    
+    const { execSync } = require('child_process');
+    try {
+      fishInfo('Executing global installation via npm...');
+      // stdio: inherit allows the user to see the npm progress bar and output
+      execSync('npm install -g azerclaw@latest', { stdio: 'inherit' });
+      fishSuccess('AZERCLAW upgraded to the latest version successfully!');
+      console.log(chalk.dim('Please restart your terminal if you encounter any path issues.\n'));
+    } catch (e: any) {
+      fishError(`Update failed: ${e.message}`);
+      console.log(chalk.dim('\nTip: You may need to run this with sudo depending on your npm configuration:'));
+      console.log(chalk.yellow('sudo npm install -g azerclaw@latest\n'));
+    }
+  });
+
+
 // ─── Security Audit Command ────────────────────────────────────
 
 const securityCmd = program
