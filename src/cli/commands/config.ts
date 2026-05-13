@@ -9,6 +9,7 @@ const gradientString = require('gradient-string');
 const { getConfigManager } = require('../../config/manager');
 const { fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
 const { PROVIDER_LABELS } = require('./settings');
+const { ProviderName } = require('../../config/schema');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 
@@ -63,14 +64,14 @@ export function configList(): void {
     '',
     chalk.hex('#818cf8').bold('AI Provider Settings:'),
     `  Default:    ${chalk.hex('#34d399')(PROVIDER_LABELS[all.ai.defaultProvider] || all.ai.defaultProvider)}`,
-    `  Model:      ${chalk.hex('#34d399')((all.ai.providers as any)[all.ai.defaultProvider]?.defaultModel || 'auto')}`,
+    `  Model:      ${chalk.hex('#34d399')(all.ai.providers[all.ai.defaultProvider as typeof ProviderName]?.defaultModel || 'auto')}`,
     `  Fallback:   ${chalk.hex('#34d399')(fallback ? `${PROVIDER_LABELS[fallback.name] || fallback.name} (${fallback.config.defaultModel})` : chalk.dim('none'))}`,
     `  Chain:      ${chalk.dim(all.ai.fallbackChain.join(' → '))}`,
     `  Max Tokens: ${chalk.dim(String(all.ai.maxTokens))}`,
     `  Temperature:${chalk.dim(String(all.ai.temperature))}`,
     '',
     chalk.hex('#818cf8').bold('Configured Providers:'),
-    ...Object.entries(all.ai.providers).map(([name, prov]: [string, any]) => {
+    ...Object.entries(all.ai.providers).map(([name, prov]: [string, unknown]) => {
       const isDefault = name === all.ai.defaultProvider;
       const isFallback = fallback?.name === name;
       const status = prov.enabled ? chalk.hex('#34d399')('●') : chalk.hex('#6b7280')('○');
@@ -83,9 +84,9 @@ export function configList(): void {
     `  Name:            ${chalk.dim(all.agent.name)}`,
     `  Max Iterations:  ${chalk.dim(String(all.agent.maxIterations))}`,
     `  Approval Required: ${chalk.dim(String(all.agent.approvalRequired))}`,
-    `  Sandbox Mode:    ${chalk.dim(String((all.agent as any).sandboxMode))}`,
-    `  Sandbox Allowed: ${chalk.dim((((all.agent as any).sandboxAllowedTools || []) as string[]).join(', ') || 'none')}`,
-    `  Sandbox Denied:  ${chalk.dim((((all.agent as any).sandboxDeniedTools || []) as string[]).join(', ') || 'none')}`,
+    `  Sandbox Mode:    ${chalk.dim(String(all.agent.sandboxMode))}`,
+    `  Sandbox Allowed: ${chalk.dim((all.agent.sandboxAllowedTools || []).join(', ') || 'none')}`,
+    `  Sandbox Denied:  ${chalk.dim((all.agent.sandboxDeniedTools || []).join(', ') || 'none')}`,
     '',
     chalk.hex('#818cf8').bold('Permissions:'),
     `  Auto-Approve:    ${chalk.dim((all.permissions?.autoApprove || []).join(', ') || 'none')}`,
@@ -100,10 +101,10 @@ export function configList(): void {
     `  Splash: ${chalk.dim(String(all.ui.showSplash))}`,
     '',
     chalk.hex('#818cf8').bold('Channel Security:'),
-    `  Discord DM:  ${chalk.dim((all.channels as any)?.discord?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.discord?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
-    `  Telegram DM: ${chalk.dim((all.channels as any)?.telegram?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.telegram?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
-    `  Slack DM:    ${chalk.dim((all.channels as any)?.slack?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((((all.channels as any)?.slack?.allowFrom || []) as string[]).join(', ') || 'empty')}`,
-    `  Routing:     ${chalk.dim((all.channels as any)?.routing?.strategy || 'platform_channel')} (${chalk.dim(String((((all.channels as any)?.routing?.rules || []) as unknown[]).length))} rules)`,
+    `  Discord DM:  ${chalk.dim(all.channels.discord?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((all.channels.discord?.allowFrom || []).join(', ') || 'empty')}`,
+    `  Telegram DM: ${chalk.dim(all.channels.telegram?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((all.channels.telegram?.allowFrom || []).join(', ') || 'empty')}`,
+    `  Slack DM:    ${chalk.dim(all.channels.slack?.dmPolicy || 'pairing')} | allowFrom=${chalk.dim((all.channels.slack?.allowFrom || []).join(', ') || 'empty')}`,
+    `  Routing:     ${chalk.dim(all.channels.routing?.strategy || 'platform_channel')} (${chalk.dim(String((all.channels.routing?.rules || []).length))} rules)`,
     '',
     chalk.dim(`Config: ${config.paths.configFile}`),
   ]);

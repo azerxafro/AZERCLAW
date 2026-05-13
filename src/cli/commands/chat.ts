@@ -265,11 +265,11 @@ export async function runChat(options: { model?: string; provider?: string; init
         let task = agentMatch[2];
         
         // Parse execution flags
-        let flags = { turbo: false, auto: false, review: false, collab: false, secure: false };
+        const flags: Record<string, boolean> = { turbo: false, auto: false, review: false, collab: false, secure: false };
         const flagPattern = /\/\/(turbo|auto|review|collab|secure)/g;
         let flagMatch;
         while ((flagMatch = flagPattern.exec(task)) !== null) {
-          (flags as any)[flagMatch[1]] = true;
+          flags[flagMatch[1]] = true;
         }
         task = task.replace(flagPattern, '').trim();
         

@@ -21,30 +21,24 @@ const { getConfigManager } = require('../../config/manager');
 const { resetRouter } = require('../../providers/router');
 const { fishSuccess, fishError, fishInfo, fishWarn, fishBox, FishThinkingAnimation } = require('../animations/fish');
 const { PROVIDER_MODELS, PROVIDER_LABELS } = require('./settings');
+const { ProviderName } = require('../../config/schema');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 const BLOOD = gradientString(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
 
 const PROVIDERS = [
-  { name: 'OpenAI', value: 'openai', hint: 'GPT-4o, GPT-4.1, o3, o4-mini', keyPrefix: 'sk-', envVar: 'OPENAI_API_KEY', local: false },
-  { name: 'Anthropic', value: 'anthropic', hint: 'Claude Opus 4, Sonnet 4, Haiku', keyPrefix: 'sk-ant-', envVar: 'ANTHROPIC_API_KEY', local: false },
-  { name: 'Google Gemini', value: 'google', hint: 'Gemini 2.5 Pro/Flash', keyPrefix: 'AI', envVar: 'GOOGLE_API_KEY', local: false },
-  { name: 'Groq', value: 'groq', hint: 'Llama 3.3, Mixtral (fast inference)', keyPrefix: 'gsk_', envVar: 'GROQ_API_KEY', local: false },
-  { name: 'DeepSeek', value: 'deepseek', hint: 'DeepSeek V3, R1', keyPrefix: 'sk-', envVar: '', local: false },
-  { name: 'OpenRouter', value: 'openrouter', hint: '100+ models via one key', keyPrefix: 'sk-or-', envVar: 'OPENROUTER_API_KEY', local: false },
+  { name: 'Opencode (Free)', value: 'opencode', hint: 'MiniMax, Ring — Free tier · 1T context', keyPrefix: 'oc-', envVar: 'AZERTRON_OPENCODE_KEY', local: false },
+  { name: 'Groq (Fast Free)', value: 'groq', hint: 'Llama 3.3, Mixtral — Fast inference', keyPrefix: 'gsk_', envVar: 'GROQ_API_KEY', local: false },
+  { name: 'OpenRouter (Free Tier)', value: 'openrouter', hint: '100+ models via one key', keyPrefix: 'sk-or-', envVar: 'OPENROUTER_API_KEY', local: false },
+  { name: 'Pollinations (No Key)', value: 'pollinations', hint: 'GPT-4o-mini, Claude, Llama — No API key needed', keyPrefix: '', envVar: '', local: false },
   { name: 'Ollama (Local)', value: 'ollama', hint: 'Free, runs on your machine — port 11434', keyPrefix: '', envVar: '', local: true },
-  { name: 'LM Studio (Local)', value: 'lmstudio', hint: 'Free, runs on your machine — port 1234', keyPrefix: '', envVar: '', local: true },
-  { name: 'LocalAI (Local)', value: 'localai', hint: 'Free, runs on your machine — port 8080', keyPrefix: '', envVar: '', local: true },
-  { name: 'Custom (OpenAI-compatible)', value: 'custom', hint: 'Any endpoint', keyPrefix: '', envVar: '', local: false },
 ];
 
 // ─── Local LLM Server Detection ─────────────────────────────────
 
 const LOCAL_SERVERS = [
   { name: 'Ollama', provider: 'ollama', url: 'http://localhost:11434', testPath: '/api/tags' },
-  { name: 'LM Studio', provider: 'lmstudio', url: 'http://localhost:1234', testPath: '/v1/models' },
-  { name: 'LocalAI', provider: 'localai', url: 'http://localhost:8080', testPath: '/v1/models' },
 ];
 
 async function detectLocalServers(): Promise<{ name: string; provider: string; url: string; models?: string[] }[]> {
@@ -58,7 +52,7 @@ async function detectLocalServers(): Promise<{ name: string; provider: string; u
       clearTimeout(timeout);
       
       if (res.ok) {
-        const data = await res.json() as any;
+        const data = await res.json() as Record<string, unknown>;
         let models: string[] = [];
         
         // Extract model names based on API format
@@ -157,7 +151,7 @@ export async function runOnboard(): Promise<void> {
       fishBox('🔍 Auto-Detected API Keys', [
         '',
         ...cloudProviders.map((p: string) => {
-          const prov = (config.getAll().ai.providers as any)[p];
+          const prov = config.getAll().ai.providers[p as typeof ProviderName];
           const label = PROVIDER_LABELS[p] || p;
           return `  ${chalk.hex('#34d399')('●')} ${chalk.hex('#e2e8f0')(label.padEnd(18))} ${chalk.dim(maskKey(prov.apiKey))}`;
         }),
@@ -184,7 +178,7 @@ export async function runOnboard(): Promise<void> {
           choices: detectedProviders.map((p: string) => ({
             name: p,
             message: `${PROVIDER_LABELS[p] || p}`,
-            hint: chalk.dim((config.getAll().ai.providers as any)[p]?.defaultModel || ''),
+            hint: chalk.dim(config.getAll().ai.providers[p as typeof ProviderName]?.defaultModel || ''),
           })),
         }).run().catch(() => detectedProviders[0]);
 
@@ -223,7 +217,7 @@ export async function runOnboard(): Promise<void> {
   
   if (knownModels.length > 0) {
     console.log('');
-    const currentModel = (config.getAll().ai.providers as any)[defaultProvider]?.defaultModel;
+    const currentModel = config.getAll().ai.providers[defaultProvider as typeof ProviderName]?.defaultModel;
     
     const selectedModel: string = await new Enquirer.Select({
       name: 'model',
@@ -475,7 +469,7 @@ async function configureProviders(config: any, alreadyConfigured: string[]): Pro
     }).run().catch(() => '');
 
     if (apiKey) {
-      config.setProviderKey(provider.value as any, apiKey);
+      config.setProviderKey(provider.value as typeof ProviderName, apiKey);
       fishSuccess(`${provider.name} configured`);
     } else {
       fishError(`${provider.name} skipped`);
@@ -525,7 +519,7 @@ async function configureFallback(config: any, enabledProviders: string[]): Promi
     choices: fallbackCandidates.map((p: string) => ({
       name: p,
       message: `${PROVIDER_LABELS[p] || p}`,
-      hint: chalk.dim((config.getAll().ai.providers as any)[p]?.defaultModel || ''),
+      hint: chalk.dim(config.getAll().ai.providers[p as typeof ProviderName]?.defaultModel || ''),
     })),
   }).run().catch(() => fallbackCandidates[0]);
 

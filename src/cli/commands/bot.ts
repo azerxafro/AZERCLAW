@@ -10,7 +10,7 @@ const { getConfigManager } = require('../../config/manager');
 export async function startBot(options: { port?: number }): Promise<void> {
   const config = getConfigManager().getAll();
   const enabledPlatforms = Object.entries(config.channels || {})
-    .filter(([platform, cfg]) => platform !== 'routing' && (cfg as any).enabled)
+    .filter(([platform, cfg]) => platform !== 'routing' && (cfg as Record<string, unknown>).enabled)
     .map(([platform]) => platform);
 
   if (enabledPlatforms.length === 0) {

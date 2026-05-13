@@ -1,9 +1,10 @@
 const { marked } = require('marked');
-const markedTerminal = require('marked-terminal');
+const MarkedTerminal = require('marked-terminal');
 const chalk = require('chalk');
 
 // Configure marked with the terminal renderer
-marked.use(markedTerminal({
+// marked-terminal v7+ requires instantiation with new
+const renderer = new MarkedTerminal({
   // Customize styling to match AZERCLAW/Gemini CLI
   header: chalk.bold.hex('#c4b5fd'),
   code: chalk.hex('#a78bfa'),
@@ -24,7 +25,9 @@ marked.use(markedTerminal({
   
   // Custom box around code blocks or just better coloring
   tab: 2
-}));
+});
+
+marked.use({ renderer });
 
 export function renderMarkdown(text: string): string {
   if (!text) return '';

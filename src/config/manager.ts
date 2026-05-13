@@ -69,7 +69,11 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(LEGACY_CONFIG_FILE, 'utf-8');
         fs.writeFileSync(CONFIG_FILE, raw, { mode: 0o600 });
-      } catch { /* ignore migration errors */ }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Legacy migration failed:', e instanceof Error ? e.message : String(e));
+        }
+      }
     }
   }
 
@@ -121,7 +125,11 @@ class ConfigManager extends EventEmitter {
           }
         });
       }
-    } catch { /* ignore watcher setup errors */ }
+    } catch (e) {
+      if (process.env.AZERCLAW_DEBUG) {
+        console.error('[ConfigManager] Watcher setup failed:', e instanceof Error ? e.message : String(e));
+      }
+    }
   }
 
   /**
@@ -161,7 +169,12 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(projectFile, 'utf-8');
         this.projectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
-      } catch { this.projectSettings = null; }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Project settings load failed:', e instanceof Error ? e.message : String(e));
+        }
+        this.projectSettings = null;
+      }
     }
 
     // Local project settings (personal, gitignored)
@@ -170,7 +183,12 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(localFile, 'utf-8');
         this.localProjectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
-      } catch { this.localProjectSettings = null; }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Local project settings load failed:', e instanceof Error ? e.message : String(e));
+        }
+        this.localProjectSettings = null;
+      }
     }
   }
 
@@ -390,7 +408,7 @@ class ConfigManager extends EventEmitter {
   getActiveProvider(): { name: ProviderName; config: any } {
     const all = this.getAll();
     const providerName = all.ai.defaultProvider as ProviderName;
-    const providerConfig = (all.ai.providers as any)[providerName];
+    const providerConfig = all.ai.providers[providerName];
     return { name: providerName, config: providerConfig };
   }
 
@@ -405,7 +423,7 @@ class ConfigManager extends EventEmitter {
     // Find first enabled fallback that isn't the active provider
     for (const name of chain) {
       if (name === activeProvider) continue;
-      const provConfig = (all.ai.providers as any)[name];
+      const provConfig = all.ai.providers[name as ProviderName];
       if (provConfig && provConfig.enabled) {
         return { name: name as ProviderName, config: provConfig };
       }
@@ -420,13 +438,13 @@ class ConfigManager extends EventEmitter {
     const providers = this.config?.ai?.providers;
     if (!providers || typeof providers !== 'object') return [];
     const enabled: { name: string; config: any }[] = [];
-    
+
     for (const [name, provConfig] of Object.entries(providers)) {
-      if (provConfig && (provConfig as any).enabled) {
+      if (provConfig && (provConfig as Record<string, unknown>).enabled) {
         enabled.push({ name, config: provConfig });
       }
     }
-    
+
     return enabled;
   }
 
@@ -447,7 +465,7 @@ class ConfigManager extends EventEmitter {
    * Switch the active provider.
    */
   switchProvider(provider: ProviderName): void {
-    const providerConfig = (this.config.ai.providers as any)[provider];
+    const providerConfig = this.config.ai.providers[provider];
     if (!providerConfig) throw new Error(`Unknown provider: ${provider}`);
     this.set('ai.defaultProvider', provider);
     if (!providerConfig.enabled) {
@@ -459,7 +477,7 @@ class ConfigManager extends EventEmitter {
    * Change the default model for a provider (or the active provider).
    */
   setProviderModel(model: string, provider?: ProviderName): void {
-    const target = provider || this.config.ai.defaultProvider as ProviderName;
+    const target = provider || (this.config.ai.defaultProvider as ProviderName);
     this.set(`ai.providers.${target}.defaultModel`, model);
   }
 
@@ -487,6 +505,8 @@ class ConfigManager extends EventEmitter {
   resolveEnvOverrides(): string[] {
     const envMap: Record<string, { provider: ProviderName; key: string }> = {
       'AZERTRON_OPENCODE_KEY': { provider: 'opencode', key: 'apiKey' },
+      'AZERTRON_OPENROUTER_KEY': { provider: 'openrouter', key: 'apiKey' },
+      'AZERTRON_GROQ_KEY': { provider: 'groq', key: 'apiKey' },
     };
 
     const detected: string[] = [];
@@ -501,8 +521,8 @@ class ConfigManager extends EventEmitter {
 
     // If we detected providers and there's no active default, set one
     if (detected.length > 0) {
-      const currentDefault = this.config.ai.defaultProvider;
-      const currentDefaultEnabled = (this.config.ai.providers as any)[currentDefault]?.enabled;
+      const currentDefault = this.config.ai.defaultProvider as ProviderName;
+      const currentDefaultEnabled = this.config.ai.providers[currentDefault]?.enabled;
       if (!currentDefaultEnabled) {
         this.set('ai.defaultProvider', detected[0]);
       }
@@ -527,8 +547,8 @@ class ConfigManager extends EventEmitter {
     configFile: string;
   } {
     const all = this.getAll();
-    const provider = all.ai.defaultProvider;
-    const provConfig = (all.ai.providers as any)[provider];
+    const provider = all.ai.defaultProvider as ProviderName;
+    const provConfig = all.ai.providers[provider];
     const model = provConfig?.defaultModel || 'auto';
     const fallback = this.getFallbackProvider();
     

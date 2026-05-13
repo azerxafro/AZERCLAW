@@ -10,6 +10,33 @@ const OpencodeProviderSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
+const OpenRouterProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://openrouter.ai/api/v1'),
+  defaultModel: z.string().default('deepseek/deepseek-chat:free'),
+  enabled: z.boolean().default(false),
+});
+
+const GroqProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://api.groq.com/openai/v1'),
+  defaultModel: z.string().default('llama-3.3-70b-versatile'),
+  enabled: z.boolean().default(false),
+});
+
+const PollinationsProviderSchema = z.object({
+  // No API key needed - completely free
+  baseUrl: z.string().default('https://text.pollinations.ai/openai'),
+  defaultModel: z.string().default('openai'),
+  enabled: z.boolean().default(true), // Enabled by default - no key needed
+});
+
+const OllamaProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:11434'),
+  defaultModel: z.string().default('llama3.2'),
+  enabled: z.boolean().default(false),
+});
+
 // ─── Security Schemas ───────────────────────────────────────────
 
 const ChannelSecuritySchema = z.object({
@@ -21,12 +48,38 @@ const ChannelSecuritySchema = z.object({
 
 const ProvidersSchema = z.object({
   opencode: OpencodeProviderSchema.default({}),
+  openrouter: OpenRouterProviderSchema.default({}),
+  groq: GroqProviderSchema.default({}),
+  pollinations: PollinationsProviderSchema.default({}),
+  ollama: OllamaProviderSchema.default({}),
 }).default({
-  opencode: { 
-    apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
-    baseUrl: 'https://opencode.ai/zen/v1', 
-    defaultModel: 'minimax-m2.5-free', 
-    enabled: true 
+  opencode: {
+    apiKey: process.env.AZERTRON_OPENCODE_KEY || '',
+    baseUrl: 'https://opencode.ai/zen/v1',
+    defaultModel: 'minimax-m2.5-free',
+    enabled: true
+  },
+  openrouter: {
+    apiKey: process.env.AZERTRON_OPENROUTER_KEY || '',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'deepseek/deepseek-chat:free',
+    enabled: !!process.env.AZERTRON_OPENROUTER_KEY
+  },
+  groq: {
+    apiKey: process.env.AZERTRON_GROQ_KEY || '',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    enabled: !!process.env.AZERTRON_GROQ_KEY
+  },
+  pollinations: {
+    baseUrl: 'https://text.pollinations.ai/openai',
+    defaultModel: 'openai',
+    enabled: true // Always enabled - no API key needed
+  },
+  ollama: {
+    baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    defaultModel: 'llama3.2',
+    enabled: false // User must explicitly enable
   },
 });
 
@@ -191,4 +244,4 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
-export type ProviderName = 'opencode';
+export type ProviderName = 'opencode' | 'openrouter' | 'groq' | 'pollinations' | 'ollama';

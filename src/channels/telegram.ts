@@ -24,10 +24,10 @@ export class TelegramAdapter extends ChannelAdapter {
 
     // Verify token
     const res = await fetch(`${this.baseUrl}/getMe`);
-    const data = await res.json() as any;
+    const data = await res.json() as { ok: boolean; result?: { username?: string }; description?: string };
     if (!data.ok) throw new Error(`Telegram auth failed: ${data.description}`);
 
-    auditLog('TELEGRAM_CONNECTED', `Bot: @${data.result.username}`);
+    auditLog('TELEGRAM_CONNECTED', `Bot: @${data.result?.username}`);
     this.polling = true;
     this.pollUpdates();
   }
@@ -59,7 +59,7 @@ export class TelegramAdapter extends ChannelAdapter {
 
     try {
       const res = await fetch(`${this.baseUrl}/getUpdates?offset=${this.offset}&timeout=30`);
-      const data = await res.json() as any;
+      const data = await res.json() as { ok: boolean; result?: Record<string, unknown>[] };
 
       if (data.ok && data.result) {
         for (const update of data.result) {

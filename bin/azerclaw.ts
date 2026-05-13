@@ -41,14 +41,14 @@ if (!process.stdout.isTTY) {
 const { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } = require('../src/cli/animations/fish');
 const { getConfigManager } = require('../src/config/manager');
 
-const VERSION = '2.1.4';
+const VERSION = '2.1.7';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
 
 program
   .name('azerclaw')
-  .description('🐟 AZERTRON X1.0 — Diabolical AI · Scorched Earth · Your Way')
+  .description('🐟 AZERCLAW v2.1.7 — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')
@@ -574,9 +574,11 @@ program
 
 // ─── Security Audit Command ────────────────────────────────────
 
-program
+const securityCmd = program
   .command('security')
-  .description('Security audit')
+  .description('Security audit');
+
+securityCmd
   .command('audit')
   .option('-f, --fix', 'Auto-fix security issues')
   .action(async (opts: any) => {

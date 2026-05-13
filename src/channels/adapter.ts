@@ -186,12 +186,12 @@ export abstract class ChannelAdapter {
   }
 
   protected getChannelSecurityConfig(): { dmPolicy: 'pairing' | 'open' | 'closed'; allowFrom: string[] } {
-    const channelsConfig = getConfigManager().getAll().channels as any;
-    const channelConfig = channelsConfig?.[this.platform] || {};
+    const channelsConfig = getConfigManager().getAll().channels;
+    const channelConfig = (channelsConfig as Record<string, Record<string, unknown>>)?.[this.platform] || {};
     const dmPolicy = channelConfig.dmPolicy === 'open' || channelConfig.dmPolicy === 'closed'
-      ? channelConfig.dmPolicy
+      ? channelConfig.dmPolicy as 'open' | 'closed'
       : 'pairing';
-    const allowFrom: string[] = Array.isArray(channelConfig.allowFrom) ? channelConfig.allowFrom : [];
+    const allowFrom: string[] = Array.isArray(channelConfig.allowFrom) ? channelConfig.allowFrom as string[] : [];
     return { dmPolicy, allowFrom };
   }
 

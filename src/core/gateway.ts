@@ -99,12 +99,13 @@ export class Gateway {
     const channels = config.channels || {};
     for (const [platform, channelConfig] of Object.entries(channels)) {
       if (platform === 'routing') continue;
-      if ((channelConfig as any).enabled && (channelConfig as any).token) {
+      const cfg = channelConfig as Record<string, unknown>;
+      if (cfg.enabled && (cfg.token || cfg.botToken)) {
         try {
-          await this.connectChannel(platform, channelConfig as any);
+          await this.connectChannel(platform, cfg as Record<string, string>);
           console.log(chalk.green(`[Gateway] Connected to ${platform}`));
-        } catch (e: any) {
-          console.error(chalk.red(`[Gateway] Failed to connect ${platform}: ${e.message}`));
+        } catch (e: unknown) {
+          console.error(chalk.red(`[Gateway] Failed to connect ${platform}: ${e instanceof Error ? e.message : String(e)}`));
         }
       }
     }

@@ -117,16 +117,28 @@ export function speak(text: string, character?: string): void {
     const { getConfigManager } = require('../../config/manager');
     const config = getConfigManager().getAll();
     if (!config.ui.ttsEnabled) return;
-  } catch {
-    return; // Safety fallback
+  } catch (e) {
+    if (process.env.AZERCLAW_DEBUG) {
+      console.error('[TTS] Config check failed:', e instanceof Error ? e.message : String(e));
+    }
+    return;
   }
 
-  const voice = character ? CHARACTER_VOICES[character.toUpperCase()] : 'Daniel';  const cleanText = text.replace(/[*_`]/g, '').slice(0, 200); // Strip markdown and limit length
-  
+  const voice = character ? CHARACTER_VOICES[character.toUpperCase()] : 'Daniel';
+  const cleanText = text.replace(/["*_`]/g, '').slice(0, 200); // Strip markdown and limit length
+
   try {
-    const { exec } = require('child_process');
-    exec(`say -v "${voice || 'Daniel'}" "${cleanText}"`);
-  } catch { /* ignore tts errors */ }
+    const { execFile } = require('child_process');
+    execFile('say', ['-v', voice || 'Daniel', cleanText], (err: unknown) => {
+      if (err && process.env.AZERCLAW_DEBUG) {
+        console.error('[TTS Error]', err instanceof Error ? err.message : String(err));
+      }
+    });
+  } catch (e) {
+    if (process.env.AZERCLAW_DEBUG) {
+      console.error('[TTS] execFile failed:', e instanceof Error ? e.message : String(e));
+    }
+  }
 }
 
 export async function playSplashScreen(version: string): Promise<void> {

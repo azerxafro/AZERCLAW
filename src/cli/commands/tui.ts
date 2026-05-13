@@ -306,10 +306,10 @@ export async function runTUI(): Promise<void> {
         let task = agentMatch[2];
 
         const flagPattern = /\/\/(turbo|auto|review|collab|secure)/g;
-        let flags = { turbo: false, auto: false, review: false, collab: false, secure: false };
+        const flags: Record<string, boolean> = { turbo: false, auto: false, review: false, collab: false, secure: false };
         let flagMatch;
         while ((flagMatch = flagPattern.exec(task)) !== null) {
-          (flags as any)[flagMatch[1]] = true;
+          flags[flagMatch[1]] = true;
         }
         task = task.replace(flagPattern, '').trim();
 

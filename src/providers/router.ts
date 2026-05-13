@@ -18,13 +18,50 @@ export class ProviderRouter {
   }
 
   private initProviders(aiConfig: AIConfig): void {
-    const p = aiConfig.providers as Record<string, any>;
-    
-    if (p.opencode && p.opencode.enabled && p.opencode.apiKey) {
+    const p = aiConfig.providers;
+
+    // Opencode (default free provider)
+    if (p.opencode?.enabled && p.opencode.apiKey) {
       this.providers.set('opencode', new OpenAIProvider({
         apiKey: p.opencode.apiKey,
         baseUrl: p.opencode.baseUrl || 'https://opencode.ai/zen/v1',
         defaultModel: p.opencode.defaultModel || 'minimax-m2.5-free'
+      }));
+    }
+
+    // OpenRouter (free tier access)
+    if (p.openrouter?.enabled && p.openrouter.apiKey) {
+      this.providers.set('openrouter', new OpenAIProvider({
+        apiKey: p.openrouter.apiKey,
+        baseUrl: p.openrouter.baseUrl || 'https://openrouter.ai/api/v1',
+        defaultModel: p.openrouter.defaultModel || 'deepseek/deepseek-chat:free'
+      }));
+    }
+
+    // Groq (fast free tier)
+    if (p.groq?.enabled && p.groq.apiKey) {
+      this.providers.set('groq', new OpenAIProvider({
+        apiKey: p.groq.apiKey,
+        baseUrl: p.groq.baseUrl || 'https://api.groq.com/openai/v1',
+        defaultModel: p.groq.defaultModel || 'llama-3.3-70b-versatile'
+      }));
+    }
+
+    // Pollinations (no API key needed - completely free)
+    if (p.pollinations?.enabled) {
+      this.providers.set('pollinations', new OpenAIProvider({
+        apiKey: 'pollinations-no-key-required', // Dummy key for compatibility
+        baseUrl: p.pollinations.baseUrl || 'https://text.pollinations.ai/openai',
+        defaultModel: p.pollinations.defaultModel || 'openai'
+      }));
+    }
+
+    // Ollama (local models)
+    if (p.ollama?.enabled) {
+      this.providers.set('ollama', new OpenAIProvider({
+        apiKey: 'ollama', // Ollama doesn't need a real API key
+        baseUrl: p.ollama.baseUrl || 'http://localhost:11434/v1',
+        defaultModel: p.ollama.defaultModel || 'llama3.2'
       }));
     }
 
@@ -37,7 +74,26 @@ export class ProviderRouter {
     if (name) return this.providers.get(name);
     const config = getConfigManager().getAll();
     const defaultProvider = config.ai.defaultProvider;
-    return this.providers.get(defaultProvider) || this.providers.get('opencode') || this.providers.values().next().value;
+    // Smart fallback: prefer free providers that don't need keys
+    return this.providers.get(defaultProvider)
+      || this.providers.get('opencode')
+      || this.providers.get('pollinations') // No API key needed
+      || this.providers.get('openrouter')
+      || this.providers.get('groq')
+      || this.providers.get('ollama')
+      || this.providers.values().next().value;
+  }
+
+  /**
+   * Get a free provider that doesn't require API key setup
+   */
+  getFreeProvider(): BaseProvider | undefined {
+    // Priority: Pollinations (no key) > OpenRouter free tier > Groq free tier > Ollama
+    return this.providers.get('pollinations')
+      || this.providers.get('openrouter')
+      || this.providers.get('groq')
+      || this.providers.get('ollama')
+      || this.providers.values().next().value;
   }
 
   async complete(options: CompletionOptions, preferredProvider?: string): Promise<CompletionResult> {
@@ -47,11 +103,11 @@ export class ProviderRouter {
       return { content: 'Error: No AI engine configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
     }
 
-    const providerName = preferredProvider || (provider as BaseProvider).name || config.ai.defaultProvider;
-    const providerConfig = (config.ai.providers as Record<string, any>)[providerName] || (config.ai.providers as Record<string, any>).opencode;
+    const providerName = preferredProvider || provider.name || config.ai.defaultProvider;
+    const providerConfig = config.ai.providers[providerName as keyof typeof config.ai.providers];
     const defaultModel = providerConfig?.defaultModel;
-    
-    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...((config.ai as Record<string, any>).modelFallbackChain || [])];
+
+    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...(config.ai.modelFallbackChain || [])];
 
     let lastError = '';
     let attempted = false;

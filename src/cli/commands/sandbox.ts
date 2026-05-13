@@ -11,7 +11,7 @@ function unique(list: string[]): string[] {
 
 export function sandboxStatus(): void {
   const config = getConfigManager().getAll();
-  const agent = config.agent as any;
+  const agent = config.agent;
   const mode = resolveSandboxMode(agent.sandboxMode);
   const allowed = Array.isArray(agent.sandboxAllowedTools) ? agent.sandboxAllowedTools : [];
   const denied = Array.isArray(agent.sandboxDeniedTools) ? agent.sandboxDeniedTools : [];
@@ -41,8 +41,8 @@ export function setSandboxMode(mode: string): void {
 export function addSandboxAllowedTool(toolName: string): void {
   const config = getConfigManager();
   const all = config.getAll();
-  const current = Array.isArray((all.agent as any).sandboxAllowedTools)
-    ? (all.agent as any).sandboxAllowedTools
+  const current = Array.isArray(all.agent.sandboxAllowedTools)
+    ? all.agent.sandboxAllowedTools
     : [];
   const next = unique([...current, toolName]);
   config.set('agent.sandboxAllowedTools', next);
@@ -52,8 +52,8 @@ export function addSandboxAllowedTool(toolName: string): void {
 export function removeSandboxAllowedTool(toolName: string): void {
   const config = getConfigManager();
   const all = config.getAll();
-  const current = Array.isArray((all.agent as any).sandboxAllowedTools)
-    ? (all.agent as any).sandboxAllowedTools
+  const current = Array.isArray(all.agent.sandboxAllowedTools)
+    ? all.agent.sandboxAllowedTools
     : [];
   const next = current.filter((t: string) => t !== toolName);
   if (next.length === current.length) {
@@ -67,8 +67,8 @@ export function removeSandboxAllowedTool(toolName: string): void {
 export function addSandboxDeniedTool(toolName: string): void {
   const config = getConfigManager();
   const all = config.getAll();
-  const current = Array.isArray((all.agent as any).sandboxDeniedTools)
-    ? (all.agent as any).sandboxDeniedTools
+  const current = Array.isArray(all.agent.sandboxDeniedTools)
+    ? all.agent.sandboxDeniedTools
     : [];
   const next = unique([...current, toolName]);
   config.set('agent.sandboxDeniedTools', next);
@@ -78,8 +78,8 @@ export function addSandboxDeniedTool(toolName: string): void {
 export function removeSandboxDeniedTool(toolName: string): void {
   const config = getConfigManager();
   const all = config.getAll();
-  const current = Array.isArray((all.agent as any).sandboxDeniedTools)
-    ? (all.agent as any).sandboxDeniedTools
+  const current = Array.isArray(all.agent.sandboxDeniedTools)
+    ? all.agent.sandboxDeniedTools
     : [];
   const next = current.filter((t: string) => t !== toolName);
   if (next.length === current.length) {
