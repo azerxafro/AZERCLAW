@@ -72,10 +72,11 @@ export function configList(): void {
     '',
     chalk.hex('#818cf8').bold('Configured Providers:'),
     ...Object.entries(all.ai.providers).map(([name, prov]: [string, unknown]) => {
+      const p = prov as Record<string, unknown>;
       const isDefault = name === all.ai.defaultProvider;
       const isFallback = fallback?.name === name;
-      const status = prov.enabled ? chalk.hex('#34d399')('●') : chalk.hex('#6b7280')('○');
-      const key = prov.apiKey ? maskKey(prov.apiKey) : (name === 'ollama' ? chalk.dim('local') : chalk.dim('no key'));
+      const status = p.enabled ? chalk.hex('#34d399')('●') : chalk.hex('#6b7280')('○');
+      const key = p.apiKey ? maskKey(p.apiKey as string) : (name === 'ollama' ? chalk.dim('local') : chalk.dim('no key'));
       const badge = isDefault ? chalk.hex('#34d399')(' [primary]') : isFallback ? chalk.hex('#06b6d4')(' [fallback]') : '';
       return `  ${status} ${chalk.hex('#e2e8f0')((PROVIDER_LABELS[name] || name).padEnd(16))} ${key}${badge}`;
     }),

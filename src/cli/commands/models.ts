@@ -62,7 +62,7 @@ export async function modelsStatus(): Promise<void> {
     activeProviders.length > 0 ? chalk.dim(`  └─ ${activeProviders.join(', ')}`) : '',
     chalk.hex('#818cf8')(`Default Provider: `) + chalk.hex('#34d399')(aiConfig.defaultProvider),
     chalk.hex('#818cf8')(`Default Model:    `) + chalk.hex('#34d399')(
-      providers[aiConfig.defaultProvider as typeof ProviderName]?.defaultModel || 'auto'
+      ((providers as Record<string, unknown>)[aiConfig.defaultProvider as string] as Record<string, unknown>)?.defaultModel || 'auto'
     ),
     chalk.hex('#818cf8')(`Fallback Chain:   `) + chalk.dim(aiConfig.fallbackChain.join(' → ')),
     chalk.hex('#818cf8')(`Temperature:      `) + chalk.dim(String(aiConfig.temperature)),
@@ -99,7 +99,7 @@ export async function modelsList(): Promise<void> {
     const providers = config.getAll().ai.providers;
 
     for (const [providerName, models] of Object.entries(FREE_MODEL_REGISTRY)) {
-      const providerConfig = providers[providerName as typeof ProviderName];
+      const providerConfig = (providers as Record<string, unknown>)[providerName] as Record<string, unknown>;
       if (providerConfig?.enabled !== false) {
         for (const model of models) {
           // Only add if not already present

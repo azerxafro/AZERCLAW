@@ -58,10 +58,10 @@ async function detectLocalServers(): Promise<{ name: string; provider: string; u
         // Extract model names based on API format
         if (data.models) {
           // Ollama format
-          models = data.models.map((m: any) => m.name || m.model || '').filter(Boolean).slice(0, 5);
+          models = (data.models as Record<string, unknown>[]).map((m) => String(m.name || m.model || '')).filter(Boolean).slice(0, 5);
         } else if (data.data) {
-          // OpenAI-compatible format (LM Studio, LocalAI)
-          models = data.data.map((m: any) => m.id || '').filter(Boolean).slice(0, 5);
+          // OpenAI-compatible format
+          models = (data.data as Record<string, unknown>[]).map((m) => String(m.id || '')).filter(Boolean).slice(0, 5);
         }
         
         detected.push({ ...server, models });

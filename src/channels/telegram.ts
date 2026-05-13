@@ -63,19 +63,21 @@ export class TelegramAdapter extends ChannelAdapter {
 
       if (data.ok && data.result) {
         for (const update of data.result) {
-          this.offset = update.update_id + 1;
-          if (update.message?.text) {
-            const msg = update.message;
+          this.offset = (update.update_id as number) + 1;
+          const msg = update.message as Record<string, unknown>;
+          if (msg?.text) {
+            const from = msg.from as Record<string, unknown> | undefined;
+            const chat = msg.chat as Record<string, unknown>;
             const normalized: NormalizedMessage = {
               id: String(msg.message_id),
               platform: 'telegram',
-              channelId: String(msg.chat.id),
-              senderId: String(msg.from?.id || ''),
-              senderName: msg.from?.first_name || 'Unknown',
-              content: msg.text,
+              channelId: String(chat.id),
+              senderId: String(from?.id || ''),
+              senderName: from?.first_name as string || 'Unknown',
+              content: msg.text as string,
               attachments: [],
-              timestamp: new Date(msg.date * 1000),
-              metadata: { chatType: msg.chat.type },
+              timestamp: new Date((msg.date as number) * 1000),
+              metadata: { chatType: chat.type as string },
             };
             this.handleIncoming(normalized);
           }

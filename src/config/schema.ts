@@ -221,7 +221,7 @@ export const ConfigSchema = z.object({
     enabled: z.boolean().default(true),
   })).default({}),
   channels: ChannelsConfigSchema,
-  version: z.string().default('2.1.4'),
+  version: z.string().default('2.1.8'),
   firstRun: z.boolean().default(true),
   hasCompletedOnboarding: z.boolean().default(false),
   hasCompletedProjectOnboarding: z.boolean().default(false),

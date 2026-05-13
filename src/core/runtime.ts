@@ -204,7 +204,7 @@ export class AgentRuntime {
       if (this.context.character) {
         const character = this.context.character.toUpperCase();
         availableTools = availableTools.filter(tool => {
-          const mcpAuthor = tool.author;
+          const mcpAuthor = ((tool as unknown) as Record<string, unknown>).author as string | undefined;
           if (mcpAuthor && mcpAuthor !== character && mcpAuthor !== 'builtin') {
              // Let supes use their own tools or builtin ones
              return false;

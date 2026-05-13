@@ -26,7 +26,7 @@ export class SlackAdapter extends ChannelAdapter {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${this.appToken}` },
     });
-    const data = await res.json() as { ok: boolean; error?: string };
+    const data = await res.json() as { ok: boolean; error?: string; url?: string };
     if (!data.ok) throw new Error(`Slack auth failed: ${data.error}`);
 
     const WebSocket = require('ws');

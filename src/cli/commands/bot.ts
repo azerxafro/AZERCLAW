@@ -6,6 +6,7 @@
 const { Gateway } = require('../../core/gateway');
 const { playSplashScreen, printQuickSplash, fishSuccess, fishError, fishInfo } = require('../animations/fish');
 const { getConfigManager } = require('../../config/manager');
+const { version: VERSION } = require('../../../../package.json');
 
 export async function startBot(options: { port?: number }): Promise<void> {
   const config = getConfigManager().getAll();
@@ -20,7 +21,7 @@ export async function startBot(options: { port?: number }): Promise<void> {
     return;
   }
 
-  printQuickSplash('1.6.1');
+  printQuickSplash(VERSION);
   fishInfo(`Starting bots: ${enabledPlatforms.join(', ')}...`);
 
   const port = options.port || 3142;

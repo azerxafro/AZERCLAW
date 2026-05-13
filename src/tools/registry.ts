@@ -111,7 +111,7 @@ class ToolRegistry {
       process: {
         env: { ...process.env, OPENAI_API_KEY: undefined, ANTHROPIC_API_KEY: undefined, GOOGLE_API_KEY: undefined }
       },
-      result: null as unknown
+      result: { success: false, output: '' } as ToolResult
     };
     
     vm.createContext(context);

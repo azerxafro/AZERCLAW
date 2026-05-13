@@ -1,9 +1,11 @@
 const { marked } = require('marked');
-const MarkedTerminal = require('marked-terminal');
+const MarkedTerminalModule = require('marked-terminal');
 const chalk = require('chalk');
 
+// marked-terminal v7+ exports via ESM default; handle both CJS and ESM interop
+const MarkedTerminal = MarkedTerminalModule.default || MarkedTerminalModule;
+
 // Configure marked with the terminal renderer
-// marked-terminal v7+ requires instantiation with new
 const renderer = new MarkedTerminal({
   // Customize styling to match AZERCLAW/Gemini CLI
   header: chalk.bold.hex('#c4b5fd'),

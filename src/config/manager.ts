@@ -554,7 +554,7 @@ class ConfigManager extends EventEmitter {
     
     // Determine auth route
     let authRoute: 'api_key' | 'env_var' | 'none' = 'none';
-    if (provConfig?.apiKey) {
+    if ((provConfig as Record<string, unknown>)?.apiKey) {
       // Check if the key came from env
       const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY'];
       const hasEnvKey = envKeys.some(k => process.env[k]);

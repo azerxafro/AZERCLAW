@@ -13,6 +13,7 @@ const { AutoComplete, Select } = require('enquirer');
 const { AgentRuntime } = require('../../core/runtime');
 const { getConfigManager } = require('../../config/manager');
 const { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } = require('../animations/fish');
+const { version: VERSION } = require('../../../../package.json');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -140,7 +141,7 @@ export async function runTUI(): Promise<void> {
 
   // Clear screen and show splash
   console.clear();
-  await playSplashScreen('1.0.0');
+  await playSplashScreen(VERSION);
   
   // Status bar
   renderStatusBar();
