@@ -15,8 +15,8 @@ import {
 } from './visualizations';
 import { getPluginManager } from '../../plugins';
 // Note: VectorContextStore is optional
-// import { getSessionStore, getVectorContextStore } from '../../memory';
-import { getSessionStore } from '../../memory';
+// import { getSessionStore, getVectorContextStore } from '../../memory/store';
+import { getSessionStore } from '../../memory/store';
 import { getHeartbeatManager } from '../../workspace';
 
 // ─── Dashboard Types ───────────────────────────────────────────────────

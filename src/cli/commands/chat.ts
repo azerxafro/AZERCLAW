@@ -23,6 +23,7 @@ const gradientString = require('gradient-string');
 const readline = require('readline');
 const { AutoComplete, Select } = require('enquirer');
 const { AgentRuntime } = require('../../core/runtime');
+const { HybridEngine } = require('../../brain/hybrid');
 const { getToolRegistry } = require('../../tools/registry');
 const { shellTool } = require('../../tools/shell');
 const { readFileTool, writeFileTool, listDirTool, searchFilesTool } = require('../../tools/filesystem');
@@ -34,7 +35,7 @@ const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 const EMBER = gradientString(['#fbbf24', '#f59e0b', '#ef4444']);
 
-export async function runChat(options: { model?: string; provider?: string; initialMessage?: string }): Promise<void> {
+export async function runChat(options: { model?: string; provider?: string; initialMessage?: string; hybrid?: boolean }): Promise<void> {
   const config = getConfigManager();
 
   // Apply CLI flag overrides
@@ -577,7 +578,42 @@ export async function runChat(options: { model?: string; provider?: string; init
       }
       
       const cleanInput = input.replace(/\/\/\w+/g, '').trim();
-      await agent.chat(cleanInput, flags);
+
+      if (options.hybrid) {
+        const hybrid = new HybridEngine({
+          eventHandler: async (event: any) => {
+            if (event.type === 'decompose') {
+              if (!isThinking) { isThinking = true; thinking.start(); }
+              thinking.updateMessage('Decomposing task...');
+            } else if (event.type === 'dispatch') {
+              thinking.updateMessage('Dispatching subtasks...');
+            } else if (event.type === 'subtask_start') {
+              thinking.updateMessage(`Subtask ${event.subtaskId}`);
+            } else if (event.type === 'synthesize') {
+              thinking.updateMessage('Synthesizing results...');
+            } else if (event.type === 'response' && event.content) {
+              if (isThinking) { thinking.stop(); isThinking = false; }
+              console.log('');
+              console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 AZERCLAW (Hybrid Brain)'));
+              const lines = event.content.split('\n');
+              for (const line of lines) {
+                const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+                console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
+              }
+              console.log(chalk.hex('#c4b5fd')('  └─'));
+              console.log('');
+            } else if (event.type === 'error') {
+              if (isThinking) { thinking.fail(event.error); isThinking = false; }
+              else fishError(event.error || 'Hybrid engine error');
+            } else if (event.type === 'done') {
+              if (isThinking) { thinking.stop('Done'); isThinking = false; }
+            }
+          },
+        });
+        await hybrid.execute(cleanInput, flags);
+      } else {
+        await agent.chat(cleanInput, flags);
+      }
     } catch (error: any) {
       fishError(error.message || 'Something went wrong');
     }

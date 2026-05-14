@@ -4,9 +4,9 @@
  */
 
 export * from './types';
-export * from './manager';
+export { PluginManager } from './manager';
 export * from './loader';
-export * from './registry';
+export { PluginRegistry } from './registry';
 
 // ─── Plugin System Initialization ───────────────────────────────────────
 

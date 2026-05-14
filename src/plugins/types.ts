@@ -4,6 +4,7 @@
  */
 
 import { Tool, ToolResult } from '../tools/registry';
+export { Tool, ToolResult };
 
 // ─── Plugin Types ──────────────────────────────────────────────────────
 

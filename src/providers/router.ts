@@ -5,6 +5,9 @@
 
 import { BaseProvider, CompletionOptions, CompletionResult, StreamChunk, ModelInfo } from './base';
 import { OpenAIProvider } from './openai';
+import { KiloAutoProvider } from './kiloauto';
+import { HuggingFaceProvider } from './huggingface';
+import { LocalLlamaProvider } from './localllama';
 import { getConfigManager } from '../config/manager';
 import { AIConfig } from '../config/schema';
 
@@ -65,6 +68,32 @@ export class ProviderRouter {
       }));
     }
 
+    // KiloAuto (free tier)
+    if (p.kiloauto?.enabled && p.kiloauto.apiKey) {
+      this.providers.set('kiloauto', new KiloAutoProvider({
+        apiKey: p.kiloauto.apiKey,
+        baseUrl: p.kiloauto.baseUrl,
+        defaultModel: p.kiloauto.defaultModel || 'kilo-auto-v1'
+      }));
+    }
+
+    // HuggingFace (free inference API)
+    if (p.huggingface?.enabled && p.huggingface.apiKey) {
+      this.providers.set('huggingface', new HuggingFaceProvider({
+        apiKey: p.huggingface.apiKey,
+        baseUrl: p.huggingface.baseUrl,
+        defaultModel: p.huggingface.defaultModel || 'meta-llama/Llama-3.2-1B-Instruct'
+      }));
+    }
+
+    // LocalLlama (self-hosted)
+    if (p.localllama?.enabled) {
+      this.providers.set('localllama', new LocalLlamaProvider({
+        baseUrl: p.localllama.baseUrl,
+        defaultModel: p.localllama.defaultModel || 'llama3.2'
+      }));
+    }
+
     if (process.env.AZERCLAW_DEBUG) {
       console.log(`[Router] Initialized providers: ${Array.from(this.providers.keys()).join(', ')}`);
     }
@@ -78,6 +107,9 @@ export class ProviderRouter {
     return this.providers.get(defaultProvider)
       || this.providers.get('opencode')
       || this.providers.get('pollinations') // No API key needed
+      || this.providers.get('kiloauto')
+      || this.providers.get('huggingface')
+      || this.providers.get('localllama')
       || this.providers.get('openrouter')
       || this.providers.get('groq')
       || this.providers.get('ollama')
@@ -88,8 +120,11 @@ export class ProviderRouter {
    * Get a free provider that doesn't require API key setup
    */
   getFreeProvider(): BaseProvider | undefined {
-    // Priority: Pollinations (no key) > OpenRouter free tier > Groq free tier > Ollama
+    // Priority: Pollinations (no key) > KiloAuto > HuggingFace > LocalLlama > OpenRouter free tier > Groq free tier > Ollama
     return this.providers.get('pollinations')
+      || this.providers.get('kiloauto')
+      || this.providers.get('huggingface')
+      || this.providers.get('localllama')
       || this.providers.get('openrouter')
       || this.providers.get('groq')
       || this.providers.get('ollama')

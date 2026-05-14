@@ -76,7 +76,12 @@ export interface ModelInfo {
   supportsStreaming: boolean;
   description?: string;
   status?: 'online' | 'offline' | 'unknown';
+  strengths?: TaskType[];
+  latencyTier?: 'fast' | 'normal' | 'slow';
+  costTier?: 'free' | 'rate_limited' | 'paid';
 }
+
+export type TaskType = 'code' | 'reasoning' | 'creative' | 'search' | 'chat' | 'planning' | 'synthesis';
 
 // ─── Base Provider ──────────────────────────────────────────────
 

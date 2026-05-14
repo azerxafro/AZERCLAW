@@ -116,6 +116,7 @@ program
   .option('-m, --model <model>', 'Override the default model')
   .option('-p, --provider <provider>', 'Override the default provider')
   .option('-f, --file <path>', 'Include a file in the conversation context')
+  .option('-b, --hybrid', 'Use hybrid brain (multi-model parallel execution)')
   .action(async (opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
@@ -157,6 +158,7 @@ program
   .option('-p, --provider <provider>', 'Override the default provider')
   .option('-f, --file <path>', 'Include a file in the task context')
   .option('-V, --verbose', 'Show tool calls in detail')
+  .option('-b, --hybrid', 'Use hybrid brain (multi-model parallel execution)')
   .action(async (task: string | undefined, opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();

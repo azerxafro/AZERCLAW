@@ -3,7 +3,7 @@
  * Optional lightweight web interface for advanced users
  */
 
-import * as express from 'express';
+import express from 'express';
 import * as path from 'path';
 import * as http from 'http';
 // Note: socket.io is an optional dependency
@@ -11,7 +11,7 @@ import * as http from 'http';
 import { EventEmitter } from 'events';
 import { getPluginManager } from '../../plugins';
 // Note: Memory imports are optional
-// import { getSessionStore } from '../../memory';
+import { getSessionStore } from '../../memory/store';
 import { getHeartbeatManager } from '../../workspace';
 import { getPrivacyManager } from '../../security/privacy';
 import { getNetworkAnalyzer } from '../../networking/analyzer';
@@ -70,7 +70,7 @@ export interface WebDashboardData {
 export class WebServer extends EventEmitter {
   private app: express.Application;
   private server: http.Server | null = null;
-  // private io: SocketIOServer | null = null; // Optional dependency
+  private io: any | null = null; // Socket.IO optional dependency
   private config: WebServerConfig;
   private isRunning: boolean = false;
 
@@ -353,7 +353,7 @@ export class WebServer extends EventEmitter {
     };
 
     let azerclaw = {
-      version: '2.2.0',
+      version: '2.1.1',
       plugins: 0,
       sessions: 0,
       tools: 0
@@ -365,7 +365,7 @@ export class WebServer extends EventEmitter {
       const sessionStore = getSessionStore();
       
       azerclaw = {
-        version: '2.2.0',
+        version: '2.1.1',
         plugins: plugins.length,
         sessions: sessionStore.list(1000).length,
         tools: plugins.reduce((sum, p) => sum + (p.plugin.tools?.length || 0), 0)

@@ -37,6 +37,26 @@ const OllamaProviderSchema = z.object({
   enabled: z.boolean().default(false),
 });
 
+const KiloAutoProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://api.kilo.ai/auto'),
+  defaultModel: z.string().default('kilo-auto-v1'),
+  enabled: z.boolean().default(false),
+});
+
+const HuggingFaceProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://api-inference.huggingface.co/models'),
+  defaultModel: z.string().default('meta-llama/Llama-3.2-1B-Instruct'),
+  enabled: z.boolean().default(false),
+});
+
+const LocalLlamaProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:11434'),
+  defaultModel: z.string().default('llama3.2'),
+  enabled: z.boolean().default(false),
+});
+
 // ─── Security Schemas ───────────────────────────────────────────
 
 const ChannelSecuritySchema = z.object({
@@ -52,6 +72,9 @@ const ProvidersSchema = z.object({
   groq: GroqProviderSchema.default({}),
   pollinations: PollinationsProviderSchema.default({}),
   ollama: OllamaProviderSchema.default({}),
+  kiloauto: KiloAutoProviderSchema.default({}),
+  huggingface: HuggingFaceProviderSchema.default({}),
+  localllama: LocalLlamaProviderSchema.default({}),
 }).default({
   opencode: {
     apiKey: process.env.AZERTRON_OPENCODE_KEY || '',
@@ -77,6 +100,23 @@ const ProvidersSchema = z.object({
     enabled: true // Always enabled - no API key needed
   },
   ollama: {
+    baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    defaultModel: 'llama3.2',
+    enabled: false // User must explicitly enable
+  },
+  kiloauto: {
+    apiKey: process.env.KILO_API_KEY || '',
+    baseUrl: 'https://api.kilo.ai/auto',
+    defaultModel: 'kilo-auto-v1',
+    enabled: !!process.env.KILO_API_KEY
+  },
+  huggingface: {
+    apiKey: process.env.HF_API_KEY || '',
+    baseUrl: 'https://api-inference.huggingface.co/models',
+    defaultModel: 'meta-llama/Llama-3.2-1B-Instruct',
+    enabled: !!process.env.HF_API_KEY
+  },
+  localllama: {
     baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
     defaultModel: 'llama3.2',
     enabled: false // User must explicitly enable
@@ -193,6 +233,23 @@ export const ConfigSchema = z.object({
         defaultModel: 'minimax-m2.5-free', 
         enabled: true 
       },
+      kiloauto: {
+        apiKey: process.env.KILO_API_KEY || '',
+        baseUrl: 'https://api.kilo.ai/auto',
+        defaultModel: 'kilo-auto-v1',
+        enabled: !!process.env.KILO_API_KEY
+      },
+      huggingface: {
+        apiKey: process.env.HF_API_KEY || '',
+        baseUrl: 'https://api-inference.huggingface.co/models',
+        defaultModel: 'meta-llama/Llama-3.2-1B-Instruct',
+        enabled: !!process.env.HF_API_KEY
+      },
+      localllama: {
+        baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+        defaultModel: 'llama3.2',
+        enabled: false
+      },
     },
   }),
   agent: AgentConfigSchema.default(() => ({
@@ -244,4 +301,4 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 
-export type ProviderName = 'opencode' | 'openrouter' | 'groq' | 'pollinations' | 'ollama';
+export type ProviderName = 'opencode' | 'openrouter' | 'groq' | 'pollinations' | 'ollama' | 'kiloauto' | 'huggingface' | 'localllama';

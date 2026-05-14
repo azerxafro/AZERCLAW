@@ -42,6 +42,7 @@ export interface ConfigSnapshot {
   config: AzerclawConfig;
   projectSettings?: ProjectSettings;
   localProjectSettings?: ProjectSettings;
+  aiConfig?: any;
   changes: ConfigChange[];
 }
 
@@ -349,7 +350,7 @@ export class HotReloadManager extends EventEmitter {
       id: `snapshot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
       config: this.configManager.getAll(),
-      projectSettings: this.configManager.getProjectSettings(),
+      projectSettings: this.configManager.getProjectSettings() || undefined,
       localProjectSettings: (this.configManager as any).getLocalProjectSettings?.() || undefined,
       aiConfig: (this.configManager as any).getAIConfig?.() || undefined,
       changes: []

@@ -55,6 +55,10 @@ class ToolRegistry {
     this.pluginTools.delete(toolName);
   }
 
+  unregisterTool(toolName: string): void {
+    this.unregister(toolName);
+  }
+
   get(name: string): Tool | undefined {
     return this.tools.get(name);
   }

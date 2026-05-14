@@ -271,6 +271,10 @@ export class PluginManager extends EventEmitter implements IPluginManager {
     return this.plugins.get(pluginId) || null;
   }
 
+  getPluginCount(): number {
+    return this.plugins.size;
+  }
+
   async getPluginHealth(pluginId: string): Promise<PluginHealth | null> {
     const loadedPlugin = this.plugins.get(pluginId);
     if (!loadedPlugin) {

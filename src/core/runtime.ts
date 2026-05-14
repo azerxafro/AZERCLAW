@@ -516,11 +516,36 @@ export class AgentRuntime {
 
     // 2. Character TTS (Azerclaw 2.0)
     if (event.type === 'response' && event.content) {
-       const { speak } = require('../cli/animations/fish');
-       speak(event.content, this.context.character);
+       try {
+         const { speak } = require('../cli/animations/fish');
+         speak(event.content, this.context.character);
+       } catch { /* ignore TTS errors */ }
     }
 
     await this.eventHandler(event);
+  }
+
+  /**
+   * Lightweight static factory for executing a single task without
+   * full session initialization overhead. Used by HybridEngine.
+   */
+  static async executeTask(
+    task: string,
+    options: {
+      flags?: string[];
+      maxIterations?: number;
+      systemPrompt?: string;
+      onEvent?: (event: AgentEvent) => void | Promise<void>;
+    } = {}
+  ): Promise<string> {
+    const agent = new AgentRuntime({
+      sessionId: `task_${Date.now()}`,
+      flags: options.flags || [],
+      systemPrompt: options.systemPrompt,
+      maxIterations: options.maxIterations || 10,
+      eventHandler: options.onEvent || (() => {}),
+    });
+    return agent.run(task);
   }
 
   private parseToolArgs(toolCall: ToolCall): Record<string, unknown> {
