@@ -80,6 +80,7 @@ class ToolRegistry {
         name: tool.name,
         description: tool.description,
         parameters: tool.parameters,
+        author: tool.author || 'builtin',
       },
     }));
   }

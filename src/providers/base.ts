@@ -28,6 +28,7 @@ export interface ToolDefinition {
     name: string;
     description: string;
     parameters: Record<string, unknown>;
+    author?: string; // Character that owns this tool (e.g. "HOMELANDER")
   };
 }
 

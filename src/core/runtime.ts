@@ -77,6 +77,9 @@ export class AgentRuntime {
   private eventHandler: AgentEventHandler;
   private aborted = false;
   private subAgents: Map<string, AgentRuntime> = new Map();
+  private rotationRetries = 0;
+  private maxRotationRetries = 3;
+  private approvalPromise: { resolve: (approved: boolean) => void } | null = null;
 
   constructor(options: {
     sessionId?: string;
@@ -206,8 +209,8 @@ export class AgentRuntime {
       if (this.context.character) {
         const character = this.context.character.toUpperCase();
         availableTools = availableTools.filter(tool => {
-          const mcpAuthor = ((tool as unknown) as Record<string, unknown>).author as string | undefined;
-          if (mcpAuthor && mcpAuthor !== character && mcpAuthor !== 'builtin') {
+          const author = tool.function.author?.toUpperCase();
+          if (author && author !== character && author !== 'BUILTIN') {
              // Let supes use their own tools or builtin ones
              return false;
           }
@@ -225,8 +228,15 @@ export class AgentRuntime {
       // Handle errors from provider
       if (result.finishReason === 'error') {
         if (result.content.includes('VOUGHT_GATE_AUTH_FAILURE')) {
+          if (this.rotationRetries >= this.maxRotationRetries) {
+            const error = `Critical: Auth failure persists after ${this.maxRotationRetries} rotations. Aborting mission.`;
+            await this.emit({ type: 'error', error });
+            break;
+          }
+
+          this.rotationRetries++;
           await this.emit({ type: 'thinking' });
-          console.log(require('chalk').red('\n[VOUGHT LABS] Auth failure detected. Executing emergency key rotation...\n'));
+          console.log(require('chalk').red(`\n[VOUGHT LABS] Auth failure detected (Attempt ${this.rotationRetries}/${this.maxRotationRetries}). Executing emergency key rotation...\n`));
           
           const rotator = require('../tools/specialized').rollVoughtCredentialsTool;
           const rotateResult = await rotator.execute({ reason: 'Automatic recovery' });
@@ -239,6 +249,7 @@ export class AgentRuntime {
             break;
           }
         }
+        this.rotationRetries = 0; // Reset on success or other error
         finalResponse = result.content;
         await this.emit({ type: 'error', error: result.content });
         break;
@@ -259,6 +270,7 @@ export class AgentRuntime {
 
         // Execute each tool call
         for (const toolCall of result.toolCalls) {
+          if (this.aborted) break;
           const parsedArgs = this.parseToolArgs(toolCall);
 
           await this.emit({
@@ -292,16 +304,28 @@ export class AgentRuntime {
                toolName: toolCall.function.name,
                toolArgs: parsedArgs
              });
-             // For CLI/TUI, this will block. In this runtime, we'll continue for now but ideally we'd pause.
-             // But for Azerclaw 2.0 "Turbo" is the default flavor. 
-             // We'll proceed with execution but the event was emitted.
-             const sandboxMode = resolveSandboxMode(agentConfig.sandboxMode);
-             const useVmSandbox = shouldSandboxSession(this.context.sessionId, sandboxMode);
-             toolResult = await registry.execute(
-               toolCall.function.name,
-               parsedArgs,
-               { sandbox: useVmSandbox, agentId: this.context.sessionId }
-             );
+             
+             // Wait for approval signal
+             const approved = await new Promise<boolean>((resolve) => {
+               this.approvalPromise = { resolve };
+             });
+             this.approvalPromise = null;
+
+             if (!approved) {
+               toolResult = {
+                 success: false,
+                 output: '',
+                 error: 'User denied tool execution approval.',
+               };
+             } else {
+               const sandboxMode = resolveSandboxMode(agentConfig.sandboxMode);
+               const useVmSandbox = shouldSandboxSession(this.context.sessionId, sandboxMode);
+               toolResult = await registry.execute(
+                 toolCall.function.name,
+                 parsedArgs,
+                 { sandbox: useVmSandbox, agentId: this.context.sessionId }
+               );
+             }
           } else if (toolCall.function.name === 'spawn_sub_agent') {
             toolResult = await this.handleSubAgent(toolCall);
           } else {
@@ -467,8 +491,20 @@ export class AgentRuntime {
     }
     
     this.context.messages = [...session.messages];
+    this.context.currentIteration = Math.max(0, this.context.currentIteration - 1);
     store.save(); // Save the truncated history
     return true;
+  }
+
+  /**
+   * Resolve a pending approval request.
+   */
+  approve(approved: boolean): boolean {
+    if (this.approvalPromise) {
+      this.approvalPromise.resolve(approved);
+      return true;
+    }
+    return false;
   }
 
   private async emit(event: AgentEvent): Promise<void> {

@@ -9,7 +9,7 @@ import { AgentRuntime } from './runtime';
 import { getToolRegistry } from '../tools/registry';
 
 interface ClientMessage {
-  type: 'start_chat' | 'chat_message' | 'abort' | 'ping';
+  type: 'start_chat' | 'chat_message' | 'abort' | 'ping' | 'approve_tool';
   payload?: any;
 }
 
@@ -122,6 +122,16 @@ export class AzerclawServer {
               if (agent) {
                 agent.abort();
                 this.safeSend(ws, JSON.stringify({ type: 'system', payload: 'Operation aborted.' }));
+              }
+              break;
+
+            case 'approve_tool':
+              if (agent) {
+                const approved = !!msg.payload?.approved;
+                const success = agent.approve(approved);
+                if (!success) {
+                  this.safeSend(ws, JSON.stringify({ type: 'error', payload: 'No pending approval found.' }));
+                }
               }
               break;
 
