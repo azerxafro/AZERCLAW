@@ -41,14 +41,14 @@ if (!process.stdout.isTTY) {
 import { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } from '../src/cli/animations/fish';
 import { getConfigManager } from '../src/config/manager';
 
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
 
 program
   .name('azerclaw')
-  .description('🐟 AZERCLAW v2.2.0 — Diabolical AI · Scorched Earth · Your Way')
+  .description('🐟 AZERCLAW v2.2.1 — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')
@@ -60,6 +60,16 @@ program
     // Global initialization
     const { registerAllTools } = require('../src/tools');
     await registerAllTools();
+
+    // Initialize learning/memory dreaming engine
+    try {
+      const { initializeDreaming } = require('../src/memory/dreaming');
+      const { getVectorContextStore, getContextStore } = require('../src/memory');
+      const vectorStore = getVectorContextStore(getContextStore()).getVectorStore();
+      initializeDreaming(vectorStore, { enabled: true, interval: 30 });
+    } catch {
+      /* silently skip if memory subsystem unavailable */
+    }
   });
 
 // ─── Default Action (no command) ────────────────────────────────

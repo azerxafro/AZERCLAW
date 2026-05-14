@@ -562,6 +562,22 @@ class DreamingEngine {
         }
       );
     }
+
+    // Also store in ContextStore so insights appear in future prompts
+    try {
+      const { getContextStore } = require('./store');
+      const contextStore = getContextStore();
+      for (const insight of insights) {
+        contextStore.set(
+          `insight_${insight.type}_${insight.id}`,
+          `${insight.title}: ${insight.description}`,
+          'dreaming',
+          [insight.type, 'insight', 'auto']
+        );
+      }
+    } catch {
+      /* ContextStore may not be available */
+    }
   }
 
   private calculateStats(memories: Array<any>, insights: Insight[]) {

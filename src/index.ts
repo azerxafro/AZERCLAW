@@ -32,5 +32,7 @@ export * from './channels/security';
 
 // Memory & Config
 export * from './memory/store';
+export * from './memory/vector';
+export { initializeDreaming, getDreamingEngine, shutdownDreaming } from './memory/dreaming';
 export * from './config/manager';
 export * from './config/schema';

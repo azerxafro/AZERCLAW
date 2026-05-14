@@ -154,7 +154,7 @@ export class WebServer extends EventEmitter {
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: '2.2.0'
+        version: '2.2.1'
       });
     });
 
@@ -322,7 +322,7 @@ export class WebServer extends EventEmitter {
     this.app.get('/api/config', (req, res) => {
       // Return non-sensitive configuration
       res.json({
-        version: '2.2.0',
+        version: '2.2.1',
         features: {
           plugins: true,
           vectorMemory: true,
@@ -353,7 +353,7 @@ export class WebServer extends EventEmitter {
     };
 
     let azerclaw = {
-      version: '2.1.1',
+      version: '2.2.1',
       plugins: 0,
       sessions: 0,
       tools: 0
@@ -365,7 +365,7 @@ export class WebServer extends EventEmitter {
       const sessionStore = getSessionStore();
       
       azerclaw = {
-        version: '2.1.1',
+        version: '2.2.1',
         plugins: plugins.length,
         sessions: sessionStore.list(1000).length,
         tools: plugins.reduce((sum, p) => sum + (p.plugin.tools?.length || 0), 0)
