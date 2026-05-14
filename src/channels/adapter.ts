@@ -42,10 +42,47 @@ export interface SendOptions {
 
 // ─── Base Adapter ───────────────────────────────────────────────
 
+// Channel-agent registry caps. JS Maps preserve insertion order, which we use
+// as a simple LRU: re-inserting moves an entry to the end (most-recently used).
+const MAX_CHANNEL_AGENTS = 1000;
+const CHANNEL_AGENT_IDLE_MS = 60 * 60 * 1000; // 1 hour
+
 export abstract class ChannelAdapter {
   abstract readonly platform: string;
   abstract readonly displayName: string;
   protected agents: Map<string, AgentRuntime> = new Map();
+  private agentLastSeen: Map<string, number> = new Map();
+
+  /**
+   * Evict idle agents and trim the map to MAX_CHANNEL_AGENTS using LRU order.
+   */
+  private evictStaleAgents(): void {
+    const now = Date.now();
+    for (const [sid, ts] of this.agentLastSeen) {
+      if (now - ts > CHANNEL_AGENT_IDLE_MS) {
+        const a = this.agents.get(sid);
+        try { a?.abort?.(); } catch { /* ignore */ }
+        this.agents.delete(sid);
+        this.agentLastSeen.delete(sid);
+      }
+    }
+    // Hard cap — evict oldest until under MAX.
+    while (this.agents.size > MAX_CHANNEL_AGENTS) {
+      const oldest = this.agents.keys().next().value as string | undefined;
+      if (!oldest) break;
+      const a = this.agents.get(oldest);
+      try { a?.abort?.(); } catch { /* ignore */ }
+      this.agents.delete(oldest);
+      this.agentLastSeen.delete(oldest);
+    }
+  }
+
+  private touchAgent(sessionId: string, agent: AgentRuntime): void {
+    // Move to end of insertion order to mark as MRU.
+    if (this.agents.has(sessionId)) this.agents.delete(sessionId);
+    this.agents.set(sessionId, agent);
+    this.agentLastSeen.set(sessionId, Date.now());
+  }
 
   /**
    * Initialize the adapter with credentials.
@@ -76,6 +113,8 @@ export abstract class ChannelAdapter {
     const allowed = await this.enforceDmPolicy(message);
     if (!allowed) return;
 
+    this.evictStaleAgents();
+
     const sessionId = this.resolveSessionId(message);
     let agent = this.agents.get(sessionId);
 
@@ -98,9 +137,9 @@ export abstract class ChannelAdapter {
           }
         },
       });
-      this.agents.set(sessionId, agent);
       auditLog('CHANNEL_SESSION_ROUTE', `${this.platform}:${message.channelId} -> ${sessionId} (as ${character})`);
     }
+    this.touchAgent(sessionId, agent);
 
     try {
       await agent.chat(message.content);

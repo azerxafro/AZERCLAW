@@ -6,6 +6,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import express from 'express';
 import { createServer } from 'http';
+import * as fs from 'fs';
 import path from 'path';
 import { AgentEvent } from '../core/runtime';
 
@@ -24,14 +25,21 @@ export class VoughtHQ {
     
     // Fallback for SPA
     this.app.use((req, res) => {
-      res.sendFile(path.join(process.cwd(), 'dist/dashboard/index.html'));
+      const indexPath = path.join(process.cwd(), 'dist/dashboard/index.html');
+      if (!fs.existsSync(indexPath)) {
+        res.status(404).send('Dashboard not built. Run `npm run build`.');
+        return;
+      }
+      res.sendFile(indexPath);
     });
   }
 
   start(): void {
-    this.server.listen(this.port, () => {
-      console.log(`[HQ] Vought HQ active at http://localhost:${this.port}`);
-      console.log(`[HQ] WebSocket broadcast on ws://localhost:${this.port}`);
+    // Bind to loopback by default; allow opt-in remote exposure via env var.
+    const host = process.env.AZERCLAW_HQ_HOST || '127.0.0.1';
+    this.server.listen(this.port, host, () => {
+      console.log(`[HQ] Vought HQ active at http://${host}:${this.port}`);
+      console.log(`[HQ] WebSocket broadcast on ws://${host}:${this.port}`);
     });
 
     this.wss.on('connection', (ws) => {

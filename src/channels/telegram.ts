@@ -54,12 +54,18 @@ export class TelegramAdapter extends ChannelAdapter {
     return this.polling;
   }
 
+  private consecutiveErrors = 0;
+
   private async pollUpdates(): Promise<void> {
     if (!this.polling) return;
 
+    let delay = 1000;
     try {
       const res = await fetch(`${this.baseUrl}/getUpdates?offset=${this.offset}&timeout=30`);
       const data = await res.json() as { ok: boolean; result?: Record<string, unknown>[] };
+
+      // Successful poll — reset backoff.
+      this.consecutiveErrors = 0;
 
       if (data.ok && data.result) {
         for (const update of data.result) {
@@ -86,9 +92,12 @@ export class TelegramAdapter extends ChannelAdapter {
         }
       }
     } catch (e: any) {
-      auditLog('TELEGRAM_ERROR', e.message);
+      this.consecutiveErrors++;
+      // 1s, 2s, 4s, 8s, ... capped at 60s
+      delay = Math.min(60_000, 1000 * Math.pow(2, this.consecutiveErrors - 1));
+      auditLog('TELEGRAM_ERROR', `${e.message} (retry in ${delay}ms, error #${this.consecutiveErrors})`);
     }
 
-    this.pollTimer = setTimeout(() => this.pollUpdates(), 1000);
+    this.pollTimer = setTimeout(() => this.pollUpdates(), delay);
   }
 }

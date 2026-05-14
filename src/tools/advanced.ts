@@ -58,17 +58,29 @@ export const webSearchTool: Tool = {
     if (!rawQuery || typeof rawQuery !== 'string' || rawQuery.trim().length === 0) {
       return { success: false, output: '', error: 'web_search requires a non-empty "query" string' };
     }
-    // Clamp maxResults to a safe integer (1-20) to prevent shell injection
     const maxResults = Math.max(1, Math.min(20, Math.floor(Number(args.maxResults) || 5)));
-    const query = encodeURIComponent(rawQuery);
     try {
-      const { execSync } = require('child_process');
-      const result = execSync(
-        `curl -sL "https://html.duckduckgo.com/html/?q=${query}" | perl -nle 'while (/<a rel="nofollow" class="result__a" href="[^"]*">([^<]*)<\\/a>/g) { print $1 }' | head -${maxResults}`,
-        { encoding: 'utf-8', timeout: 10000 }
-      );
-
-      return { success: true, output: result.trim() || 'No results found' };
+      // Use global fetch (Node 18+) — no shell, no injection surface.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
+      let html = '';
+      try {
+        const res = await fetch(
+          `https://html.duckduckgo.com/html/?q=${encodeURIComponent(rawQuery)}`,
+          { signal: controller.signal, headers: { 'User-Agent': 'azerclaw/2.0' } }
+        );
+        html = await res.text();
+      } finally {
+        clearTimeout(timeout);
+      }
+      // Extract titles in JS rather than piping through perl.
+      const matches: string[] = [];
+      const re = /<a rel="nofollow" class="result__a" href="[^"]*">([^<]*)<\/a>/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(html)) !== null && matches.length < maxResults) {
+        matches.push(m[1].trim());
+      }
+      return { success: true, output: matches.join('\n') || 'No results found' };
     } catch {
       return { success: true, output: 'Web search unavailable in current environment' };
     }

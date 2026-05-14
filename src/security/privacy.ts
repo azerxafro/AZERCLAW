@@ -215,8 +215,8 @@ export class PrivacyManager extends EventEmitter {
     try {
       if (fs.existsSync(this.dataStorePath)) {
         const data = JSON.parse(fs.readFileSync(this.dataStorePath, 'utf-8'));
-        this.events = (data.events || []).map(this.deserializeEvent);
-        this.violations = (data.violations || []).map(this.deserializeViolation);
+        this.events = (data.events || []).map((e: any) => this.deserializeEvent(e));
+        this.violations = (data.violations || []).map((v: any) => this.deserializeViolation(v));
       }
     } catch (error) {
       console.warn('[PrivacyManager] Failed to load privacy data:', error);
@@ -226,8 +226,8 @@ export class PrivacyManager extends EventEmitter {
   private saveData(): void {
     try {
       const data = {
-        events: this.events.map(this.serializeEvent),
-        violations: this.violations.map(this.serializeViolation),
+        events: this.events.map((e) => this.serializeEvent(e)),
+        violations: this.violations.map((v) => this.serializeViolation(v)),
         lastUpdated: new Date().toISOString()
       };
       

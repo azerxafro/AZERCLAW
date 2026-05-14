@@ -177,6 +177,14 @@ export async function runChat(options: { model?: string; provider?: string; init
   readline.emitKeypressEvents(process.stdin);
   if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
+    // Always restore cooked mode on shutdown so callers (TUI/test harnesses) don't
+    // end up with a wedged terminal.
+    const restoreRawMode = () => {
+      try { if (process.stdin.isTTY) process.stdin.setRawMode(false); } catch { /* ignore */ }
+    };
+    process.once('exit', restoreRawMode);
+    process.once('SIGINT', () => { restoreRawMode(); process.exit(0); });
+    process.once('SIGTERM', () => { restoreRawMode(); process.exit(0); });
   }
 
   process.stdin.on('keypress', async (str, key) => {
@@ -459,6 +467,8 @@ export async function runChat(options: { model?: string; provider?: string; init
             const selectedSession = sessionStore.get(selectedSessionId);
             if (selectedSession) {
               fishSuccess(`Resuming session: ${selectedSession.title}`);
+              // Abort any prior agent so its in-flight iteration cannot keep emitting events.
+              try { agent?.abort?.(); } catch { /* ignore */ }
               // Assign new agent runtime
               agent = new AgentRuntime({
                 sessionId: selectedSessionId,
@@ -511,12 +521,12 @@ export async function runChat(options: { model?: string; provider?: string; init
           const { getVoughtHQ } = require('../../server/hq');
           const hq = getVoughtHQ();
           hq.start();
-          const { exec } = require('child_process');
+          const { execFile } = require('child_process');
           const url = 'http://localhost:8443';
           fishInfo(`Vought HQ Dashboard launched at ${url}`);
-          if (process.platform === 'darwin') exec(`open ${url}`);
-          else if (process.platform === 'win32') exec(`start ${url}`);
-          else exec(`xdg-open ${url}`);
+          if (process.platform === 'darwin') execFile('open', [url]);
+          else if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url]);
+          else execFile('xdg-open', [url]);
           break;
         }
         case '/help':

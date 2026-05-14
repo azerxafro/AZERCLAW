@@ -182,7 +182,7 @@ const ChannelsConfigSchema = z.object({
 export const ConfigSchema = z.object({
   ai: AIConfigSchema.default({
     defaultProvider: 'opencode',
-    fallbackChain: [],
+    fallbackChain: ['opencode'],
     modelFallbackChain: ['opencode/ring-2.6-1t:free', 'minimax-m2.5-free'],
     maxTokens: 4096,
     temperature: 0.7,

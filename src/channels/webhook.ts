@@ -31,9 +31,10 @@ export class WebhookAdapter extends ChannelAdapter {
       const chunks: Buffer[] = [];
       let total = 0;
       let aborted = false;
-      req.on('data', (chunk: Buffer) => {
+      req.on('data', (chunk: Buffer | string) => {
         if (aborted) return;
-        total += chunk.length;
+        const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        total += buf.length;
         if (total > MAX_BODY) {
           aborted = true;
           res.writeHead(413);
@@ -41,7 +42,7 @@ export class WebhookAdapter extends ChannelAdapter {
           req.destroy();
           return;
         }
-        chunks.push(chunk);
+        chunks.push(buf);
       });
       req.on('end', async () => {
         if (aborted) return;
@@ -70,10 +71,22 @@ export class WebhookAdapter extends ChannelAdapter {
       });
     });
 
-    // Bind to localhost only for security
-    this.server.listen(this.port, '127.0.0.1', () => {
-      this.connected = true;
-      auditLog('WEBHOOK_STARTED', `Listening on 127.0.0.1:${this.port}`);
+    // Bind to localhost only for security. Await `listening` so connect()
+    // resolves only when isConnected() will return true.
+    await new Promise<void>((resolve, reject) => {
+      const onError = (err: Error) => {
+        this.server?.removeListener('listening', onListening);
+        reject(err);
+      };
+      const onListening = () => {
+        this.server?.removeListener('error', onError);
+        this.connected = true;
+        auditLog('WEBHOOK_STARTED', `Listening on 127.0.0.1:${this.port}`);
+        resolve();
+      };
+      this.server!.once('error', onError);
+      this.server!.once('listening', onListening);
+      this.server!.listen(this.port, '127.0.0.1');
     });
   }
 

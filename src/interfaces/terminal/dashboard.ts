@@ -548,6 +548,8 @@ export class TerminalDashboard extends EventEmitter {
       };
       
       console.log(TerminalTables.renderTable(executionTable, 80));
+    } catch (error) {
+      console.error(chalk.red('Failed to get task status:'), error);
     }
   }
 

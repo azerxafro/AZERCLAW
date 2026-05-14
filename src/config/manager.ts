@@ -49,6 +49,8 @@ class ConfigManager extends EventEmitter {
   private localProjectSettings: ProjectSettings | null = null;
   private runtimeOverrides: Record<string, unknown> = {};
   private watcher: fs.FSWatcher | null = null;
+  private isSaving = false;
+  private reloadTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -119,10 +121,15 @@ class ConfigManager extends EventEmitter {
     try {
       if (fs.existsSync(this.configPath)) {
         this.watcher = fs.watch(this.configPath, (eventType) => {
-          if (eventType === 'change') {
-            // Debounce to prevent multiple rapid reloads on a single write
-            setTimeout(() => this.reload(), 100);
-          }
+          if (eventType !== 'change') return;
+          // Ignore self-writes to break reload loops.
+          if (this.isSaving) return;
+          // Coalesce rapid events into a single reload.
+          if (this.reloadTimer) clearTimeout(this.reloadTimer);
+          this.reloadTimer = setTimeout(() => {
+            this.reloadTimer = null;
+            this.reload();
+          }, 100);
         });
       }
     } catch (e) {
@@ -147,11 +154,18 @@ class ConfigManager extends EventEmitter {
    */
   private save(config?: AzerclawConfig): void {
     const data = config || this.config;
-    fs.writeFileSync(
-      this.configPath,
-      JSON.stringify(data, null, 2),
-      { mode: 0o600 }
-    );
+    this.isSaving = true;
+    try {
+      fs.writeFileSync(
+        this.configPath,
+        JSON.stringify(data, null, 2),
+        { mode: 0o600 }
+      );
+    } finally {
+      // Clear after the next tick so the fs.watch callback (which fires async
+      // after the write completes) still sees isSaving=true.
+      setTimeout(() => { this.isSaving = false; }, 150);
+    }
   }
 
   // ─── Project Settings (Layered) ────────────────────────────

@@ -143,6 +143,7 @@ export function speak(text: string, character?: string): void {
 
 export async function playSplashScreen(version: string): Promise<void> {
   hideCursor();
+  try {
   const termWidth = process.stdout.columns || 80;
   
   console.log('');
@@ -176,8 +177,9 @@ export async function playSplashScreen(version: string): Promise<void> {
   const versionStr = `v${version}-DIABOLICAL`;
   const vPad = Math.max(0, Math.floor((termWidth - versionStr.length - 4) / 2));
   console.log(' '.repeat(vPad) + chalk.bgRed.black(` ${versionStr} `) + '\n');
-  
-  showCursor();
+  } finally {
+    showCursor();
+  }
 }
 
 export function printQuickSplash(version: string): void {
