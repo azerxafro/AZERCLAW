@@ -32,6 +32,7 @@ export interface Tool {
 
 class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
+  private pluginTools: Map<string, string> = new Map(); // toolName -> pluginId
   private sandboxEnabled: boolean = false;
 
   constructor(options: { sandbox?: boolean } = {}) {
@@ -42,12 +43,34 @@ class ToolRegistry {
     this.tools.set(tool.name, tool);
   }
 
+  registerTool(tool: Tool, pluginId?: string): void {
+    this.tools.set(tool.name, tool);
+    if (pluginId) {
+      this.pluginTools.set(tool.name, pluginId);
+    }
+  }
+
+  unregister(toolName: string): void {
+    this.tools.delete(toolName);
+    this.pluginTools.delete(toolName);
+  }
+
   get(name: string): Tool | undefined {
     return this.tools.get(name);
   }
 
+  getPluginId(toolName: string): string | undefined {
+    return this.pluginTools.get(toolName);
+  }
+
   getAll(): Tool[] {
     return Array.from(this.tools.values());
+  }
+
+  getToolsByPlugin(pluginId: string): Tool[] {
+    return Array.from(this.tools.values()).filter(tool => 
+      this.pluginTools.get(tool.name) === pluginId
+    );
   }
 
   getDefinitions(): any[] {
@@ -149,14 +172,22 @@ let creating = false;
 export function getToolRegistry(): ToolRegistry {
   if (!instance) {
     if (creating) {
-      // Re-entrant call during construction — return a bare instance to avoid infinite loop
-      return new ToolRegistry({ sandbox: false });
+      // Re-entrant call during construction — eagerly publish a partially-built
+      // singleton so callers share the same registry instead of getting a bare empty one.
+      instance = new ToolRegistry({ sandbox: false });
+      return instance;
     }
     creating = true;
     try {
       const config = getConfigManager().getAll();
       const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
-      instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+      // If a re-entrant call already initialized `instance`, reuse it and just
+      // update its sandbox mode rather than discarding registered tools.
+      if (instance) {
+        (instance as any).sandboxEnabled = sandboxMode === 'all';
+      } else {
+        instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+      }
     } finally {
       creating = false;
     }

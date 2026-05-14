@@ -28,8 +28,18 @@ export class DiscordAdapter extends ChannelAdapter {
     });
 
     this.ws.on('message', (data: string) => {
-      const payload = JSON.parse(data);
-      this.handleGatewayEvent(payload);
+      let payload: any;
+      try {
+        payload = JSON.parse(data.toString());
+      } catch (err: any) {
+        auditLog('DISCORD_PARSE_ERROR', err?.message || String(err));
+        return;
+      }
+      try {
+        this.handleGatewayEvent(payload);
+      } catch (err: any) {
+        auditLog('DISCORD_HANDLER_ERROR', err?.message || String(err));
+      }
     });
 
     this.ws.on('close', () => {
@@ -107,13 +117,16 @@ export class DiscordAdapter extends ChannelAdapter {
             metadata: { guildId: d.guild_id },
           };
           
-          this.handleIncoming(message);
+          this.handleIncoming(message).catch((err: any) => {
+            auditLog('DISCORD_HANDLE_ERROR', err?.message || String(err));
+          });
         }
         break;
     }
   }
 
   private startHeartbeat(interval: number): void {
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = setInterval(() => {
       this.ws?.send(JSON.stringify({ op: 1, d: this.sequence }));
     }, interval);

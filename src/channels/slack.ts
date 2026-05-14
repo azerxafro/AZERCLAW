@@ -38,8 +38,18 @@ export class SlackAdapter extends ChannelAdapter {
     });
 
     this.ws.on('message', (raw: string) => {
-      const payload = JSON.parse(raw);
-      this.handleSlackEvent(payload);
+      let payload: any;
+      try {
+        payload = JSON.parse(raw.toString());
+      } catch (err: any) {
+        auditLog('SLACK_PARSE_ERROR', err?.message || String(err));
+        return;
+      }
+      try {
+        this.handleSlackEvent(payload);
+      } catch (err: any) {
+        auditLog('SLACK_HANDLER_ERROR', err?.message || String(err));
+      }
     });
 
     this.ws.on('close', () => {
@@ -99,6 +109,8 @@ export class SlackAdapter extends ChannelAdapter {
       metadata: { threadTs: event.thread_ts, channelType: event.channel_type },
     };
 
-    this.handleIncoming(normalized);
+    this.handleIncoming(normalized).catch((err: any) => {
+      auditLog('SLACK_HANDLE_ERROR', err?.message || String(err));
+    });
   }
 }

@@ -79,7 +79,9 @@ export class TelegramAdapter extends ChannelAdapter {
               timestamp: new Date((msg.date as number) * 1000),
               metadata: { chatType: chat.type as string },
             };
-            this.handleIncoming(normalized);
+            this.handleIncoming(normalized).catch((err: any) => {
+              auditLog('TELEGRAM_HANDLE_ERROR', err?.message || String(err));
+            });
           }
         }
       }

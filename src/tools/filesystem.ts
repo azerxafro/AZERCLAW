@@ -108,12 +108,19 @@ export const searchFilesTool: Tool = {
     const searchPath = path.resolve(args.path as string);
     const pattern = args.pattern as string;
     try {
-      const { execSync } = require('child_process');
-      const fileFilter = args.filePattern ? `--include="${args.filePattern}"` : '';
-      const cmd = `grep -rnI ${fileFilter} "${pattern}" "${searchPath}" 2>/dev/null | head -50`;
-      const output = execSync(cmd, { encoding: 'utf-8', timeout: 10000 });
-      return { success: true, output: output.trim() || 'No matches found' };
-    } catch { return { success: true, output: 'No matches found' }; }
+      const { spawnSync } = require('child_process');
+      const grepArgs = ['-rnI'];
+      if (args.filePattern) grepArgs.push(`--include=${args.filePattern as string}`);
+      // Use -e to ensure pattern starting with '-' is not parsed as a flag
+      grepArgs.push('-e', pattern, '--', searchPath);
+      const res = spawnSync('grep', grepArgs, { encoding: 'utf-8', timeout: 10000, maxBuffer: 10 * 1024 * 1024 });
+      // grep exit: 0 = matches, 1 = no matches, >1 = error
+      if (res.status !== null && res.status > 1) {
+        return { success: false, output: '', error: res.stderr?.trim() || `grep exited with ${res.status}` };
+      }
+      const lines = (res.stdout || '').split('\n').slice(0, 50).join('\n').trim();
+      return { success: true, output: lines || 'No matches found' };
+    } catch (e: any) { return { success: false, output: '', error: e?.message || 'search failed' }; }
   },
 };
 

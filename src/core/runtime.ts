@@ -185,6 +185,7 @@ export class AgentRuntime {
           const reason = totalExceeded ? 'total' : dailyExceeded ? 'daily' : 'monthly';
           const error = `Token budget exceeded (${reason} limit). Check your config or increase limits.`;
           await this.emit({ type: 'error', error });
+          await this.emit({ type: 'done', content: error });
           return error;
         }
       }

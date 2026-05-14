@@ -27,10 +27,26 @@ export class WebhookAdapter extends ChannelAdapter {
         return;
       }
 
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
+      const MAX_BODY = 1024 * 1024; // 1 MB
+      const chunks: Buffer[] = [];
+      let total = 0;
+      let aborted = false;
+      req.on('data', (chunk: Buffer) => {
+        if (aborted) return;
+        total += chunk.length;
+        if (total > MAX_BODY) {
+          aborted = true;
+          res.writeHead(413);
+          res.end('Payload too large');
+          req.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
       req.on('end', async () => {
+        if (aborted) return;
         try {
+          const body = Buffer.concat(chunks).toString('utf8');
           const data = JSON.parse(body);
           const message: NormalizedMessage = {
             id: data.id || `wh_${Date.now()}`,
