@@ -38,7 +38,7 @@ export class ToolLoader {
         }
       }
       
-      if (count > 0) {
+      if (count > 0 && process.env.AZERCLAW_DEBUG) {
         console.log(`[ToolLoader] Loaded ${count} tools from ${directory}`);
       }
     } catch (error: any) {
@@ -71,7 +71,10 @@ export class ToolLoader {
       }
 
       this.registry.register(tool);
-      console.log(`[ToolLoader] Registered tool: ${tool.name} (v${tool.version})`);
+      if (process.env.AZERCLAW_DEBUG) {
+        console.log(`[ToolLoader] Registered tool: ${tool.name} (v${tool.version})`);
+      }
+
     } catch (error: any) {
       console.error(`[ToolLoader] Failed to load plugin ${filePath}:`, error.message);
     }

@@ -4,8 +4,59 @@
  */
 
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { Tool, ToolResult } from './registry';
+
+/**
+ * Enforce write-path safety: only permit writes inside the current working
+ * directory or the user's ~/.azerclaw data dir, unless an explicit allowlist
+ * is set via env (AZERCLAW_ALLOWED_WRITE_PATHS, colon-separated absolute paths).
+ * Always denies known-sensitive locations regardless of the allowlist.
+ */
+function assertWritablePath(targetAbs: string): string | null {
+  const home = os.homedir();
+  const denyExact = new Set([
+    path.join(home, '.bashrc'),
+    path.join(home, '.zshrc'),
+    path.join(home, '.profile'),
+    path.join(home, '.bash_profile'),
+    path.join(home, '.zprofile'),
+  ]);
+  const denyPrefixes = [
+    path.join(home, '.ssh'),
+    path.join(home, '.aws'),
+    path.join(home, '.gnupg'),
+    path.join(home, '.config', 'gh'),
+    '/etc',
+    '/usr',
+    '/bin',
+    '/sbin',
+    '/boot',
+    '/System',
+    '/Library/LaunchDaemons',
+    '/Library/LaunchAgents',
+  ];
+  if (denyExact.has(targetAbs)) return `Refused: ${targetAbs} is a protected file`;
+  for (const prefix of denyPrefixes) {
+    if (targetAbs === prefix || targetAbs.startsWith(prefix + path.sep)) {
+      return `Refused: ${targetAbs} is inside protected path ${prefix}`;
+    }
+  }
+
+  const allowed = [
+    process.cwd(),
+    path.join(home, '.azerclaw'),
+    ...(process.env.AZERCLAW_ALLOWED_WRITE_PATHS || '')
+      .split(path.delimiter)
+      .filter(Boolean)
+      .map(p => path.resolve(p)),
+  ];
+  for (const root of allowed) {
+    if (targetAbs === root || targetAbs.startsWith(root + path.sep)) return null;
+  }
+  return `Refused: ${targetAbs} is outside the allowed write roots (${allowed.join(', ')}). Set AZERCLAW_ALLOWED_WRITE_PATHS to extend.`;
+}
 
 export const readFileTool: Tool = {
   name: 'read_file',
@@ -52,6 +103,8 @@ export const writeFileTool: Tool = {
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
     const filePath = path.resolve(args.path as string);
+    const denyReason = assertWritablePath(filePath);
+    if (denyReason) return { success: false, output: '', error: denyReason };
     try {
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       if (args.append) {
@@ -108,12 +161,19 @@ export const searchFilesTool: Tool = {
     const searchPath = path.resolve(args.path as string);
     const pattern = args.pattern as string;
     try {
-      const { execSync } = require('child_process');
-      const fileFilter = args.filePattern ? `--include="${args.filePattern}"` : '';
-      const cmd = `grep -rnI ${fileFilter} "${pattern}" "${searchPath}" 2>/dev/null | head -50`;
-      const output = execSync(cmd, { encoding: 'utf-8', timeout: 10000 });
-      return { success: true, output: output.trim() || 'No matches found' };
-    } catch { return { success: true, output: 'No matches found' }; }
+      const { spawnSync } = require('child_process');
+      const grepArgs = ['-rnI'];
+      if (args.filePattern) grepArgs.push(`--include=${args.filePattern as string}`);
+      // Use -e to ensure pattern starting with '-' is not parsed as a flag
+      grepArgs.push('-e', pattern, '--', searchPath);
+      const res = spawnSync('grep', grepArgs, { encoding: 'utf-8', timeout: 10000, maxBuffer: 10 * 1024 * 1024 });
+      // grep exit: 0 = matches, 1 = no matches, >1 = error
+      if (res.status !== null && res.status > 1) {
+        return { success: false, output: '', error: res.stderr?.trim() || `grep exited with ${res.status}` };
+      }
+      const lines = (res.stdout || '').split('\n').slice(0, 50).join('\n').trim();
+      return { success: true, output: lines || 'No matches found' };
+    } catch (e: any) { return { success: false, output: '', error: e?.message || 'search failed' }; }
   },
 };
 

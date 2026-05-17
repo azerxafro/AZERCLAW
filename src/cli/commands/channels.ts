@@ -17,18 +17,15 @@ function maskAllowlist(values: string[]): string {
 
 export function channelsConfigList(): void {
   const config = getConfigManager().getAll();
-  const channels = config.channels as any;
+  const channels = config.channels;
   const lines: string[] = ['', chalk.hex('#818cf8').bold('DM Policies')];
 
   for (const platform of CHANNELS) {
-    const c = channels?.[platform] || {};
-    lines.push(
-      `  ${platform.padEnd(10)} enabled=${String(!!c.enabled).padEnd(5)} ` +
-      `policy=${String(c.dmPolicy || 'pairing').padEnd(8)} allowFrom=${maskAllowlist(Array.isArray(c.allowFrom) ? c.allowFrom : [])}`
-    );
+    const cfg = (channels as Record<string, { dmPolicy?: string; allowFrom?: string[] }>)[platform] || {};
+    lines.push(`  ${chalk.hex('#34d399')(platform.padEnd(10))}  policy=${cfg.dmPolicy || 'pairing'}  allowFrom=${maskAllowlist(cfg.allowFrom || [])}`);
   }
 
-  const routing = channels?.routing || {};
+  const routing = channels.routing || {};
   const rules = Array.isArray(routing.rules) ? routing.rules : [];
   lines.push('');
   lines.push(chalk.hex('#818cf8').bold(`Routing (${rules.length} rules)`));
@@ -70,8 +67,8 @@ export function addChannelAllowFrom(platform: string, senderId: string): void {
   }
 
   const config = getConfigManager();
-  const channels = config.getAll().channels as any;
-  const current = Array.isArray(channels?.[platform]?.allowFrom) ? channels[platform].allowFrom : [];
+  const channels = config.getAll().channels as Record<string, { allowFrom?: string[] }>;
+  const current = Array.isArray(channels[platform]?.allowFrom) ? channels[platform].allowFrom : [];
   if (current.includes(senderId)) {
     fishInfo(`Sender already allowed on ${platform}: ${senderId}`);
     return;
@@ -88,8 +85,8 @@ export function removeChannelAllowFrom(platform: string, senderId: string): void
   }
 
   const config = getConfigManager();
-  const channels = config.getAll().channels as any;
-  const current = Array.isArray(channels?.[platform]?.allowFrom) ? channels[platform].allowFrom : [];
+  const channels = config.getAll().channels as Record<string, { allowFrom?: string[] }>;
+  const current = Array.isArray(channels[platform]?.allowFrom) ? channels[platform].allowFrom : [];
   const next = current.filter((id: string) => id !== senderId);
 
   if (next.length === current.length) {
@@ -108,7 +105,7 @@ export function listChannelAllowFrom(platform: string): void {
   }
 
   const config = getConfigManager().getAll();
-  const allowFrom = ((config.channels as any)?.[platform]?.allowFrom || []) as string[];
+  const allowFrom = ((config.channels as Record<string, { allowFrom?: string[] }>)[platform]?.allowFrom || []);
   fishBox(`Allowlist — ${platform}`, [
     '',
     ...(allowFrom.length > 0 ? allowFrom.map(id => `  ${chalk.hex('#34d399')('●')} ${id}`) : [`  ${chalk.dim('empty')}`]),
@@ -142,8 +139,8 @@ export function addRoutingRule(
   }
 
   const config = getConfigManager();
-  const channels = config.getAll().channels as any;
-  const routing = channels?.routing || {};
+  const channels = config.getAll().channels;
+  const routing = channels.routing || {};
   const rules = Array.isArray(routing.rules) ? routing.rules : [];
 
   const nextRules = [
@@ -165,10 +162,10 @@ export function removeRoutingRule(
   opts: { platform?: string; channel?: string; sender?: string }
 ): void {
   const config = getConfigManager();
-  const channels = config.getAll().channels as any;
-  const rules = Array.isArray(channels?.routing?.rules) ? channels.routing.rules : [];
+  const channels = config.getAll().channels;
+  const rules = Array.isArray(channels.routing?.rules) ? channels.routing.rules : [];
 
-  const nextRules = rules.filter((rule: any) => {
+  const nextRules = rules.filter((rule: Record<string, unknown>) => {
     if (rule.sessionId !== sessionId) return true;
     if (opts.platform && rule.platform !== opts.platform) return true;
     if (opts.channel && rule.channelId !== opts.channel) return true;

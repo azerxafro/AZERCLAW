@@ -27,10 +27,27 @@ export class WebhookAdapter extends ChannelAdapter {
         return;
       }
 
-      let body = '';
-      req.on('data', chunk => { body += chunk; });
+      const MAX_BODY = 1024 * 1024; // 1 MB
+      const chunks: Buffer[] = [];
+      let total = 0;
+      let aborted = false;
+      req.on('data', (chunk: Buffer | string) => {
+        if (aborted) return;
+        const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        total += buf.length;
+        if (total > MAX_BODY) {
+          aborted = true;
+          res.writeHead(413);
+          res.end('Payload too large');
+          req.destroy();
+          return;
+        }
+        chunks.push(buf);
+      });
       req.on('end', async () => {
+        if (aborted) return;
         try {
+          const body = Buffer.concat(chunks).toString('utf8');
           const data = JSON.parse(body);
           const message: NormalizedMessage = {
             id: data.id || `wh_${Date.now()}`,
@@ -54,10 +71,22 @@ export class WebhookAdapter extends ChannelAdapter {
       });
     });
 
-    // Bind to localhost only for security
-    this.server.listen(this.port, '127.0.0.1', () => {
-      this.connected = true;
-      auditLog('WEBHOOK_STARTED', `Listening on 127.0.0.1:${this.port}`);
+    // Bind to localhost only for security. Await `listening` so connect()
+    // resolves only when isConnected() will return true.
+    await new Promise<void>((resolve, reject) => {
+      const onError = (err: Error) => {
+        this.server?.removeListener('listening', onListening);
+        reject(err);
+      };
+      const onListening = () => {
+        this.server?.removeListener('error', onError);
+        this.connected = true;
+        auditLog('WEBHOOK_STARTED', `Listening on 127.0.0.1:${this.port}`);
+        resolve();
+      };
+      this.server!.once('error', onError);
+      this.server!.once('listening', onListening);
+      this.server!.listen(this.port, '127.0.0.1');
     });
   }
 

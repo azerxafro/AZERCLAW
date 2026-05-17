@@ -18,22 +18,13 @@
  *   azerclaw config apikey [provider] [key]
  */
 
-import chalk from 'chalk';
-import gradientString from 'gradient-string';
-import Enquirer from 'enquirer';
-import { getConfigManager } from '../../config/manager';
-import { resetRouter } from '../../providers/router';
-import { KEYLESS_PROVIDERS } from '../../config/schema';
-import type { AIConfig, ProviderConfig, ProviderName } from '../../config/schema';
-import { fishSuccess, fishError, fishInfo, fishBox, fishWarn } from '../animations/fish';
-
-/** Typed accessor for a provider entry inside `ai.providers`. */
-function getProviderConfig(aiConfig: AIConfig, name: string): ProviderConfig | undefined {
-  return (aiConfig.providers as Record<string, ProviderConfig | undefined>)[name];
-}
-
-/** Providers that do not require an API key (ollama, lmstudio, localai, pollinations). */
-const KEYLESS_PROVIDER_SET = new Set<string>(KEYLESS_PROVIDERS);
+const chalk = require('chalk');
+const gradientString = require('gradient-string');
+const Enquirer = require('enquirer');
+const { getConfigManager } = require('../../config/manager');
+const { resetRouter } = require('../../providers/router');
+const { fishSuccess, fishError, fishInfo, fishBox, fishWarn } = require('../animations/fish');
+const { ProviderName } = require('../../config/schema');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -41,46 +32,31 @@ const BLOOD = gradientString(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
 
 // ─── Known Models Per Provider ──────────────────────────────────
 
-export const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
-  openai: [
-    { name: 'GPT-4o', id: 'gpt-4o', hint: 'Best all-around' },
-    { name: 'GPT-4o Mini', id: 'gpt-4o-mini', hint: 'Fast & cheap' },
-    { name: 'GPT-4.1', id: 'gpt-4.1', hint: 'Latest flagship' },
-    { name: 'GPT-4.1 Mini', id: 'gpt-4.1-mini', hint: 'Balanced' },
-    { name: 'GPT-4.1 Nano', id: 'gpt-4.1-nano', hint: 'Ultra-fast' },
-    { name: 'o3', id: 'o3', hint: 'Reasoning' },
-    { name: 'o4-mini', id: 'o4-mini', hint: 'Fast reasoning' },
+const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
+  opencode: [
+    { name: 'MiniMax M2.5 Free', id: 'minimax-m2.5-free', hint: '🆓 Free tier · 1T context' },
+    { name: 'Ring 2.6 Free', id: 'ring-2.6-1t:free', hint: '🆓 Free tier · 1T context' },
   ],
-  anthropic: [
-    { name: 'Claude Opus 4', id: 'claude-opus-4-20250514', hint: 'Most capable' },
-    { name: 'Claude Sonnet 4', id: 'claude-sonnet-4-20250514', hint: 'Best balance' },
-    { name: 'Claude Haiku 3.5', id: 'claude-3-5-haiku-20241022', hint: 'Fast & cheap' },
-  ],
-  google: [
-    { name: 'Gemini 2.5 Pro', id: 'gemini-2.5-pro', hint: 'Most capable' },
-    { name: 'Gemini 2.5 Flash', id: 'gemini-2.5-flash', hint: 'Fast & smart' },
-    { name: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash', hint: 'Affordable' },
+  pollinations: [
+    { name: 'GPT-4o-mini', id: 'openai', hint: '🆓 No API key · Via Pollinations' },
+    { name: 'Claude 3 Haiku', id: 'anthropic', hint: '🆓 No API key · Via Pollinations' },
+    { name: 'DeepSeek V3', id: 'deepseek', hint: '🆓 No API key · Via Pollinations' },
+    { name: 'Llama 3.3 70B', id: 'llama', hint: '🆓 No API key · Via Pollinations' },
+    { name: 'Mistral Large', id: 'mistral', hint: '🆓 No API key · Via Pollinations' },
   ],
   groq: [
     { name: 'Llama 3.3 70B', id: 'llama-3.3-70b-versatile', hint: 'Versatile' },
     { name: 'Llama 3.1 8B', id: 'llama-3.1-8b-instant', hint: 'Blazing fast' },
     { name: 'Mixtral 8x7B', id: 'mixtral-8x7b-32768', hint: 'Large context' },
   ],
-  deepseek: [
-    { name: 'DeepSeek Chat', id: 'deepseek-chat', hint: 'General' },
-    { name: 'DeepSeek Reasoner', id: 'deepseek-reasoner', hint: 'Reasoning' },
-  ],
   openrouter: [
-    { name: 'Claude Sonnet 4', id: 'anthropic/claude-sonnet-4', hint: 'Via OpenRouter' },
-    { name: 'GPT-4o', id: 'openai/gpt-4o', hint: 'Via OpenRouter' },
-    { name: 'Gemini 2.5 Pro', id: 'google/gemini-2.5-pro', hint: 'Via OpenRouter' },
-    { name: 'Llama 3.3 70B (Free)', id: 'meta-llama/llama-3.3-70b-instruct:free', hint: 'Free via OpenRouter' },
-  ],
-  pollinations: [
-    { name: 'OpenAI (default)', id: 'openai', hint: 'Free, no key required' },
-    { name: 'OpenAI Large', id: 'openai-large', hint: 'Free, larger context' },
-    { name: 'Mistral', id: 'mistral', hint: 'Free' },
-    { name: 'Llama', id: 'llama', hint: 'Free' },
+    { name: 'DeepSeek V3 Free', id: 'deepseek/deepseek-chat:free', hint: '🆓 FREE tier · 685B params' },
+    { name: 'Gemini 2.0 Flash Free', id: 'google/gemini-2.0-flash-exp:free', hint: '🆓 FREE tier · 1M context' },
+    { name: 'Llama 3.3 70B Free', id: 'meta-llama/llama-3.3-70b-instruct:free', hint: '🆓 FREE tier · Latest Llama' },
+    { name: 'Nemotron 70B Free', id: 'nvidia/llama-3.1-nemotron-70b-instruct:free', hint: '🆓 FREE tier · NVIDIA' },
+    { name: 'Claude Sonnet 4', id: 'anthropic/claude-sonnet-4', hint: 'Paid · Via OpenRouter' },
+    { name: 'GPT-4o', id: 'openai/gpt-4o', hint: 'Paid · Via OpenRouter' },
+    { name: 'Gemini 2.5 Pro', id: 'google/gemini-2.5-pro', hint: 'Paid · Via OpenRouter' },
   ],
   ollama: [
     { name: 'Llama 3.1', id: 'llama3.1', hint: 'General purpose' },
@@ -91,27 +67,14 @@ export const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: s
     { name: 'Qwen 2.5', id: 'qwen2.5', hint: 'Multilingual' },
     { name: 'Phi-3', id: 'phi3', hint: 'Microsoft, small & fast' },
   ],
-  lmstudio: [
-    { name: 'Use loaded model', id: 'local-model', hint: 'Whatever is loaded in LM Studio' },
-  ],
-  localai: [
-    { name: 'Use loaded model', id: 'local-model', hint: 'Whatever is loaded in LocalAI' },
-  ],
-  custom: [],
 };
 
-export const PROVIDER_LABELS: Record<string, string> = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google Gemini',
-  groq: 'Groq',
-  deepseek: 'DeepSeek',
-  openrouter: 'OpenRouter',
-  pollinations: 'Pollinations (Free)',
-  ollama: 'Ollama (Local)',
-  lmstudio: 'LM Studio (Local)',
-  localai: 'LocalAI (Local)',
-  custom: 'Custom',
+const PROVIDER_LABELS: Record<string, string> = {
+  opencode: '🔷 Opencode (Free)',
+  groq: '⚡ Groq (Fast Free)',
+  openrouter: '🔌 OpenRouter (Free Tier)',
+  pollinations: '🔥 Pollinations (No Key)',
+  ollama: '🏠 Ollama (Local)',
 };
 
 // ─── /status — Show Current Status ──────────────────────────────
@@ -143,8 +106,8 @@ export function showStatus(): void {
 export async function interactiveSettingsMenu(): Promise<void> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
-  const currentProvider = aiConfig.defaultProvider;
-  const currentModel = getProviderConfig(aiConfig, currentProvider)?.defaultModel || 'default';
+  const currentProvider = aiConfig.defaultProvider as typeof ProviderName;
+  const currentModel = aiConfig.providers[currentProvider]?.defaultModel || 'default';
   const fallback = config.getFallbackProvider();
 
   fishBox('⚙️  Configuration', [
@@ -192,7 +155,7 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
   const allProviders = Object.keys(aiConfig.providers);
 
   const choices = allProviders.map((p: string) => {
-    const prov = getProviderConfig(aiConfig, p);
+    const prov = aiConfig.providers[p as typeof ProviderName];
     const isActive = p === aiConfig.defaultProvider;
     const isEnabled = prov?.enabled;
     const status = isActive
@@ -215,9 +178,12 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
       choices,
     }).run();
 
-    const provConfig = getProviderConfig(aiConfig, selected);
+    const provConfig = aiConfig.providers[selected as typeof ProviderName];
 
-    if (!KEYLESS_PROVIDER_SET.has(selected) && (!provConfig?.apiKey || provConfig.apiKey === '')) {
+    // Check if provider needs API key (ollama and pollinations don't need keys)
+    const needsApiKey = !['ollama', 'pollinations'].includes(selected);
+
+    if (needsApiKey && (!provConfig?.apiKey || provConfig.apiKey === '')) {
       fishWarn(`${PROVIDER_LABELS[selected] || selected} has no API key configured.`);
       const setKey: boolean = await new Enquirer.Confirm({
         name: 'setKey',
@@ -232,7 +198,7 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
         }).run();
 
         if (apiKey) {
-          config.updateProviderKey(selected as ProviderName, apiKey);
+          config.updateProviderKey(selected as typeof ProviderName, apiKey);
           fishSuccess(`API key set for ${PROVIDER_LABELS[selected] || selected}`);
         } else {
           fishError('No key provided. Provider switch aborted.');
@@ -244,11 +210,19 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
       }
     }
 
-    config.switchProvider(selected as ProviderName);
+    config.switchProvider(selected as typeof ProviderName);
     resetRouter();
 
-    const newModel = getProviderConfig(config.getAll().ai, selected)?.defaultModel || 'default';
-    fishSuccess(`Switched to ${PROVIDER_LABELS[selected] || selected} (model: ${newModel})`);
+    const newModel = config.getAll().ai.providers[selected as typeof ProviderName]?.defaultModel || 'default';
+
+    // Special message for free providers
+    if (selected === 'pollinations') {
+      fishSuccess(`🔥 Switched to Pollinations (model: ${newModel}) — no API key needed!`);
+    } else if (selected === 'ollama') {
+      fishSuccess(`🏠 Switched to Ollama (model: ${newModel}) — make sure Ollama is running locally`);
+    } else {
+      fishSuccess(`Switched to ${PROVIDER_LABELS[selected] || selected} (model: ${newModel})`);
+    }
     return true;
   } catch { return false; }
 }
@@ -258,8 +232,8 @@ export async function interactiveProviderSwitch(): Promise<boolean> {
 export async function interactiveModelSwitch(): Promise<boolean> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
-  const currentProvider = aiConfig.defaultProvider;
-  const currentModel = getProviderConfig(aiConfig, currentProvider)?.defaultModel || 'default';
+  const currentProvider = aiConfig.defaultProvider as typeof ProviderName;
+  const currentModel = aiConfig.providers[currentProvider]?.defaultModel || 'default';
 
   fishInfo(`Current: ${PROVIDER_LABELS[currentProvider] || currentProvider} → ${currentModel}`);
 
@@ -311,11 +285,11 @@ export async function interactiveModelSwitch(): Promise<boolean> {
 export async function interactiveApiKeyChange(): Promise<boolean> {
   const config = getConfigManager();
   const aiConfig = config.getAll().ai;
-  const allProviders = Object.keys(aiConfig.providers).filter((p) => !KEYLESS_PROVIDER_SET.has(p));
+  const allProviders = Object.keys(aiConfig.providers).filter((p) => !['ollama', 'pollinations'].includes(p));
 
   const choices = allProviders.map((p: string) => {
-    const prov = getProviderConfig(aiConfig, p);
-    const hasKey = !!prov?.apiKey && prov.apiKey.length > 0;
+    const prov = aiConfig.providers[p as typeof ProviderName];
+    const hasKey = prov?.apiKey && prov.apiKey.length > 0;
     const status = hasKey
       ? chalk.hex('#34d399')(`● ${maskKey(prov.apiKey)}`)
       : chalk.hex('#6b7280')('○ no key');
@@ -343,7 +317,7 @@ export async function interactiveApiKeyChange(): Promise<boolean> {
       return false;
     }
 
-    config.updateProviderKey(selected as ProviderName, apiKey);
+    config.updateProviderKey(selected as typeof ProviderName, apiKey);
     resetRouter();
     fishSuccess(`API key updated for ${PROVIDER_LABELS[selected] || selected}: ${maskKey(apiKey)}`);
     return true;
@@ -536,9 +510,9 @@ export function initProject(): void {
 export function cliSwitchProvider(providerName: string): void {
   const config = getConfigManager();
   try {
-    config.switchProvider(providerName as ProviderName);
+    config.switchProvider(providerName as typeof ProviderName);
     resetRouter();
-    const model = getProviderConfig(config.getAll().ai, providerName)?.defaultModel || 'default';
+    const model = config.getAll().ai.providers[providerName as typeof ProviderName]?.defaultModel || 'default';
     fishSuccess(`Switched to ${PROVIDER_LABELS[providerName] || providerName} (model: ${model})`);
   } catch (e: unknown) {
     fishError(e instanceof Error ? e.message : String(e));
@@ -548,14 +522,14 @@ export function cliSwitchProvider(providerName: string): void {
 export function cliSwitchModel(modelId: string, providerName?: string): void {
   const config = getConfigManager();
   const provider = providerName || config.getAll().ai.defaultProvider;
-  config.setProviderModel(modelId, provider as ProviderName);
+  config.setProviderModel(modelId, provider as typeof ProviderName);
   resetRouter();
   fishSuccess(`Model set to ${modelId} on ${PROVIDER_LABELS[provider] || provider}`);
 }
 
 export function cliSetApiKey(providerName: string, apiKey: string): void {
   const config = getConfigManager();
-  config.updateProviderKey(providerName as ProviderName, apiKey);
+  config.updateProviderKey(providerName as typeof ProviderName, apiKey);
   resetRouter();
   fishSuccess(`API key updated for ${PROVIDER_LABELS[providerName] || providerName}: ${maskKey(apiKey)}`);
 }

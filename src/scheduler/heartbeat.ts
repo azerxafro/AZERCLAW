@@ -192,7 +192,22 @@ export class HeartbeatEngine {
       }
     }
     
-    // Run the task via a temporary agent
+    // Refuse obviously destructive actions in heartbeat (no human in the loop).
+    const ACTION_DENY = [
+      /\brm\s+-rf?\s+\//i,
+      /\bsudo\b/i,
+      /\bshutdown\b|\breboot\b|\bhalt\b/i,
+      /\bmkfs(\.|\s)/i,
+      /\b(curl|wget)\b[^|]*\|\s*(sh|bash|zsh)/i,
+    ];
+    for (const pattern of ACTION_DENY) {
+      if (pattern.test(task.action)) {
+        auditLog('HEARTBEAT_REFUSED', `${task.name} matched deny pattern ${pattern}`);
+        return;
+      }
+    }
+
+    // Run the task via a temporary agent. No turbo flag — approvals stay enforced.
     let result = '';
     const agent = new AgentRuntime({
       sessionId: `heartbeat_${task.name}_${Date.now()}`,
@@ -203,19 +218,22 @@ export class HeartbeatEngine {
         }
       },
     });
-    
+
     try {
       result = await agent.run(task.action);
       task.lastRun = new Date();
       task.lastResult = result.slice(0, 500);
-      
+
       if (result && this.eventCallback) {
         this.eventCallback(`heartbeat:${task.name}`, result);
       }
-      
+
       auditLog('HEARTBEAT_DONE', `${task.name} — ${result.slice(0, 100)}`);
     } catch (e: any) {
       auditLog('HEARTBEAT_ERROR', `${task.name} — ${e.message}`);
+    } finally {
+      // Release any sub-agents / pending work before the reference drops.
+      try { agent.abort(); } catch { /* ignore */ }
     }
   }
 

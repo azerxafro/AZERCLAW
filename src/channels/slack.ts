@@ -13,8 +13,12 @@ export class SlackAdapter extends ChannelAdapter {
   private appToken = '';
   private ws: any = null;
   private connected = false;
+  private pingInterval: NodeJS.Timeout | null = null;
+  private lastPongAt = 0;
+  private savedConfig: Record<string, string> | null = null;
 
   async connect(config: Record<string, string>): Promise<void> {
+    this.savedConfig = config;
     this.botToken = config.botToken;
     this.appToken = config.appToken;
     if (!this.botToken || !this.appToken) {
@@ -26,7 +30,7 @@ export class SlackAdapter extends ChannelAdapter {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${this.appToken}` },
     });
-    const data = await res.json() as any;
+    const data = await res.json() as { ok: boolean; error?: string; url?: string };
     if (!data.ok) throw new Error(`Slack auth failed: ${data.error}`);
 
     const WebSocket = require('ws');
@@ -34,21 +38,64 @@ export class SlackAdapter extends ChannelAdapter {
 
     this.ws.on('open', () => {
       this.connected = true;
+      this.lastPongAt = Date.now();
+      this.startKeepalive();
       auditLog('SLACK_CONNECTED', 'Socket Mode active');
     });
 
+    this.ws.on('pong', () => { this.lastPongAt = Date.now(); });
+
     this.ws.on('message', (raw: string) => {
-      const payload = JSON.parse(raw);
-      this.handleSlackEvent(payload);
+      let payload: any;
+      try {
+        payload = JSON.parse(raw.toString());
+      } catch (err: any) {
+        auditLog('SLACK_PARSE_ERROR', err?.message || String(err));
+        return;
+      }
+      try {
+        this.handleSlackEvent(payload);
+      } catch (err: any) {
+        auditLog('SLACK_HANDLER_ERROR', err?.message || String(err));
+      }
     });
 
     this.ws.on('close', () => {
       this.connected = false;
+      this.stopKeepalive();
       auditLog('SLACK_DISCONNECTED', '');
     });
   }
 
+  private startKeepalive(): void {
+    this.stopKeepalive();
+    this.pingInterval = setInterval(() => {
+      // If we haven’t seen a pong in 90s, treat the socket as dead and reconnect.
+      if (Date.now() - this.lastPongAt > 90_000) {
+        auditLog('SLACK_KEEPALIVE_TIMEOUT', 'No pong in 90s; reconnecting');
+        try { this.ws?.terminate?.(); } catch { /* ignore */ }
+        this.connected = false;
+        this.stopKeepalive();
+        if (this.savedConfig) {
+          this.connect(this.savedConfig).catch((err: any) => {
+            auditLog('SLACK_RECONNECT_FAILED', err?.message || String(err));
+          });
+        }
+        return;
+      }
+      try { this.ws?.ping?.(); } catch { /* ignore */ }
+    }, 30_000);
+  }
+
+  private stopKeepalive(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
   async disconnect(): Promise<void> {
+    this.stopKeepalive();
     if (this.ws) this.ws.close();
     this.connected = false;
   }
@@ -99,6 +146,8 @@ export class SlackAdapter extends ChannelAdapter {
       metadata: { threadTs: event.thread_ts, channelType: event.channel_type },
     };
 
-    this.handleIncoming(normalized);
+    this.handleIncoming(normalized).catch((err: any) => {
+      auditLog('SLACK_HANDLE_ERROR', err?.message || String(err));
+    });
   }
 }

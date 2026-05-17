@@ -5,6 +5,9 @@
 
 import { BaseProvider, CompletionOptions, CompletionResult, StreamChunk, ModelInfo } from './base';
 import { OpenAIProvider } from './openai';
+import { KiloAutoProvider } from './kiloauto';
+import { HuggingFaceProvider } from './huggingface';
+import { LocalLlamaProvider } from './localllama';
 import { getConfigManager } from '../config/manager';
 import { AIConfig, KEYLESS_PROVIDERS, ProviderConfig, ProviderName } from '../config/schema';
 
@@ -37,20 +40,76 @@ export class ProviderRouter {
   }
 
   private initProviders(aiConfig: AIConfig): void {
-    const providers = aiConfig.providers as ProvidersMap;
+    const p = aiConfig.providers;
 
-    for (const [name, cfg] of Object.entries(providers) as [keyof ProvidersMap, ProviderConfig][]) {
-      if (!cfg || !cfg.enabled) continue;
-      // Skip key-required providers without a key, but allow keyless providers
-      // (ollama / lmstudio / localai / pollinations) through with no apiKey.
-      if (!cfg.apiKey && !isKeyless(name)) continue;
-      if (!cfg.baseUrl) continue;
+    // Opencode (default free provider)
+    if (p.opencode?.enabled && p.opencode.apiKey) {
+      this.providers.set('opencode', new OpenAIProvider({
+        apiKey: p.opencode.apiKey,
+        baseUrl: p.opencode.baseUrl || 'https://opencode.ai/zen/v1',
+        defaultModel: p.opencode.defaultModel || 'minimax-m2.5-free'
+      }));
+    }
 
-      this.providers.set(name, new OpenAIProvider({
-        // OpenAI SDK requires a non-empty apiKey even when the upstream ignores it.
-        apiKey: cfg.apiKey || 'no-key-required',
-        baseUrl: cfg.baseUrl,
-        defaultModel: cfg.defaultModel,
+    // OpenRouter (free tier access)
+    if (p.openrouter?.enabled && p.openrouter.apiKey) {
+      this.providers.set('openrouter', new OpenAIProvider({
+        apiKey: p.openrouter.apiKey,
+        baseUrl: p.openrouter.baseUrl || 'https://openrouter.ai/api/v1',
+        defaultModel: p.openrouter.defaultModel || 'deepseek/deepseek-chat:free'
+      }));
+    }
+
+    // Groq (fast free tier)
+    if (p.groq?.enabled && p.groq.apiKey) {
+      this.providers.set('groq', new OpenAIProvider({
+        apiKey: p.groq.apiKey,
+        baseUrl: p.groq.baseUrl || 'https://api.groq.com/openai/v1',
+        defaultModel: p.groq.defaultModel || 'llama-3.3-70b-versatile'
+      }));
+    }
+
+    // Pollinations (no API key needed - completely free)
+    if (p.pollinations?.enabled) {
+      this.providers.set('pollinations', new OpenAIProvider({
+        apiKey: 'pollinations-no-key-required', // Dummy key for compatibility
+        baseUrl: p.pollinations.baseUrl || 'https://text.pollinations.ai/openai',
+        defaultModel: p.pollinations.defaultModel || 'openai'
+      }));
+    }
+
+    // Ollama (local models)
+    if (p.ollama?.enabled) {
+      this.providers.set('ollama', new OpenAIProvider({
+        apiKey: 'ollama', // Ollama doesn't need a real API key
+        baseUrl: p.ollama.baseUrl || 'http://localhost:11434/v1',
+        defaultModel: p.ollama.defaultModel || 'llama3.2'
+      }));
+    }
+
+    // KiloAuto (free tier)
+    if (p.kiloauto?.enabled && p.kiloauto.apiKey) {
+      this.providers.set('kiloauto', new KiloAutoProvider({
+        apiKey: p.kiloauto.apiKey,
+        baseUrl: p.kiloauto.baseUrl,
+        defaultModel: p.kiloauto.defaultModel || 'kilo-auto-v1'
+      }));
+    }
+
+    // HuggingFace (free inference API)
+    if (p.huggingface?.enabled && p.huggingface.apiKey) {
+      this.providers.set('huggingface', new HuggingFaceProvider({
+        apiKey: p.huggingface.apiKey,
+        baseUrl: p.huggingface.baseUrl,
+        defaultModel: p.huggingface.defaultModel || 'meta-llama/Llama-3.2-1B-Instruct'
+      }));
+    }
+
+    // LocalLlama (self-hosted)
+    if (p.localllama?.enabled) {
+      this.providers.set('localllama', new LocalLlamaProvider({
+        baseUrl: p.localllama.baseUrl,
+        defaultModel: p.localllama.defaultModel || 'llama3.2'
       }));
     }
 
@@ -63,8 +122,31 @@ export class ProviderRouter {
     if (name) return this.providers.get(name);
     const config = getConfigManager().getAll();
     const defaultProvider = config.ai.defaultProvider;
+    // Smart fallback: prefer free providers that don't need keys
     return this.providers.get(defaultProvider)
       || this.providers.get('opencode')
+      || this.providers.get('pollinations') // No API key needed
+      || this.providers.get('kiloauto')
+      || this.providers.get('huggingface')
+      || this.providers.get('localllama')
+      || this.providers.get('openrouter')
+      || this.providers.get('groq')
+      || this.providers.get('ollama')
+      || this.providers.values().next().value;
+  }
+
+  /**
+   * Get a free provider that doesn't require API key setup
+   */
+  getFreeProvider(): BaseProvider | undefined {
+    // Priority: Pollinations (no key) > KiloAuto > HuggingFace > LocalLlama > OpenRouter free tier > Groq free tier > Ollama
+    return this.providers.get('pollinations')
+      || this.providers.get('kiloauto')
+      || this.providers.get('huggingface')
+      || this.providers.get('localllama')
+      || this.providers.get('openrouter')
+      || this.providers.get('groq')
+      || this.providers.get('ollama')
       || this.providers.values().next().value;
   }
 
@@ -75,19 +157,11 @@ export class ProviderRouter {
       return { content: 'Error: No AI engine configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
     }
 
-    // `provider.name` is the SDK class name (e.g. "openai") and is the same for every
-    // OpenAI-compatible provider, so we never use it to resolve the active provider name.
-    const providerName = preferredProvider || config.ai.defaultProvider;
-    const providers = config.ai.providers as ProvidersMap;
-    const providerConfig = providers[providerName as keyof ProvidersMap] ?? providers.opencode;
+    const providerName = preferredProvider || provider.name || config.ai.defaultProvider;
+    const providerConfig = config.ai.providers[providerName as keyof typeof config.ai.providers];
     const defaultModel = providerConfig?.defaultModel;
 
-    // The global `modelFallbackChain` contains opencode-specific model IDs and would
-    // 404 against any other backend (e.g. Pollinations), so it is only applied when
-    // the active provider is opencode.
-    const globalFallbacks = ((config.ai as { modelFallbackChain?: string[] }).modelFallbackChain) || [];
-    const modelFallbacks = providerName === 'opencode' ? globalFallbacks : [];
-    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...modelFallbacks];
+    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...(config.ai.modelFallbackChain || [])];
 
     let lastError = '';
     let attempted = false;
@@ -95,13 +169,18 @@ export class ProviderRouter {
       if (!modelId) continue;
       attempted = true;
       if (process.env.AZERCLAW_DEBUG) {
-        console.log(`[Router] Attempting model: ${modelId} on ${providerName}`);
+        console.log(`[Router] Attempting model: ${modelId} on ${providerName}...`);
       }
       try {
+        const start = Date.now();
         const result = await provider.complete({ ...options, model: modelId });
+        if (process.env.AZERCLAW_DEBUG) {
+          console.log(`[Router] Model ${modelId} finished in ${Date.now() - start}ms (finishReason: ${result.finishReason})`);
+        }
         if (result.finishReason !== 'error') return result;
         lastError = result.content;
       } catch (e: unknown) {
+
         lastError = e instanceof Error ? e.message : String(e);
       }
     }

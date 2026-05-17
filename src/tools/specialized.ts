@@ -181,12 +181,47 @@ export const applyFixTool: Tool = {
     required: ['fixCommand'],
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
+    const cmd = String(args.fixCommand || '').trim();
+    if (!cmd) {
+      return { success: false, output: '', error: 'apply_fix requires a non-empty fixCommand' };
+    }
+
+    // Refuse outright if the user has locked the agent into full sandbox mode.
+    try {
+      const { getConfigManager } = require('../config/manager');
+      const sandboxMode = getConfigManager().getAll()?.agent?.sandboxMode;
+      if (sandboxMode === 'all' || sandboxMode === true) {
+        return { success: false, output: '', error: 'apply_fix is blocked by sandbox policy (sandboxMode=all)' };
+      }
+    } catch { /* config unavailable — proceed with denylist only */ }
+
+    // Denylist of catastrophically destructive patterns.
+    const DENY = [
+      /\brm\s+-rf?\s+\/(?!\S*\.azerclaw)/i,    // rm -rf / (allow within .azerclaw)
+      /:\(\)\s*\{\s*:\|:&\s*\}\s*;\s*:/,        // fork bomb
+      /\bmkfs(\.|\s)/i,                          // filesystem format
+      /\bdd\s+if=\S+\s+of=\/dev\//i,            // raw disk write
+      />\s*\/dev\/(sda|nvme|disk)/i,            // overwrite block device
+      /\bchmod\s+-R\s+0?777\s+\//,              // chmod world-write root
+      /\bshutdown\b|\breboot\b|\bhalt\b/i,
+      /\b(curl|wget)\b[^|]*\|\s*(sh|bash|zsh)/i, // pipe-to-shell
+    ];
+    for (const pattern of DENY) {
+      if (pattern.test(cmd)) {
+        return { success: false, output: '', error: `apply_fix refused: command matches deny pattern ${pattern}` };
+      }
+    }
+
     const { execSync } = require('child_process');
     try {
-      const output = execSync(args.fixCommand as string, { encoding: 'utf-8' });
+      const output = execSync(cmd, {
+        encoding: 'utf-8',
+        timeout: 30_000,
+        maxBuffer: 10 * 1024 * 1024,
+      });
       return {
         success: true,
-        output: `Fix applied successfully: ${args.fixCommand}\n\nOutput:\n${output}`,
+        output: `Fix applied successfully: ${cmd}\n\nOutput:\n${output}`,
       };
     } catch (e: any) {
       return { success: false, output: '', error: `Fix failed: ${e.message}` };
@@ -211,12 +246,16 @@ export const rollVoughtCredentialsTool: Tool = {
   },
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
     try {
-      const fetch = require('node-fetch');
+      // Use Node 18+ global fetch — node-fetch v3 is ESM-only and crashes under CommonJS.
+      const adminToken = process.env.VOUGHT_GATE_ADMIN_TOKEN || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (adminToken) headers['Authorization'] = `Bearer ${adminToken}`;
       const response = await fetch('https://vought-gate.achu-ashwin98.workers.dev/admin/rotate', {
         method: 'POST',
+        headers,
       });
-      
-      const data = await response.json();
+
+      const data: any = await response.json();
       if (data.success) {
         return {
           success: true,

@@ -38,7 +38,7 @@ export function resolveSessionIdForMessage(
   routingConfig?: SessionRoutingConfig
 ): string {
   const resolvedConfig = routingConfig ??
-    (((getConfigManager().getAll().channels as any).routing || {}) as SessionRoutingConfig);
+    ((getConfigManager().getAll().channels.routing || {}) as SessionRoutingConfig);
 
   const rules = resolvedConfig.rules || [];
   const matchedRule = rules.find(rule => ruleMatches(message, rule));

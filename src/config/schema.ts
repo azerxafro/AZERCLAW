@@ -21,71 +21,51 @@ const OpencodeProviderSchema = ProviderSchema.extend({
   enabled: z.boolean().default(true),
 });
 
-const OpenAIProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.OPENAI_API_KEY || ''),
-  baseUrl: z.string().default('https://api.openai.com/v1'),
-  defaultModel: z.string().default('gpt-4o-mini'),
+const OpenRouterProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://openrouter.ai/api/v1'),
+  defaultModel: z.string().default('deepseek/deepseek-chat:free'),
+  enabled: z.boolean().default(false),
 });
 
-const AnthropicProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.ANTHROPIC_API_KEY || ''),
-  baseUrl: z.string().default('https://api.anthropic.com/v1'),
-  defaultModel: z.string().default('claude-sonnet-4-20250514'),
-});
-
-const GoogleProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.GOOGLE_API_KEY || ''),
-  baseUrl: z.string().default('https://generativelanguage.googleapis.com/v1beta/openai'),
-  defaultModel: z.string().default('gemini-2.5-flash'),
-});
-
-const GroqProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.GROQ_API_KEY || ''),
+const GroqProviderSchema = z.object({
+  apiKey: z.string().default(''),
   baseUrl: z.string().default('https://api.groq.com/openai/v1'),
   defaultModel: z.string().default('llama-3.3-70b-versatile'),
+  enabled: z.boolean().default(false),
 });
 
-const DeepSeekProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.DEEPSEEK_API_KEY || ''),
-  baseUrl: z.string().default('https://api.deepseek.com/v1'),
-  defaultModel: z.string().default('deepseek-chat'),
-});
-
-const OpenRouterProviderSchema = ProviderSchema.extend({
-  apiKey: z.string().default(process.env.OPENROUTER_API_KEY || ''),
-  baseUrl: z.string().default('https://openrouter.ai/api/v1'),
-  defaultModel: z.string().default('meta-llama/llama-3.3-70b-instruct:free'),
-});
-
-// Local/free providers — enabled by default so users get a zero-config experience.
-const OllamaProviderSchema = ProviderSchema.extend({
-  baseUrl: z.string().default('http://localhost:11434/v1'),
-  defaultModel: z.string().default('llama3.1'),
-  enabled: z.boolean().default(true),
-});
-
-const LMStudioProviderSchema = ProviderSchema.extend({
-  baseUrl: z.string().default('http://localhost:1234/v1'),
-  defaultModel: z.string().default('local-model'),
-  enabled: z.boolean().default(true),
-});
-
-const LocalAIProviderSchema = ProviderSchema.extend({
-  baseUrl: z.string().default('http://localhost:8080/v1'),
-  defaultModel: z.string().default('local-model'),
-  enabled: z.boolean().default(true),
-});
-
-const PollinationsProviderSchema = ProviderSchema.extend({
-  // Pollinations is a free, no-key OpenAI-compatible endpoint.
+const PollinationsProviderSchema = z.object({
+  // No API key needed - completely free
   baseUrl: z.string().default('https://text.pollinations.ai/openai'),
   defaultModel: z.string().default('openai'),
-  enabled: z.boolean().default(true),
+  enabled: z.boolean().default(true), // Enabled by default - no key needed
 });
 
-const CustomProviderSchema = ProviderSchema.extend({
-  baseUrl: z.string().default(''),
-  defaultModel: z.string().default('custom-model'),
+const OllamaProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:11434'),
+  defaultModel: z.string().default('llama3.2'),
+  enabled: z.boolean().default(false),
+});
+
+const KiloAutoProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://api.kilo.ai/auto'),
+  defaultModel: z.string().default('kilo-auto-v1'),
+  enabled: z.boolean().default(false),
+});
+
+const HuggingFaceProviderSchema = z.object({
+  apiKey: z.string().default(''),
+  baseUrl: z.string().default('https://api-inference.huggingface.co/models'),
+  defaultModel: z.string().default('meta-llama/Llama-3.2-1B-Instruct'),
+  enabled: z.boolean().default(false),
+});
+
+const LocalLlamaProviderSchema = z.object({
+  baseUrl: z.string().default('http://localhost:11434'),
+  defaultModel: z.string().default('llama3.2'),
+  enabled: z.boolean().default(false),
 });
 
 // ─── Security Schemas ───────────────────────────────────────────
@@ -99,18 +79,60 @@ const ChannelSecuritySchema = z.object({
 
 const ProvidersSchema = z.object({
   opencode: OpencodeProviderSchema.default({}),
-  openai: OpenAIProviderSchema.default({}),
-  anthropic: AnthropicProviderSchema.default({}),
-  google: GoogleProviderSchema.default({}),
-  groq: GroqProviderSchema.default({}),
-  deepseek: DeepSeekProviderSchema.default({}),
   openrouter: OpenRouterProviderSchema.default({}),
-  ollama: OllamaProviderSchema.default({}),
-  lmstudio: LMStudioProviderSchema.default({}),
-  localai: LocalAIProviderSchema.default({}),
+  groq: GroqProviderSchema.default({}),
   pollinations: PollinationsProviderSchema.default({}),
-  custom: CustomProviderSchema.default({}),
-}).default({});
+  ollama: OllamaProviderSchema.default({}),
+  kiloauto: KiloAutoProviderSchema.default({}),
+  huggingface: HuggingFaceProviderSchema.default({}),
+  localllama: LocalLlamaProviderSchema.default({}),
+}).default({
+  opencode: {
+    apiKey: process.env.AZERTRON_OPENCODE_KEY || '',
+    baseUrl: 'https://opencode.ai/zen/v1',
+    defaultModel: 'minimax-m2.5-free',
+    enabled: true
+  },
+  openrouter: {
+    apiKey: process.env.AZERTRON_OPENROUTER_KEY || '',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'deepseek/deepseek-chat:free',
+    enabled: !!process.env.AZERTRON_OPENROUTER_KEY
+  },
+  groq: {
+    apiKey: process.env.AZERTRON_GROQ_KEY || '',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    enabled: !!process.env.AZERTRON_GROQ_KEY
+  },
+  pollinations: {
+    baseUrl: 'https://text.pollinations.ai/openai',
+    defaultModel: 'openai',
+    enabled: true // Always enabled - no API key needed
+  },
+  ollama: {
+    baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    defaultModel: 'llama3.2',
+    enabled: false // User must explicitly enable
+  },
+  kiloauto: {
+    apiKey: process.env.KILO_API_KEY || '',
+    baseUrl: 'https://api.kilo.ai/auto',
+    defaultModel: 'kilo-auto-v1',
+    enabled: !!process.env.KILO_API_KEY
+  },
+  huggingface: {
+    apiKey: process.env.HF_API_KEY || '',
+    baseUrl: 'https://api-inference.huggingface.co/models',
+    defaultModel: 'meta-llama/Llama-3.2-1B-Instruct',
+    enabled: !!process.env.HF_API_KEY
+  },
+  localllama: {
+    baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+    defaultModel: 'llama3.2',
+    enabled: false // User must explicitly enable
+  },
+});
 
 const AIConfigSchema = z.object({
   defaultProvider: z.string().default('opencode'),
@@ -209,7 +231,38 @@ const ChannelsConfigSchema = z.object({
 // ─── Full Config ────────────────────────────────────────────────
 
 export const ConfigSchema = z.object({
-  ai: AIConfigSchema.default({}),
+  ai: AIConfigSchema.default({
+    defaultProvider: 'opencode',
+    fallbackChain: ['opencode'],
+    modelFallbackChain: ['opencode/ring-2.6-1t:free', 'minimax-m2.5-free'],
+    maxTokens: 4096,
+    temperature: 0.7,
+    providers: {
+      opencode: { 
+        apiKey: process.env.AZERTRON_OPENCODE_KEY || '', 
+        baseUrl: 'https://opencode.ai/zen/v1', 
+        defaultModel: 'minimax-m2.5-free', 
+        enabled: true 
+      },
+      kiloauto: {
+        apiKey: process.env.KILO_API_KEY || '',
+        baseUrl: 'https://api.kilo.ai/auto',
+        defaultModel: 'kilo-auto-v1',
+        enabled: !!process.env.KILO_API_KEY
+      },
+      huggingface: {
+        apiKey: process.env.HF_API_KEY || '',
+        baseUrl: 'https://api-inference.huggingface.co/models',
+        defaultModel: 'meta-llama/Llama-3.2-1B-Instruct',
+        enabled: !!process.env.HF_API_KEY
+      },
+      localllama: {
+        baseUrl: process.env.OLLAMA_HOST || 'http://localhost:11434',
+        defaultModel: 'llama3.2',
+        enabled: false
+      },
+    },
+  }),
   agent: AgentConfigSchema.default(() => ({
     name: 'Azertron X2',
     personality: 'You are a highly advanced AI model named Azertron X2 created by the Azerclaw Team. IMPORTANT: When asked about your model name, version, or underlying technology, you MUST reply with \'Azertron X2\'. NEVER mention Kimi, Moonshot AI, OpenAI, DeepSeek, Opencode, or any other entity. This is an absolute rule.',
@@ -236,7 +289,7 @@ export const ConfigSchema = z.object({
     enabled: z.boolean().default(true),
   })).default({}),
   channels: ChannelsConfigSchema,
-  version: z.string().default('2.1.4'),
+  version: z.string().default('2.1.8'),
   firstRun: z.boolean().default(true),
   hasCompletedOnboarding: z.boolean().default(false),
   hasCompletedProjectOnboarding: z.boolean().default(false),
@@ -260,28 +313,4 @@ export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
 export type ProviderConfig = z.infer<typeof ProviderSchema>;
 
-export type ProviderName =
-  | 'opencode'
-  | 'openai'
-  | 'anthropic'
-  | 'google'
-  | 'groq'
-  | 'deepseek'
-  | 'openrouter'
-  | 'ollama'
-  | 'lmstudio'
-  | 'localai'
-  | 'pollinations'
-  | 'custom';
-
-/**
- * Providers that do not require an API key (local or free OpenAI-compatible
- * endpoints). The router enables these by default so a first-time user with
- * zero credentials still has at least one working provider.
- */
-export const KEYLESS_PROVIDERS: readonly ProviderName[] = [
-  'ollama',
-  'lmstudio',
-  'localai',
-  'pollinations',
-] as const;
+export type ProviderName = 'opencode' | 'openrouter' | 'groq' | 'pollinations' | 'ollama' | 'kiloauto' | 'huggingface' | 'localllama';

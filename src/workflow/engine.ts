@@ -254,13 +254,23 @@ export class FishboneEngine {
           if (step.onError === 'continue') {
             stepResult = `Error (continuing): ${e.message}`;
           } else if (step.onError === 'retry' && (step.maxRetries || 0) > 0) {
-            // Simple retry logic
-            for (let r = 0; r < (step.maxRetries || 1); r++) {
-              try {
-                const { execSync } = require('child_process');
-                stepResult = execSync(step.action, { encoding: 'utf-8' }).trim();
-                break;
-              } catch { continue; }
+            // Retry logic — only safe for shell steps (which we know are commands).
+            // For other step types we'd need to re-run the typed handler; abandon retry
+            // rather than blindly execSync-ing arbitrary action text.
+            let retried = false;
+            if (step.type === 'shell') {
+              const { execSync } = require('child_process');
+              const cmd = this.interpolate(step.action, execution.results);
+              for (let r = 0; r < (step.maxRetries || 1); r++) {
+                try {
+                  stepResult = execSync(cmd, { encoding: 'utf-8', timeout: step.timeout || 30000 }).trim();
+                  retried = true;
+                  break;
+                } catch { continue; }
+              }
+            }
+            if (!retried) {
+              stepResult = `Retry skipped (unsupported for type=${step.type}): ${e.message}`;
             }
           } else {
             throw e;

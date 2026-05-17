@@ -32,6 +32,7 @@ export interface Tool {
 
 class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
+  private pluginTools: Map<string, string> = new Map(); // toolName -> pluginId
   private sandboxEnabled: boolean = false;
 
   constructor(options: { sandbox?: boolean } = {}) {
@@ -42,12 +43,38 @@ class ToolRegistry {
     this.tools.set(tool.name, tool);
   }
 
+  registerTool(tool: Tool, pluginId?: string): void {
+    this.tools.set(tool.name, tool);
+    if (pluginId) {
+      this.pluginTools.set(tool.name, pluginId);
+    }
+  }
+
+  unregister(toolName: string): void {
+    this.tools.delete(toolName);
+    this.pluginTools.delete(toolName);
+  }
+
+  unregisterTool(toolName: string): void {
+    this.unregister(toolName);
+  }
+
   get(name: string): Tool | undefined {
     return this.tools.get(name);
   }
 
+  getPluginId(toolName: string): string | undefined {
+    return this.pluginTools.get(toolName);
+  }
+
   getAll(): Tool[] {
     return Array.from(this.tools.values());
+  }
+
+  getToolsByPlugin(pluginId: string): Tool[] {
+    return Array.from(this.tools.values()).filter(tool => 
+      this.pluginTools.get(tool.name) === pluginId
+    );
   }
 
   getDefinitions(): any[] {
@@ -57,6 +84,7 @@ class ToolRegistry {
         name: tool.name,
         description: tool.description,
         parameters: tool.parameters,
+        author: tool.author || 'builtin',
       },
     }));
   }
@@ -73,7 +101,9 @@ class ToolRegistry {
     }
     
     const startTime = Date.now();
-    console.log(`[ToolRegistry] Executing '${name}' (v${tool.version})...`);
+    if (process.env.AZERCLAW_DEBUG) {
+      console.log(`[ToolRegistry] Executing '${name}' (v${tool.version})...`);
+    }
     
     try {
       let result: ToolResult;
@@ -86,7 +116,9 @@ class ToolRegistry {
       }
       
       const duration = Date.now() - startTime;
-      console.log(`[ToolRegistry] '${name}' completed in ${duration}ms. Success: ${result.success}`);
+      if (process.env.AZERCLAW_DEBUG) {
+        console.log(`[ToolRegistry] '${name}' completed in ${duration}ms. Success: ${result.success}`);
+      }
       
       // Telemetry hook (local only as per AZERCLAW policy)
       this.logTelemetry(name, duration, result.success);
@@ -94,10 +126,13 @@ class ToolRegistry {
       return result;
     } catch (error: any) {
       const duration = Date.now() - startTime;
-      console.error(`[ToolRegistry] '${name}' failed in ${duration}ms:`, error.message);
+      if (process.env.AZERCLAW_DEBUG) {
+        console.error(`[ToolRegistry] '${name}' failed in ${duration}ms:`, error.message);
+      }
       this.logTelemetry(name, duration, false, error.message);
       return { success: false, output: '', error: error.message || 'Tool execution failed' };
     }
+
   }
 
   private async executeInSandbox(tool: Tool, args: Record<string, unknown>): Promise<ToolResult> {
@@ -111,7 +146,7 @@ class ToolRegistry {
       process: {
         env: { ...process.env, OPENAI_API_KEY: undefined, ANTHROPIC_API_KEY: undefined, GOOGLE_API_KEY: undefined }
       },
-      result: null as any
+      result: { success: false, output: '' } as ToolResult
     };
     
     vm.createContext(context);
@@ -142,14 +177,22 @@ let creating = false;
 export function getToolRegistry(): ToolRegistry {
   if (!instance) {
     if (creating) {
-      // Re-entrant call during construction — return a bare instance to avoid infinite loop
-      return new ToolRegistry({ sandbox: false });
+      // Re-entrant call during construction — eagerly publish a partially-built
+      // singleton so callers share the same registry instead of getting a bare empty one.
+      instance = new ToolRegistry({ sandbox: false });
+      return instance;
     }
     creating = true;
     try {
       const config = getConfigManager().getAll();
       const sandboxMode = resolveSandboxMode(config.agent.sandboxMode);
-      instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+      // If a re-entrant call already initialized `instance`, reuse it and just
+      // update its sandbox mode rather than discarding registered tools.
+      if (instance) {
+        (instance as any).sandboxEnabled = sandboxMode === 'all';
+      } else {
+        instance = new ToolRegistry({ sandbox: sandboxMode === 'all' });
+      }
     } finally {
       creating = false;
     }

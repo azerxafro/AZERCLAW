@@ -215,6 +215,10 @@ export class SessionStore {
       this.save();
     }
   }
+
+  // Stub methods for plugin compatibility
+  async getSession(id: string): Promise<Session | undefined> { return this.get(id); }
+  async getCount(): Promise<number> { return this.sessions.size; }
 }
 
 // ─── Context Store (cross-session knowledge) ────────────────────
@@ -295,6 +299,15 @@ export class ContextStore {
     if (result) this.save();
     return result;
   }
+
+  // Stub methods for plugin compatibility
+  async semanticSearch(query: string, _options?: any): Promise<any[]> { return this.search(query); }
+  async textSearch(query: string, _options?: any): Promise<any[]> { return this.search(query); }
+  async getRecentContext(_options?: any): Promise<any[]> { return this.getAll(); }
+  async addContext(_entry: any): Promise<void> { /* no-op */ }
+  async getContext(key: string): Promise<string | undefined> { return this.get(key); }
+  async getCount(): Promise<number> { return this.entries.size; }
+  on(_event: string, _listener: (...args: any[]) => void): void { /* no-op */ }
 }
 
 // ─── Singletons ─────────────────────────────────────────────────

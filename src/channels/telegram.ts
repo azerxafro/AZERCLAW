@@ -24,10 +24,10 @@ export class TelegramAdapter extends ChannelAdapter {
 
     // Verify token
     const res = await fetch(`${this.baseUrl}/getMe`);
-    const data = await res.json() as any;
+    const data = await res.json() as { ok: boolean; result?: { username?: string }; description?: string };
     if (!data.ok) throw new Error(`Telegram auth failed: ${data.description}`);
 
-    auditLog('TELEGRAM_CONNECTED', `Bot: @${data.result.username}`);
+    auditLog('TELEGRAM_CONNECTED', `Bot: @${data.result?.username}`);
     this.polling = true;
     this.pollUpdates();
   }
@@ -54,37 +54,50 @@ export class TelegramAdapter extends ChannelAdapter {
     return this.polling;
   }
 
+  private consecutiveErrors = 0;
+
   private async pollUpdates(): Promise<void> {
     if (!this.polling) return;
 
+    let delay = 1000;
     try {
       const res = await fetch(`${this.baseUrl}/getUpdates?offset=${this.offset}&timeout=30`);
-      const data = await res.json() as any;
+      const data = await res.json() as { ok: boolean; result?: Record<string, unknown>[] };
+
+      // Successful poll — reset backoff.
+      this.consecutiveErrors = 0;
 
       if (data.ok && data.result) {
         for (const update of data.result) {
-          this.offset = update.update_id + 1;
-          if (update.message?.text) {
-            const msg = update.message;
+          this.offset = (update.update_id as number) + 1;
+          const msg = update.message as Record<string, unknown>;
+          if (msg?.text) {
+            const from = msg.from as Record<string, unknown> | undefined;
+            const chat = msg.chat as Record<string, unknown>;
             const normalized: NormalizedMessage = {
               id: String(msg.message_id),
               platform: 'telegram',
-              channelId: String(msg.chat.id),
-              senderId: String(msg.from?.id || ''),
-              senderName: msg.from?.first_name || 'Unknown',
-              content: msg.text,
+              channelId: String(chat.id),
+              senderId: String(from?.id || ''),
+              senderName: from?.first_name as string || 'Unknown',
+              content: msg.text as string,
               attachments: [],
-              timestamp: new Date(msg.date * 1000),
-              metadata: { chatType: msg.chat.type },
+              timestamp: new Date((msg.date as number) * 1000),
+              metadata: { chatType: chat.type as string },
             };
-            this.handleIncoming(normalized);
+            this.handleIncoming(normalized).catch((err: any) => {
+              auditLog('TELEGRAM_HANDLE_ERROR', err?.message || String(err));
+            });
           }
         }
       }
     } catch (e: any) {
-      auditLog('TELEGRAM_ERROR', e.message);
+      this.consecutiveErrors++;
+      // 1s, 2s, 4s, 8s, ... capped at 60s
+      delay = Math.min(60_000, 1000 * Math.pow(2, this.consecutiveErrors - 1));
+      auditLog('TELEGRAM_ERROR', `${e.message} (retry in ${delay}ms, error #${this.consecutiveErrors})`);
     }
 
-    this.pollTimer = setTimeout(() => this.pollUpdates(), 1000);
+    this.pollTimer = setTimeout(() => this.pollUpdates(), delay);
   }
 }

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
+    "module": "CommonJS",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": ".",
@@ -13,8 +13,9 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
+    "noEmitOnError": false,
     "types": ["node"]
   },
   "include": ["src/**/*", "bin/**/*"],

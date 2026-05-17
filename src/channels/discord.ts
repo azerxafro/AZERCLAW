@@ -28,8 +28,18 @@ export class DiscordAdapter extends ChannelAdapter {
     });
 
     this.ws.on('message', (data: string) => {
-      const payload = JSON.parse(data);
-      this.handleGatewayEvent(payload);
+      let payload: any;
+      try {
+        payload = JSON.parse(data.toString());
+      } catch (err: any) {
+        auditLog('DISCORD_PARSE_ERROR', err?.message || String(err));
+        return;
+      }
+      try {
+        this.handleGatewayEvent(payload);
+      } catch (err: any) {
+        auditLog('DISCORD_HANDLER_ERROR', err?.message || String(err));
+      }
     });
 
     this.ws.on('close', () => {
@@ -81,10 +91,31 @@ export class DiscordAdapter extends ChannelAdapter {
         break;
       case 11: // Heartbeat ACK
         break;
+      case 1: // Heartbeat request — respond immediately
+        this.ws?.send(JSON.stringify({ op: 1, d: this.sequence }));
+        break;
+      case 7: // Reconnect — gateway is asking us to close + reconnect
+        auditLog('DISCORD_RECONNECT_REQUEST', 'Gateway requested reconnect');
+        try { this.ws?.close(4000, 'reconnect'); } catch { /* ignore */ }
+        // Reconnect after brief jitter; reuse stored token.
+        setTimeout(() => {
+          this.connect({ token: this.token }).catch((err: any) => {
+            auditLog('DISCORD_RECONNECT_FAILED', err?.message || String(err));
+          });
+        }, 1000 + Math.floor(Math.random() * 2000));
+        break;
+      case 9: { // Invalid session — re-identify after delay (resumable flag in d)
+        const resumable = !!d;
+        auditLog('DISCORD_INVALID_SESSION', `resumable=${resumable}`);
+        setTimeout(() => {
+          if (this.ws && this.ws.readyState === 1 /* OPEN */) this.identify();
+        }, 1000 + Math.floor(Math.random() * 4000));
+        break;
+      }
       case 0: // Dispatch
-        if (t === 'READY') {
+        if (t === 'READY' || t === 'RESUMED') {
           this.connected = true;
-          auditLog('DISCORD_READY', `Logged in as ${d.user?.username}`);
+          auditLog('DISCORD_READY', t === 'READY' ? `Logged in as ${d.user?.username}` : 'Session resumed');
         }
         if (t === 'MESSAGE_CREATE') {
           // Don't respond to own messages
@@ -107,13 +138,16 @@ export class DiscordAdapter extends ChannelAdapter {
             metadata: { guildId: d.guild_id },
           };
           
-          this.handleIncoming(message);
+          this.handleIncoming(message).catch((err: any) => {
+            auditLog('DISCORD_HANDLE_ERROR', err?.message || String(err));
+          });
         }
         break;
     }
   }
 
   private startHeartbeat(interval: number): void {
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
     this.heartbeatInterval = setInterval(() => {
       this.ws?.send(JSON.stringify({ op: 1, d: this.sequence }));
     }, interval);

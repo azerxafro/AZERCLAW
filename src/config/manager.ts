@@ -49,6 +49,8 @@ class ConfigManager extends EventEmitter {
   private localProjectSettings: ProjectSettings | null = null;
   private runtimeOverrides: Record<string, unknown> = {};
   private watcher: fs.FSWatcher | null = null;
+  private isSaving = false;
+  private reloadTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -69,7 +71,11 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(LEGACY_CONFIG_FILE, 'utf-8');
         fs.writeFileSync(CONFIG_FILE, raw, { mode: 0o600 });
-      } catch { /* ignore migration errors */ }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Legacy migration failed:', e instanceof Error ? e.message : String(e));
+        }
+      }
     }
   }
 
@@ -115,13 +121,22 @@ class ConfigManager extends EventEmitter {
     try {
       if (fs.existsSync(this.configPath)) {
         this.watcher = fs.watch(this.configPath, (eventType) => {
-          if (eventType === 'change') {
-            // Debounce to prevent multiple rapid reloads on a single write
-            setTimeout(() => this.reload(), 100);
-          }
+          if (eventType !== 'change') return;
+          // Ignore self-writes to break reload loops.
+          if (this.isSaving) return;
+          // Coalesce rapid events into a single reload.
+          if (this.reloadTimer) clearTimeout(this.reloadTimer);
+          this.reloadTimer = setTimeout(() => {
+            this.reloadTimer = null;
+            this.reload();
+          }, 100);
         });
       }
-    } catch { /* ignore watcher setup errors */ }
+    } catch (e) {
+      if (process.env.AZERCLAW_DEBUG) {
+        console.error('[ConfigManager] Watcher setup failed:', e instanceof Error ? e.message : String(e));
+      }
+    }
   }
 
   /**
@@ -139,11 +154,18 @@ class ConfigManager extends EventEmitter {
    */
   private save(config?: AzerclawConfig): void {
     const data = config || this.config;
-    fs.writeFileSync(
-      this.configPath,
-      JSON.stringify(data, null, 2),
-      { mode: 0o600 }
-    );
+    this.isSaving = true;
+    try {
+      fs.writeFileSync(
+        this.configPath,
+        JSON.stringify(data, null, 2),
+        { mode: 0o600 }
+      );
+    } finally {
+      // Clear after the next tick so the fs.watch callback (which fires async
+      // after the write completes) still sees isSaving=true.
+      setTimeout(() => { this.isSaving = false; }, 150);
+    }
   }
 
   // ─── Project Settings (Layered) ────────────────────────────
@@ -161,7 +183,12 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(projectFile, 'utf-8');
         this.projectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
-      } catch { this.projectSettings = null; }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Project settings load failed:', e instanceof Error ? e.message : String(e));
+        }
+        this.projectSettings = null;
+      }
     }
 
     // Local project settings (personal, gitignored)
@@ -170,7 +197,12 @@ class ConfigManager extends EventEmitter {
       try {
         const raw = fs.readFileSync(localFile, 'utf-8');
         this.localProjectSettings = ProjectSettingsSchema.parse(JSON.parse(raw));
-      } catch { this.localProjectSettings = null; }
+      } catch (e) {
+        if (process.env.AZERCLAW_DEBUG) {
+          console.error('[ConfigManager] Local project settings load failed:', e instanceof Error ? e.message : String(e));
+        }
+        this.localProjectSettings = null;
+      }
     }
   }
 
@@ -390,7 +422,7 @@ class ConfigManager extends EventEmitter {
   getActiveProvider(): { name: ProviderName; config: any } {
     const all = this.getAll();
     const providerName = all.ai.defaultProvider as ProviderName;
-    const providerConfig = (all.ai.providers as any)[providerName];
+    const providerConfig = all.ai.providers[providerName];
     return { name: providerName, config: providerConfig };
   }
 
@@ -405,7 +437,7 @@ class ConfigManager extends EventEmitter {
     // Find first enabled fallback that isn't the active provider
     for (const name of chain) {
       if (name === activeProvider) continue;
-      const provConfig = (all.ai.providers as any)[name];
+      const provConfig = all.ai.providers[name as ProviderName];
       if (provConfig && provConfig.enabled) {
         return { name: name as ProviderName, config: provConfig };
       }
@@ -419,10 +451,10 @@ class ConfigManager extends EventEmitter {
   getEnabledProviders(): { name: string; config: ProviderConfig }[] {
     const providers = this.config?.ai?.providers;
     if (!providers || typeof providers !== 'object') return [];
-    const enabled: { name: string; config: ProviderConfig }[] = [];
+    const enabled: { name: string; config: any }[] = [];
 
-    for (const [name, provConfig] of Object.entries(providers as Record<string, ProviderConfig | undefined>)) {
-      if (provConfig && provConfig.enabled) {
+    for (const [name, provConfig] of Object.entries(providers)) {
+      if (provConfig && (provConfig as Record<string, unknown>).enabled) {
         enabled.push({ name, config: provConfig });
       }
     }
@@ -447,7 +479,7 @@ class ConfigManager extends EventEmitter {
    * Switch the active provider.
    */
   switchProvider(provider: ProviderName): void {
-    const providerConfig = (this.config.ai.providers as any)[provider];
+    const providerConfig = this.config.ai.providers[provider];
     if (!providerConfig) throw new Error(`Unknown provider: ${provider}`);
     this.set('ai.defaultProvider', provider);
     if (!providerConfig.enabled) {
@@ -459,7 +491,7 @@ class ConfigManager extends EventEmitter {
    * Change the default model for a provider (or the active provider).
    */
   setProviderModel(model: string, provider?: ProviderName): void {
-    const target = provider || this.config.ai.defaultProvider as ProviderName;
+    const target = provider || (this.config.ai.defaultProvider as ProviderName);
     this.set(`ai.providers.${target}.defaultModel`, model);
   }
 
@@ -487,14 +519,8 @@ class ConfigManager extends EventEmitter {
   resolveEnvOverrides(): string[] {
     const envMap: Record<string, { provider: ProviderName; key: string }> = {
       'AZERTRON_OPENCODE_KEY': { provider: 'opencode', key: 'apiKey' },
-      'OPENCODE_API_KEY':     { provider: 'opencode', key: 'apiKey' },
-      'OPENAI_API_KEY':       { provider: 'openai', key: 'apiKey' },
-      'ANTHROPIC_API_KEY':    { provider: 'anthropic', key: 'apiKey' },
-      'GOOGLE_API_KEY':       { provider: 'google', key: 'apiKey' },
-      'GEMINI_API_KEY':       { provider: 'google', key: 'apiKey' },
-      'GROQ_API_KEY':         { provider: 'groq', key: 'apiKey' },
-      'DEEPSEEK_API_KEY':     { provider: 'deepseek', key: 'apiKey' },
-      'OPENROUTER_API_KEY':   { provider: 'openrouter', key: 'apiKey' },
+      'AZERTRON_OPENROUTER_KEY': { provider: 'openrouter', key: 'apiKey' },
+      'AZERTRON_GROQ_KEY': { provider: 'groq', key: 'apiKey' },
     };
 
     const detected: string[] = [];
@@ -509,8 +535,8 @@ class ConfigManager extends EventEmitter {
 
     // If we detected providers and there's no active default, set one
     if (detected.length > 0) {
-      const currentDefault = this.config.ai.defaultProvider;
-      const currentDefaultEnabled = (this.config.ai.providers as any)[currentDefault]?.enabled;
+      const currentDefault = this.config.ai.defaultProvider as ProviderName;
+      const currentDefaultEnabled = this.config.ai.providers[currentDefault]?.enabled;
       if (!currentDefaultEnabled) {
         this.set('ai.defaultProvider', detected[0]);
       }
@@ -535,14 +561,14 @@ class ConfigManager extends EventEmitter {
     configFile: string;
   } {
     const all = this.getAll();
-    const provider = all.ai.defaultProvider;
-    const provConfig = (all.ai.providers as any)[provider];
+    const provider = all.ai.defaultProvider as ProviderName;
+    const provConfig = all.ai.providers[provider];
     const model = provConfig?.defaultModel || 'auto';
     const fallback = this.getFallbackProvider();
     
     // Determine auth route
     let authRoute: 'api_key' | 'env_var' | 'none' = 'none';
-    if (provConfig?.apiKey) {
+    if ((provConfig as Record<string, unknown>)?.apiKey) {
       // Check if the key came from env
       const envKeys = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY', 'GROQ_API_KEY'];
       const hasEnvKey = envKeys.some(k => process.env[k]);

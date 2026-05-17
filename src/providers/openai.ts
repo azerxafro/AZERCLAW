@@ -29,8 +29,10 @@ export class OpenAIProvider extends BaseProvider {
     this.client = new OpenAI({
       apiKey: this.apiKey,
       baseURL: this.baseUrl,
+      timeout: 30000, // 30 second timeout to prevent hangs
     });
   }
+
 
   async isAvailable(): Promise<boolean> {
     try {

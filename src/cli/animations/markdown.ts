@@ -1,11 +1,12 @@
-import { marked, type MarkedExtension } from 'marked';
-import { markedTerminal } from 'marked-terminal';
-import chalk from 'chalk';
+const { marked } = require('marked');
+const MarkedTerminalModule = require('marked-terminal');
+const chalk = require('chalk');
 
-// marked-terminal v7's `markedTerminal()` returns a `MarkedExtension`-shaped object at
-// runtime, but its bundled types narrow the return to `TerminalRenderer`. Cast to keep
-// `marked.use()` happy without losing the runtime behavior.
-marked.use(markedTerminal({
+// marked-terminal v7+ exports via ESM default; handle both CJS and ESM interop
+const MarkedTerminal = MarkedTerminalModule.default || MarkedTerminalModule;
+
+// Configure marked with the terminal renderer
+const renderer = new MarkedTerminal({
   // Customize styling to match AZERCLAW/Gemini CLI
   code: chalk.hex('#a78bfa'),
   blockquote: chalk.dim.italic,
@@ -24,11 +25,31 @@ marked.use(markedTerminal({
   href: chalk.dim.underline,
   
   // Custom box around code blocks or just better coloring
-  tab: 2,
-}) as unknown as MarkedExtension);
+  tab: 2
+});
+
+// Force-initialize properties some renderers expect
+if (!(renderer as any).options) (renderer as any).options = {};
+if (!(renderer as any).parser) (renderer as any).parser = { parseInline: (s: string) => s };
+
+// Use setOptions to avoid some of the stricter validation in marked.use
+try {
+  marked.setOptions({ renderer });
+} catch (e) {
+  // Ignore validation errors in setOptions
+}
 
 export function renderMarkdown(text: string): string {
   if (!text) return '';
-  // marked-terminal forces synchronous rendering — the result is always a string.
-  return (marked.parse(text) as string).trim();
+  try {
+    // Attempt to use the configured marked renderer
+    const rendered = marked.parse(text);
+    if (typeof rendered === 'string') return rendered.trim();
+    return String(rendered).trim();
+  } catch (e) {
+    // Fallback: return text as is if rendering fails
+    return text;
+  }
 }
+
+

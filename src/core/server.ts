@@ -9,7 +9,7 @@ import { AgentRuntime } from './runtime';
 import { getToolRegistry } from '../tools/registry';
 
 interface ClientMessage {
-  type: 'start_chat' | 'chat_message' | 'abort' | 'ping';
+  type: 'start_chat' | 'chat_message' | 'abort' | 'ping' | 'approve_tool';
   payload?: any;
 }
 
@@ -85,7 +85,13 @@ export class AzerclawServer {
               this.safeSend(ws, JSON.stringify({ type: 'pong' }));
               break;
 
-            case 'start_chat':
+            case 'start_chat': {
+              // Abort & remove any prior agent owned by this connection
+              if (agent) {
+                agent.abort();
+                this.agents.delete(sessionId);
+                this.agentLastActivity.delete(sessionId);
+              }
               sessionId = msg.payload?.sessionId || sessionId;
               agent = new AgentRuntime({
                 sessionId,
@@ -97,6 +103,7 @@ export class AzerclawServer {
               this.touchAgent(sessionId);
               this.safeSend(ws, JSON.stringify({ type: 'system', payload: 'Agent ready. Scorched earth protocol engaged.' }));
               break;
+            }
 
             case 'chat_message':
               if (!agent) {
@@ -115,6 +122,16 @@ export class AzerclawServer {
               if (agent) {
                 agent.abort();
                 this.safeSend(ws, JSON.stringify({ type: 'system', payload: 'Operation aborted.' }));
+              }
+              break;
+
+            case 'approve_tool':
+              if (agent) {
+                const approved = !!msg.payload?.approved;
+                const success = agent.approve(approved);
+                if (!success) {
+                  this.safeSend(ws, JSON.stringify({ type: 'error', payload: 'No pending approval found.' }));
+                }
               }
               break;
 
@@ -139,8 +156,10 @@ export class AzerclawServer {
     // Start orphaned agent cleanup sweeper (runs every 5 minutes)
     this.cleanupInterval = setInterval(() => this.cleanupOrphanedAgents(), 5 * 60 * 1000);
 
+    const brand = (process.argv[1] || '').includes('opencode') ? 'OPENCODE' : 'AZERCLAW';
+    const icon = brand === 'OPENCODE' ? '🔷' : '🔪';
     this.server.listen(this.port, () => {
-      console.log(`\n🔪 AZERCLAW Daemon (Diabolical Edition) running on ws://localhost:${this.port}\n`);
+      console.log(`\n${icon} ${brand} Daemon running on ws://localhost:${this.port}\n`);
     });
   }
 

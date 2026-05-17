@@ -41,14 +41,14 @@ if (!process.stdout.isTTY) {
 import { playSplashScreen, printQuickSplash, fishError, fishInfo, fishSuccess } from '../src/cli/animations/fish';
 import { getConfigManager } from '../src/config/manager';
 
-const VERSION = '2.1.4';
+const VERSION = '2.2.0';
 const program = new Command();
 
 // ─── Program Setup ──────────────────────────────────────────────
 
 program
   .name('azerclaw')
-  .description('🐟 AZERTRON X2 — Diabolical AI · Scorched Earth · Your Way')
+  .description('🐟 AZERCLAW v2.2.0 — Diabolical AI · Scorched Earth · Your Way')
   .version(VERSION, '-v, --version', 'Display version')
   .option('--no-splash', 'Skip the splash screen')
   .option('--no-color', 'Disable colors')
@@ -116,6 +116,7 @@ program
   .option('-m, --model <model>', 'Override the default model')
   .option('-p, --provider <provider>', 'Override the default provider')
   .option('-f, --file <path>', 'Include a file in the conversation context')
+  .option('-b, --hybrid', 'Use hybrid brain (multi-model parallel execution)')
   .action(async (opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
@@ -157,6 +158,7 @@ program
   .option('-p, --provider <provider>', 'Override the default provider')
   .option('-f, --file <path>', 'Include a file in the task context')
   .option('-V, --verbose', 'Show tool calls in detail')
+  .option('-b, --hybrid', 'Use hybrid brain (multi-model parallel execution)')
   .action(async (task: string | undefined, opts: any) => {
     const config = getConfigManager();
     config.resolveEnvOverrides();
@@ -572,11 +574,40 @@ program
     await runDoctor(opts);
   });
 
-// ─── Security Audit Command ────────────────────────────────────
+// ─── Update Command ─────────────────────────────────────────────
 
 program
+  .command('update')
+  .description('Upgrade AZERCLAW to the latest version')
+  .action(async () => {
+    printQuickSplash(VERSION);
+    const chalk = require('chalk');
+    const { fishInfo, fishSuccess, fishError } = require('../src/cli/animations/fish');
+    
+    fishInfo('Initiating scorched-earth update... 🐟🔥');
+    
+    const { execSync } = require('child_process');
+    try {
+      fishInfo('Executing global installation via npm...');
+      // stdio: inherit allows the user to see the npm progress bar and output
+      execSync('npm install -g azerclaw@latest', { stdio: 'inherit' });
+      fishSuccess('AZERCLAW upgraded to the latest version successfully!');
+      console.log(chalk.dim('Please restart your terminal if you encounter any path issues.\n'));
+    } catch (e: any) {
+      fishError(`Update failed: ${e.message}`);
+      console.log(chalk.dim('\nTip: You may need to run this with sudo depending on your npm configuration:'));
+      console.log(chalk.yellow('sudo npm install -g azerclaw@latest\n'));
+    }
+  });
+
+
+// ─── Security Audit Command ────────────────────────────────────
+
+const securityCmd = program
   .command('security')
-  .description('Security audit')
+  .description('Security audit');
+
+securityCmd
   .command('audit')
   .option('-f, --fix', 'Auto-fix security issues')
   .action(async (opts: any) => {

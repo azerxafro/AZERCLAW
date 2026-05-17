@@ -3,14 +3,15 @@
  * Manages messenger bots (Telegram, Discord, Slack).
  */
 
-import { Gateway } from '../../core/gateway';
-import { playSplashScreen, printQuickSplash, fishSuccess, fishError, fishInfo } from '../animations/fish';
-import { getConfigManager } from '../../config/manager';
+const { Gateway } = require('../../core/gateway');
+const { playSplashScreen, printQuickSplash, fishSuccess, fishError, fishInfo } = require('../animations/fish');
+const { getConfigManager } = require('../../config/manager');
+const { version: VERSION } = require('../../../../package.json');
 
 export async function startBot(options: { port?: number }): Promise<void> {
   const config = getConfigManager().getAll();
   const enabledPlatforms = Object.entries(config.channels || {})
-    .filter(([platform, cfg]) => platform !== 'routing' && (cfg as any).enabled)
+    .filter(([platform, cfg]) => platform !== 'routing' && (cfg as Record<string, unknown>).enabled)
     .map(([platform]) => platform);
 
   if (enabledPlatforms.length === 0) {
@@ -20,7 +21,7 @@ export async function startBot(options: { port?: number }): Promise<void> {
     return;
   }
 
-  printQuickSplash('1.6.1');
+  printQuickSplash(VERSION);
   fishInfo(`Starting bots: ${enabledPlatforms.join(', ')}...`);
 
   const port = options.port || 3142;

@@ -8,10 +8,20 @@ vi.mock('http', async (importOriginal) => {
   return {
     ...actual,
     createServer: vi.fn().mockImplementation((handler) => {
+      // Track 'listening' handlers so listen() can invoke them synchronously,
+      // matching real http.Server.listen() semantics for the WebhookAdapter's
+      // Promise-based connect() implementation.
+      const listeners: Record<string, ((...args: any[]) => void)[]> = {};
+      const register = (event: string, cb: (...args: any[]) => void) => {
+        (listeners[event] = listeners[event] || []).push(cb);
+      };
       return {
-        listen: vi.fn(),
-        close: vi.fn(),
-        on: vi.fn(),
+        listen: vi.fn(() => {
+          (listeners['listening'] || []).forEach(cb => cb());
+        }),
+        close: vi.fn((cb?: () => void) => { if (cb) cb(); }),
+        on: vi.fn(register),
+        once: vi.fn(register),
         removeListener: vi.fn(),
         handler
       };

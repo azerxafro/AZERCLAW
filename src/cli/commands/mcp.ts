@@ -81,14 +81,14 @@ export async function listMCPDirectory(): Promise<void> {
 }
 
 export async function addMCPServer(name: string): Promise<void> {
-  const server = MCP_DIRECTORY.find(s => s.name === name) as any;
+  const server = MCP_DIRECTORY.find(s => s.name === name);
   if (!server) {
     fishError(`Server "${name}" not found in directory. Use azerclaw mcp add-custom instead.`);
     return;
   }
 
   const configManager = getConfigManager();
-  const mcpServers = { ...(configManager.get('mcpServers') as any || {}) };
+  const mcpServers = { ...(configManager.get('mcpServers') as Record<string, unknown> || {}) };
 
   mcpServers[name] = {
     command: server.command,
@@ -107,7 +107,7 @@ export async function addMCPServer(name: string): Promise<void> {
 
 export async function removeMCPServer(name: string): Promise<void> {
   const configManager = getConfigManager();
-  const mcpServers = { ...(configManager.get('mcpServers') as any || {}) };
+  const mcpServers = { ...(configManager.get('mcpServers') as Record<string, unknown> || {}) };
 
   if (!mcpServers[name]) {
     fishError(`MCP Server "${name}" is not installed.`);

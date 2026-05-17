@@ -6,13 +6,14 @@
  * All config changes reflect immediately via shared ConfigManager singleton.
  */
 
-import chalk from 'chalk';
-import gradientString from 'gradient-string';
-import * as readline from 'readline';
-import { AutoComplete, Select } from 'enquirer';
-import { AgentRuntime } from '../../core/runtime';
-import { getConfigManager } from '../../config/manager';
-import { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } from '../animations/fish';
+const chalk = require('chalk');
+const gradientString = require('gradient-string');
+const readline = require('readline');
+const { AutoComplete, Select } = require('enquirer');
+const { AgentRuntime } = require('../../core/runtime');
+const { getConfigManager } = require('../../config/manager');
+const { FishThinkingAnimation, fishSuccess, fishError, fishBox, fishInfo, playSplashScreen } = require('../animations/fish');
+const { version: VERSION } = require('../../../../package.json');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
@@ -140,7 +141,7 @@ export async function runTUI(): Promise<void> {
 
   // Clear screen and show splash
   console.clear();
-  await playSplashScreen('1.0.0');
+  await playSplashScreen(VERSION);
   
   // Status bar
   renderStatusBar();
@@ -306,10 +307,10 @@ export async function runTUI(): Promise<void> {
         let task = agentMatch[2];
 
         const flagPattern = /\/\/(turbo|auto|review|collab|secure)/g;
-        let flags = { turbo: false, auto: false, review: false, collab: false, secure: false };
+        const flags: Record<string, boolean> = { turbo: false, auto: false, review: false, collab: false, secure: false };
         let flagMatch;
         while ((flagMatch = flagPattern.exec(task)) !== null) {
-          (flags as any)[flagMatch[1]] = true;
+          flags[flagMatch[1]] = true;
         }
         task = task.replace(flagPattern, '').trim();
 

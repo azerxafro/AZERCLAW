@@ -18,23 +18,24 @@
  *   /AGENT task   — Invoke a specific agent
  */
 
-import chalk from 'chalk';
-import gradientString from 'gradient-string';
-import * as readline from 'readline';
-import { AutoComplete, Select } from 'enquirer';
-import { AgentRuntime } from '../../core/runtime';
-import { getToolRegistry } from '../../tools/registry';
-import { shellTool } from '../../tools/shell';
-import { readFileTool, writeFileTool, listDirTool, searchFilesTool } from '../../tools/filesystem';
-import { spawnSubAgentTool, webSearchTool, codeAnalysisTool } from '../../tools/advanced';
-import { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox, fishWarn } from '../animations/fish';
-import { getConfigManager } from '../../config/manager';
+const chalk = require('chalk');
+const gradientString = require('gradient-string');
+const readline = require('readline');
+const { AutoComplete, Select } = require('enquirer');
+const { AgentRuntime } = require('../../core/runtime');
+const { HybridEngine } = require('../../brain/hybrid');
+const { getToolRegistry } = require('../../tools/registry');
+const { shellTool } = require('../../tools/shell');
+const { readFileTool, writeFileTool, listDirTool, searchFilesTool } = require('../../tools/filesystem');
+const { spawnSubAgentTool, webSearchTool, codeAnalysisTool } = require('../../tools/advanced');
+const { FishThinkingAnimation, fishSuccess, fishError, fishInfo, fishBox, fishWarn } = require('../animations/fish');
+const { getConfigManager } = require('../../config/manager');
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 const OCEAN = gradientString(['#0ea5e9', '#06b6d4', '#14b8a6']);
 const EMBER = gradientString(['#fbbf24', '#f59e0b', '#ef4444']);
 
-export async function runChat(options: { model?: string; provider?: string; initialMessage?: string }): Promise<void> {
+export async function runChat(options: { model?: string; provider?: string; initialMessage?: string; hybrid?: boolean }): Promise<void> {
   const config = getConfigManager();
 
   // Apply CLI flag overrides
@@ -177,6 +178,14 @@ export async function runChat(options: { model?: string; provider?: string; init
   readline.emitKeypressEvents(process.stdin);
   if (process.stdin.isTTY) {
     process.stdin.setRawMode(true);
+    // Always restore cooked mode on shutdown so callers (TUI/test harnesses) don't
+    // end up with a wedged terminal.
+    const restoreRawMode = () => {
+      try { if (process.stdin.isTTY) process.stdin.setRawMode(false); } catch { /* ignore */ }
+    };
+    process.once('exit', restoreRawMode);
+    process.once('SIGINT', () => { restoreRawMode(); process.exit(0); });
+    process.once('SIGTERM', () => { restoreRawMode(); process.exit(0); });
   }
 
   process.stdin.on('keypress', async (str, key) => {
@@ -265,11 +274,11 @@ export async function runChat(options: { model?: string; provider?: string; init
         let task = agentMatch[2];
         
         // Parse execution flags
-        let flags = { turbo: false, auto: false, review: false, collab: false, secure: false };
+        const flags: Record<string, boolean> = { turbo: false, auto: false, review: false, collab: false, secure: false };
         const flagPattern = /\/\/(turbo|auto|review|collab|secure)/g;
         let flagMatch;
         while ((flagMatch = flagPattern.exec(task)) !== null) {
-          (flags as any)[flagMatch[1]] = true;
+          flags[flagMatch[1]] = true;
         }
         task = task.replace(flagPattern, '').trim();
         
@@ -459,6 +468,8 @@ export async function runChat(options: { model?: string; provider?: string; init
             const selectedSession = sessionStore.get(selectedSessionId);
             if (selectedSession) {
               fishSuccess(`Resuming session: ${selectedSession.title}`);
+              // Abort any prior agent so its in-flight iteration cannot keep emitting events.
+              try { agent?.abort?.(); } catch { /* ignore */ }
               // Assign new agent runtime
               agent = new AgentRuntime({
                 sessionId: selectedSessionId,
@@ -511,12 +522,12 @@ export async function runChat(options: { model?: string; provider?: string; init
           const { getVoughtHQ } = require('../../server/hq');
           const hq = getVoughtHQ();
           hq.start();
-          const { exec } = require('child_process');
+          const { execFile } = require('child_process');
           const url = 'http://localhost:8443';
           fishInfo(`Vought HQ Dashboard launched at ${url}`);
-          if (process.platform === 'darwin') exec(`open ${url}`);
-          else if (process.platform === 'win32') exec(`start ${url}`);
-          else exec(`xdg-open ${url}`);
+          if (process.platform === 'darwin') execFile('open', [url]);
+          else if (process.platform === 'win32') execFile('cmd', ['/c', 'start', '', url]);
+          else execFile('xdg-open', [url]);
           break;
         }
         case '/help':
@@ -567,7 +578,42 @@ export async function runChat(options: { model?: string; provider?: string; init
       }
       
       const cleanInput = input.replace(/\/\/\w+/g, '').trim();
-      await agent.chat(cleanInput, flags);
+
+      if (options.hybrid) {
+        const hybrid = new HybridEngine({
+          eventHandler: async (event: any) => {
+            if (event.type === 'decompose') {
+              if (!isThinking) { isThinking = true; thinking.start(); }
+              thinking.updateMessage('Decomposing task...');
+            } else if (event.type === 'dispatch') {
+              thinking.updateMessage('Dispatching subtasks...');
+            } else if (event.type === 'subtask_start') {
+              thinking.updateMessage(`Subtask ${event.subtaskId}`);
+            } else if (event.type === 'synthesize') {
+              thinking.updateMessage('Synthesizing results...');
+            } else if (event.type === 'response' && event.content) {
+              if (isThinking) { thinking.stop(); isThinking = false; }
+              console.log('');
+              console.log(chalk.hex('#c4b5fd')('  ┌─ 🐟 AZERCLAW (Hybrid Brain)'));
+              const lines = event.content.split('\n');
+              for (const line of lines) {
+                const formattedLine = line.replace(/\*\*(.*?)\*\*/g, (_: string, p1: string) => chalk.bold.red(p1.toUpperCase()));
+                console.log(chalk.hex('#6366f1')('  │ ') + chalk.hex('#e2e8f0')(formattedLine));
+              }
+              console.log(chalk.hex('#c4b5fd')('  └─'));
+              console.log('');
+            } else if (event.type === 'error') {
+              if (isThinking) { thinking.fail(event.error); isThinking = false; }
+              else fishError(event.error || 'Hybrid engine error');
+            } else if (event.type === 'done') {
+              if (isThinking) { thinking.stop('Done'); isThinking = false; }
+            }
+          },
+        });
+        await hybrid.execute(cleanInput, flags);
+      } else {
+        await agent.chat(cleanInput, flags);
+      }
     } catch (error: any) {
       fishError(error.message || 'Something went wrong');
     }
