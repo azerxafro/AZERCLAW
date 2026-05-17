@@ -451,11 +451,11 @@ class ConfigManager extends EventEmitter {
   getEnabledProviders(): { name: string; config: ProviderConfig }[] {
     const providers = this.config?.ai?.providers;
     if (!providers || typeof providers !== 'object') return [];
-    const enabled: { name: string; config: any }[] = [];
+    const enabled: { name: string; config: ProviderConfig }[] = [];
 
     for (const [name, provConfig] of Object.entries(providers)) {
       if (provConfig && (provConfig as Record<string, unknown>).enabled) {
-        enabled.push({ name, config: provConfig });
+        enabled.push({ name, config: provConfig as ProviderConfig });
       }
     }
 

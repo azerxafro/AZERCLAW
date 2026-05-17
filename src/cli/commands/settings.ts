@@ -344,9 +344,9 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     fishInfo(`Current fallback: ${PROVIDER_LABELS[currentFallback.name] || currentFallback.name} (${currentFallback.config.defaultModel})`);
   }
 
-  const candidates = enabledProviders.filter((p) => p.name !== activeProvider);
+  const candidates = enabledProviders.filter((p: { name: string; config: { defaultModel?: string } }) => p.name !== activeProvider);
   const choices = [
-    ...candidates.map((p) => ({
+    ...candidates.map((p: { name: string; config: { defaultModel?: string } }) => ({
       name: p.name,
       message: `${(PROVIDER_LABELS[p.name] || p.name).padEnd(22)} ${chalk.dim(`model: ${p.config.defaultModel || 'default'}`)}`,
       hint: currentFallback?.name === p.name ? chalk.hex('#34d399')(' ● current fallback') : '',
@@ -368,7 +368,7 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     }
 
     const chain = [activeProvider, selected, ...enabledProviders
-      .map((p) => p.name)
+      .map((p: { name: string }) => p.name)
       .filter((n: string) => n !== activeProvider && n !== selected)
     ];
     config.setFallbackChain(chain);

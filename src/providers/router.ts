@@ -9,26 +9,7 @@ import { KiloAutoProvider } from './kiloauto';
 import { HuggingFaceProvider } from './huggingface';
 import { LocalLlamaProvider } from './localllama';
 import { getConfigManager } from '../config/manager';
-import { AIConfig, KEYLESS_PROVIDERS, ProviderConfig, ProviderName } from '../config/schema';
-
-interface ProvidersMap {
-  opencode: ProviderConfig;
-  openai: ProviderConfig;
-  anthropic: ProviderConfig;
-  google: ProviderConfig;
-  groq: ProviderConfig;
-  deepseek: ProviderConfig;
-  openrouter: ProviderConfig;
-  ollama: ProviderConfig;
-  lmstudio: ProviderConfig;
-  localai: ProviderConfig;
-  pollinations: ProviderConfig;
-  custom: ProviderConfig;
-}
-
-function isKeyless(name: string): boolean {
-  return (KEYLESS_PROVIDERS as readonly string[]).includes(name);
-}
+import { AIConfig } from '../config/schema';
 
 export class ProviderRouter {
   private providers: Map<string, BaseProvider> = new Map();
@@ -234,5 +215,3 @@ export function getRouter(): ProviderRouter {
   return routerInstance;
 }
 export function resetRouter(): void { routerInstance = null; }
-
-export type { ProviderName };
