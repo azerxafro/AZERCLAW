@@ -109,5 +109,3 @@ export async function runTask(task: string, options: { model?: string; verbose?:
     process.exit(1);
   }
 }
-
-module.exports = { runTask };

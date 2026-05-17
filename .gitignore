@@ -26,4 +26,7 @@ npm-debug.log*
 
 # Config (contains API keys — NEVER commit)
 # Users should have their own ~/.azerclaw/config.json
-scripts/inject-secrets.js
+
+# Secrets emitted by `scripts/inject-secrets.js` during private builds.
+# The injector itself is BYOK-safe and tracked in git; the output is not.
+dist/secrets.json

@@ -12,7 +12,7 @@
     "chat": "npx tsx bin/azerclaw.ts chat",
     "tui": "npx tsx bin/azerclaw.ts tui",
     "dev": "npx tsx bin/azerclaw.ts",
-    "build": "tsc && npm run copy-skills && node scripts/inject-secrets.js",
+    "build": "tsc && npm run copy-skills && node scripts/inject-secrets.js --quiet",
     "copy-skills": "cp -r skills dist/skills 2>/dev/null || true",
     "doctor": "npx tsx bin/azerclaw.ts doctor",
     "onboard": "npx tsx bin/azerclaw.ts onboard",

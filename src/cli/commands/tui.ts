@@ -518,5 +518,3 @@ export async function runTUI(): Promise<void> {
     process.exit(0);
   });
 }
-
-module.exports = { runTUI };

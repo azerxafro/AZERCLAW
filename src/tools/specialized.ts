@@ -4,7 +4,7 @@
  */
 
 import { Tool, ToolResult } from './registry';
-const { execSync } = require('child_process');
+import { execSync } from 'child_process';
 
 /**
  * FRENCHIE: reverse_engineer

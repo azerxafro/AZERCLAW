@@ -466,5 +466,3 @@ async function configureFallback(config: any, enabledProviders: string[]): Promi
   config.setFallbackChain(chain);
   fishSuccess(`Fallback: ${PROVIDER_LABELS[fallbackProvider] || fallbackProvider}`);
 }
-
-module.exports = { runOnboard };

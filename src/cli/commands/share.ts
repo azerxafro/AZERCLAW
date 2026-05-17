@@ -7,8 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import chalk from 'chalk';
-const { getSessionStore } = require('../../memory/store');
-const { fishBox, fishSuccess, fishError, fishInfo } = require('../animations/fish');
+import { getSessionStore } from '../../memory/store';
+import { fishBox, fishSuccess, fishError, fishInfo } from '../animations/fish';
 
 const SHARES_DIR = path.join(os.homedir(), '.azerclaw', 'shares');
 

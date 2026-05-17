@@ -121,5 +121,3 @@ function maskKey(key: string): string {
   if (!key || key.length < 8) return chalk.dim('****');
   return chalk.dim(`${key.slice(0, 4)}${'*'.repeat(Math.min(20, key.length - 8))}${key.slice(-4)}`);
 }
-
-module.exports = { configGet, configSet, configList, configReset };

@@ -3,8 +3,8 @@
  * Diabolical, gritty, and uncensored.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
 
 // Helper to create TTY-aware gradients
 const createGradient = (colors: string[]) => {
@@ -16,11 +16,11 @@ const createGradient = (colors: string[]) => {
 const BLOOD_GRADIENT = createGradient(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
 const VOUGHT_GRADIENT = createGradient(['#1e3a8a', '#1d4ed8', '#fbbf24', '#f59e0b']);
 const GRITTY_GRADIENT = createGradient(['#262626', '#525252', '#a3a3a3', '#fafafa']);
-const OCEAN_GRADIENT = BLOOD_GRADIENT; // Redirect legacy for consistency
-const GOLD_GRADIENT = VOUGHT_GRADIENT;
-const NEON_GRADIENT = createGradient(['#ef4444', '#1d4ed8', '#000000']);
-const LUXE_GRADIENT = createGradient(['#000000', '#ef4444', '#000000']);
-const EMBER_GRADIENT = BLOOD_GRADIENT;
+export const OCEAN_GRADIENT = BLOOD_GRADIENT; // Redirect legacy for consistency
+export const GOLD_GRADIENT = VOUGHT_GRADIENT;
+export const NEON_GRADIENT = createGradient(['#ef4444', '#1d4ed8', '#000000']);
+export const LUXE_GRADIENT = createGradient(['#000000', '#ef4444', '#000000']);
+export const EMBER_GRADIENT = BLOOD_GRADIENT;
 
 // ─── Fish ASCII Art ─────────────────────────────────────────────
 // The fish is now aggressive and supe-like
@@ -102,7 +102,7 @@ function showCursor(): void {
 /**
  * Character-specific TTS voices for macOS
  */
-const CHARACTER_VOICES: Record<string, string> = {
+export const CHARACTER_VOICES: Record<string, string> = {
   'HOMELANDER': 'Daniel',
   'BUTCHER': 'Oliver',
   'FRENCHIE': 'Thomas',
@@ -364,26 +364,4 @@ export function fishBox(title: string, content: string[], options: { width?: num
   console.log(chalk.red(`  ┗${'━'.repeat(width - 2)}┛`));
 }
 
-module.exports = {
-  FISH_FRAMES,
-  FISH_SWIM_FRAMES,
-  FISH_DEAD,
-  FISH_HAPPY,
-  BIG_FISH,
-  playSplashScreen,
-  printQuickSplash,
-  FishThinkingAnimation,
-  renderFishProgress,
-  fishSuccess,
-  fishError,
-  fishInfo,
-  fishWarn,
-  fishBox,
-  speak,
-  CHARACTER_VOICES,
-  OCEAN_GRADIENT,
-  GOLD_GRADIENT,
-  NEON_GRADIENT,
-  LUXE_GRADIENT,
-  EMBER_GRADIENT,
-};
+

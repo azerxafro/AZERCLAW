@@ -4,7 +4,7 @@
  */
 
 import chalk from 'chalk';
-const { fishBox, fishSuccess, fishError, fishInfo } = require('../animations/fish');
+import { fishBox, fishSuccess, fishError, fishInfo } from '../animations/fish';
 import { getConfigManager } from '../../config/manager';
 
 // Curated list of popular MCP servers

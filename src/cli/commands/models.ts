@@ -179,5 +179,3 @@ export async function modelsList(): Promise<void> {
     console.error(chalk.red(`  Error: ${error.message}`));
   }
 }
-
-module.exports = { modelsStatus, modelsList };

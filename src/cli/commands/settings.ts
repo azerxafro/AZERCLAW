@@ -344,9 +344,9 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     fishInfo(`Current fallback: ${PROVIDER_LABELS[currentFallback.name] || currentFallback.name} (${currentFallback.config.defaultModel})`);
   }
 
-  const candidates = enabledProviders.filter((p: any) => p.name !== activeProvider);
+  const candidates = enabledProviders.filter((p: { name: string; config: { defaultModel?: string } }) => p.name !== activeProvider);
   const choices = [
-    ...candidates.map((p: any) => ({
+    ...candidates.map((p: { name: string; config: { defaultModel?: string } }) => ({
       name: p.name,
       message: `${(PROVIDER_LABELS[p.name] || p.name).padEnd(22)} ${chalk.dim(`model: ${p.config.defaultModel || 'default'}`)}`,
       hint: currentFallback?.name === p.name ? chalk.hex('#34d399')(' ● current fallback') : '',
@@ -368,7 +368,7 @@ export async function interactiveFallbackConfig(): Promise<boolean> {
     }
 
     const chain = [activeProvider, selected, ...enabledProviders
-      .map((p: any) => p.name)
+      .map((p: { name: string }) => p.name)
       .filter((n: string) => n !== activeProvider && n !== selected)
     ];
     config.setFallbackChain(chain);
@@ -514,8 +514,8 @@ export function cliSwitchProvider(providerName: string): void {
     resetRouter();
     const model = config.getAll().ai.providers[providerName as typeof ProviderName]?.defaultModel || 'default';
     fishSuccess(`Switched to ${PROVIDER_LABELS[providerName] || providerName} (model: ${model})`);
-  } catch (e: any) {
-    fishError(e.message);
+  } catch (e: unknown) {
+    fishError(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -560,18 +560,3 @@ function maskKey(key: string): string {
   return `${key.slice(0, 4)}${'*'.repeat(Math.min(16, key.length - 8))}${key.slice(-4)}`;
 }
 
-module.exports = {
-  interactiveProviderSwitch,
-  interactiveModelSwitch,
-  interactiveApiKeyChange,
-  interactiveFallbackConfig,
-  interactiveSettingsMenu,
-  showStatus,
-  initProject,
-  cliSwitchProvider,
-  cliSwitchModel,
-  cliSetApiKey,
-  cliSetFallback,
-  PROVIDER_MODELS,
-  PROVIDER_LABELS,
-};

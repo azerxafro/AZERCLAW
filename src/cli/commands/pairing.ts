@@ -1,6 +1,6 @@
-const chalk = require('chalk');
-const { getPairingStore } = require('../../channels/pairing');
-const { fishSuccess, fishError, fishInfo, fishBox } = require('../animations/fish');
+import chalk from 'chalk';
+import { getPairingStore } from '../../channels/pairing';
+import { fishSuccess, fishError, fishInfo, fishBox } from '../animations/fish';
 
 export function pairingList(options: { pending?: boolean; platform?: string } = {}): void {
   const store = getPairingStore();
@@ -63,8 +63,3 @@ export function pairingRevoke(platform: string, senderId: string): void {
   fishInfo(`Revoked pairing for ${platform}:${senderId}.`);
 }
 
-module.exports = {
-  pairingList,
-  pairingApprove,
-  pairingRevoke,
-};

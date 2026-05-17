@@ -8,7 +8,6 @@ const MarkedTerminal = MarkedTerminalModule.default || MarkedTerminalModule;
 // Configure marked with the terminal renderer
 const renderer = new MarkedTerminal({
   // Customize styling to match AZERCLAW/Gemini CLI
-  header: chalk.bold.hex('#c4b5fd'),
   code: chalk.hex('#a78bfa'),
   blockquote: chalk.dim.italic,
   html: chalk.gray,

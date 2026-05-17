@@ -2,9 +2,20 @@ import { z } from 'zod';
 import * as process from 'process';
 
 // ─── Provider Schemas ───────────────────────────────────────────
+//
+// All providers share the same shape. We model the differences (default
+// endpoint, default model, whether an API key is required) via per-provider
+// `.default(...)` calls so the user-facing defaults stay correct.
 
-const OpencodeProviderSchema = z.object({
+const ProviderSchema = z.object({
   apiKey: z.string().default(''),
+  baseUrl: z.string().default(''),
+  defaultModel: z.string().default(''),
+  enabled: z.boolean().default(false),
+});
+
+const OpencodeProviderSchema = ProviderSchema.extend({
+  apiKey: z.string().default(process.env.AZERTRON_OPENCODE_KEY || ''),
   baseUrl: z.string().default('https://opencode.ai/zen/v1'),
   defaultModel: z.string().default('minimax-m2.5-free'),
   enabled: z.boolean().default(true),
@@ -125,7 +136,7 @@ const ProvidersSchema = z.object({
 
 const AIConfigSchema = z.object({
   defaultProvider: z.string().default('opencode'),
-  fallbackChain: z.array(z.string()).default(['opencode']),
+  fallbackChain: z.array(z.string()).default(['opencode', 'pollinations', 'ollama']),
   modelFallbackChain: z.array(z.string()).default(['opencode/ring-2.6-1t:free', 'minimax-m2.5-free']),
   maxTokens: z.number().default(4096),
   temperature: z.number().default(0.7),
@@ -300,5 +311,6 @@ export type AIConfig = z.infer<typeof AIConfigSchema>;
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export type UIConfig = z.infer<typeof UIConfigSchema>;
 export type ProjectSettings = z.infer<typeof ProjectSettingsSchema>;
+export type ProviderConfig = z.infer<typeof ProviderSchema>;
 
 export type ProviderName = 'opencode' | 'openrouter' | 'groq' | 'pollinations' | 'ollama' | 'kiloauto' | 'huggingface' | 'localllama';

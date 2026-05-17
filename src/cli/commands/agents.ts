@@ -3,12 +3,12 @@
  * List, invoke, and manage the Pantheon of built-in agents.
  */
 
-const chalk = require('chalk');
-const gradientString = require('gradient-string');
-const { listAgents, getAgent, createAgent, matchAgentForTask, formatAgentRoster } = require('../../agents/builtin');
-const { parseAgentCommand, resolveGroupCommand } = require('../../agents/loader');
-const { getToolRegistry } = require('../../tools/registry');
-const { fishSuccess, fishError, fishInfo, fishBox, FishThinkingAnimation } = require('../animations/fish');
+import chalk from 'chalk';
+import gradientString from 'gradient-string';
+import { listAgents, getAgent, createAgent, matchAgentForTask, formatAgentRoster } from '../../agents/builtin';
+import { parseAgentCommand, resolveGroupCommand } from '../../agents/loader';
+import { getToolRegistry } from '../../tools/registry';
+import { fishSuccess, fishError, fishInfo, fishBox, FishThinkingAnimation } from '../animations/fish';
 
 const LUXE = gradientString(['#c084fc', '#818cf8', '#60a5fa', '#34d399']);
 
@@ -113,5 +113,3 @@ function registerTools(): void {
   const { registerAllTools } = require('./chat');
   registerAllTools();
 }
-
-module.exports = { agentsList, agentInvoke, agentAuto };

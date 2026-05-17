@@ -626,5 +626,3 @@ export async function runChat(options: { model?: string; provider?: string; init
     process.exit(0);
   });
 }
-
-module.exports = { runChat };

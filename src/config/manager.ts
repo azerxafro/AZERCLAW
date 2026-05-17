@@ -16,7 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { EventEmitter } from 'events';
-import { ConfigSchema, AzerclawConfig, ProviderName, ProjectSettingsSchema, ProjectSettings } from './schema';
+import { ConfigSchema, AzerclawConfig, ProviderName, ProjectSettingsSchema, ProjectSettings, ProviderConfig } from './schema';
 
 const CONFIG_DIR = path.join(os.homedir(), '.azerclaw');
 const CONFIG_FILE = path.join(CONFIG_DIR, 'settings.json');
@@ -448,14 +448,14 @@ class ConfigManager extends EventEmitter {
   /**
    * Get all enabled providers.
    */
-  getEnabledProviders(): { name: string; config: any }[] {
+  getEnabledProviders(): { name: string; config: ProviderConfig }[] {
     const providers = this.config?.ai?.providers;
     if (!providers || typeof providers !== 'object') return [];
-    const enabled: { name: string; config: any }[] = [];
+    const enabled: { name: string; config: ProviderConfig }[] = [];
 
     for (const [name, provConfig] of Object.entries(providers)) {
       if (provConfig && (provConfig as Record<string, unknown>).enabled) {
-        enabled.push({ name, config: provConfig });
+        enabled.push({ name, config: provConfig as ProviderConfig });
       }
     }
 

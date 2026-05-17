@@ -95,7 +95,7 @@ export class ProviderRouter {
     }
 
     if (process.env.AZERCLAW_DEBUG) {
-      console.log(`[Router] Initialized providers: ${Array.from(this.providers.keys()).join(', ')}`);
+      console.log(`[Router] Initialized providers: ${Array.from(this.providers.keys()).join(', ') || '(none)'}`);
     }
   }
 
@@ -171,15 +171,15 @@ export class ProviderRouter {
         content: 'Error: No model configured. Run `azerclaw config model <model-id>` or `azerclaw onboard`.',
         model: 'none',
         provider: providerName,
-        finishReason: 'error'
+        finishReason: 'error',
       };
     }
 
-    return { 
-      content: `Error: All models in the chain failed. Last error: ${lastError}`, 
-      model: 'none', 
-      provider: providerName, 
-      finishReason: 'error' 
+    return {
+      content: `Error: All models in the chain failed. Last error: ${lastError}`,
+      model: 'none',
+      provider: providerName,
+      finishReason: 'error',
     };
   }
 
