@@ -133,36 +133,61 @@ export class ProviderRouter {
 
   async complete(options: CompletionOptions, preferredProvider?: string): Promise<CompletionResult> {
     const config = getConfigManager().getAll();
-    const provider = this.getProvider(preferredProvider);
-    if (!provider) {
+    
+    // Build a list of providers to attempt in order.
+    const providersToTry: string[] = [];
+    if (preferredProvider && this.providers.has(preferredProvider)) {
+      providersToTry.push(preferredProvider);
+    }
+    const defaultProvider = config.ai.defaultProvider;
+    if (defaultProvider && this.providers.has(defaultProvider) && !providersToTry.includes(defaultProvider)) {
+      providersToTry.push(defaultProvider);
+    }
+    
+    // Add all other initialized providers as backups
+    for (const name of this.providers.keys()) {
+      if (!providersToTry.includes(name)) {
+        providersToTry.push(name);
+      }
+    }
+
+    if (providersToTry.length === 0) {
       return { content: 'Error: No AI engine configured. Run `azerclaw onboard`.', model: 'none', provider: 'none', finishReason: 'error' };
     }
 
-    const providerName = preferredProvider || provider.name || config.ai.defaultProvider;
-    const providerConfig = config.ai.providers[providerName as keyof typeof config.ai.providers];
-    const defaultModel = providerConfig?.defaultModel;
-
-    const modelChain = [options.model && options.model !== 'auto' ? options.model : defaultModel, ...(config.ai.modelFallbackChain || [])];
-
     let lastError = '';
     let attempted = false;
-    for (const modelId of modelChain) {
-      if (!modelId) continue;
-      attempted = true;
-      if (process.env.AZERCLAW_DEBUG) {
-        console.log(`[Router] Attempting model: ${modelId} on ${providerName}...`);
-      }
-      try {
-        const start = Date.now();
-        const result = await provider.complete({ ...options, model: modelId });
-        if (process.env.AZERCLAW_DEBUG) {
-          console.log(`[Router] Model ${modelId} finished in ${Date.now() - start}ms (finishReason: ${result.finishReason})`);
-        }
-        if (result.finishReason !== 'error') return result;
-        lastError = result.content;
-      } catch (e: unknown) {
 
-        lastError = e instanceof Error ? e.message : String(e);
+    for (const providerName of providersToTry) {
+      const provider = this.providers.get(providerName);
+      if (!provider) continue;
+
+      const providerConfig = config.ai.providers[providerName as keyof typeof config.ai.providers];
+      const defaultModel = providerConfig?.defaultModel;
+      
+      const modelChain = [
+        options.model && options.model !== 'auto' ? options.model : defaultModel,
+        ...(config.ai.modelFallbackChain || [])
+      ].filter((m): m is string => !!m);
+
+      for (const modelId of modelChain) {
+        attempted = true;
+        if (process.env.AZERCLAW_DEBUG) {
+          console.log(`[Router] Attempting model: ${modelId} on ${providerName}...`);
+        }
+        try {
+          const start = Date.now();
+          const result = await provider.complete({ ...options, model: modelId });
+          if (process.env.AZERCLAW_DEBUG) {
+            console.log(`[Router] Model ${modelId} finished in ${Date.now() - start}ms (finishReason: ${result.finishReason})`);
+          }
+          if (result.finishReason !== 'error') {
+            return result;
+          }
+          lastError = result.content;
+        } catch (e: unknown) {
+          lastError = e instanceof Error ? e.message : String(e);
+        }
       }
     }
 
@@ -170,15 +195,15 @@ export class ProviderRouter {
       return {
         content: 'Error: No model configured. Run `azerclaw config model <model-id>` or `azerclaw onboard`.',
         model: 'none',
-        provider: providerName,
+        provider: 'none',
         finishReason: 'error',
       };
     }
 
     return {
-      content: `Error: All models in the chain failed. Last error: ${lastError}`,
+      content: `Error: All models and providers in the fallback chain failed. Last error: ${lastError}`,
       model: 'none',
-      provider: providerName,
+      provider: preferredProvider || defaultProvider || 'none',
       finishReason: 'error',
     };
   }
