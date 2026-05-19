@@ -253,9 +253,13 @@ class DreamingEngine {
     // Note: In a real implementation, we'd retrieve actual vector entries
     // For now, we'll work with session memories
     
-    return memories.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    return memories.sort((a, b) => {
+      const timeA = new Date(a.timestamp).getTime();
+      const timeB = new Date(b.timestamp).getTime();
+      const safeA = isNaN(timeA) ? Date.now() : timeA;
+      const safeB = isNaN(timeB) ? Date.now() : timeB;
+      return safeB - safeA;
+    });
   }
 
   private async generateInsights(memories: Array<any>): Promise<Insight[]> {

@@ -4,12 +4,12 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs/promises";
 import * as path from "path";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 const server = new Server(
   {
@@ -68,7 +68,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     case "antigravity_open": {
       const targetPath = args?.path as string;
       try {
-        await execAsync(`open -a "Antigravity" "${targetPath}"`);
+        await execFileAsync("open", ["-a", "Antigravity", targetPath]);
         return {
           content: [{ type: "text", text: `Successfully opened ${targetPath} in Antigravity.` }],
         };

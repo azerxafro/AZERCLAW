@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { AgentRuntime, AgentEvent } from '../core/runtime';
-import { auditLog } from '../core/security';
+import { auditLog, getSafeEnv } from '../core/security';
 
 // ─── Types ──────────────────────────────────────────────────────
 
@@ -199,9 +199,16 @@ export class FishboneEngine {
         try {
           switch (step.type) {
             case 'shell': {
-              const { execSync } = require('child_process');
+              const { exec } = require('child_process');
+              const util = require('util');
+              const execPromise = util.promisify(exec);
               const cmd = this.interpolate(step.action, execution.results);
-              stepResult = execSync(cmd, { encoding: 'utf-8', timeout: step.timeout || 30000 }).trim();
+              const { stdout } = await execPromise(cmd, {
+                encoding: 'utf-8',
+                timeout: step.timeout || 30000,
+                env: getSafeEnv()
+              });
+              stepResult = stdout.trim();
               break;
             }
             
@@ -218,9 +225,15 @@ export class FishboneEngine {
             
             case 'condition': {
               const condition = this.interpolate(step.action, execution.results);
-              const { execSync } = require('child_process');
+              const { exec } = require('child_process');
+              const util = require('util');
+              const execPromise = util.promisify(exec);
               try {
-                execSync(condition, { encoding: 'utf-8', timeout: 5000 });
+                await execPromise(condition, {
+                  encoding: 'utf-8',
+                  timeout: 5000,
+                  env: getSafeEnv()
+                });
                 stepResult = 'true';
               } catch {
                 stepResult = 'false';
@@ -259,11 +272,18 @@ export class FishboneEngine {
             // rather than blindly execSync-ing arbitrary action text.
             let retried = false;
             if (step.type === 'shell') {
-              const { execSync } = require('child_process');
+              const { exec } = require('child_process');
+              const util = require('util');
+              const execPromise = util.promisify(exec);
               const cmd = this.interpolate(step.action, execution.results);
               for (let r = 0; r < (step.maxRetries || 1); r++) {
                 try {
-                  stepResult = execSync(cmd, { encoding: 'utf-8', timeout: step.timeout || 30000 }).trim();
+                  const { stdout } = await execPromise(cmd, {
+                    encoding: 'utf-8',
+                    timeout: step.timeout || 30000,
+                    env: getSafeEnv()
+                  });
+                  stepResult = stdout.trim();
                   retried = true;
                   break;
                 } catch { continue; }

@@ -190,6 +190,8 @@ export async function loadPluginFromFile(pluginPath: string): Promise<Plugin> {
 export async function discoverPlugins(workspaceDir?: string): Promise<string[]> {
   const pluginPaths: string[] = [];
   const paths = getPluginPaths(workspaceDir);
+  const isTsSupported = require.extensions['.ts'] !== undefined || 
+         process.execArgv.some(arg => arg.includes('ts-node') || arg.includes('tsx') || arg.includes('register'));
   
   for (const searchPath of paths) {
     try {
@@ -204,12 +206,16 @@ export async function discoverPlugins(workspaceDir?: string): Promise<string[]> 
           const indexPath = path.join(fullPath, 'index.js');
           const tsIndexPath = path.join(fullPath, 'index.ts');
           
-          if (fs.existsSync(packageJsonPath) && 
-              (fs.existsSync(indexPath) || fs.existsSync(tsIndexPath))) {
-            pluginPaths.push(fs.existsSync(indexPath) ? indexPath : tsIndexPath);
+          if (fs.existsSync(packageJsonPath)) {
+            if (fs.existsSync(indexPath)) {
+              pluginPaths.push(indexPath);
+            } else if (fs.existsSync(tsIndexPath) && isTsSupported) {
+              pluginPaths.push(tsIndexPath);
+            }
           }
-        } else if (entry.name.endsWith('.js') || entry.name.endsWith('.ts')) {
-          // Single file plugin
+        } else if (entry.name.endsWith('.js')) {
+          pluginPaths.push(fullPath);
+        } else if (entry.name.endsWith('.ts') && isTsSupported) {
           pluginPaths.push(fullPath);
         }
       }

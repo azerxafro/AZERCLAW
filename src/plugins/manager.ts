@@ -196,6 +196,8 @@ export class PluginManager extends EventEmitter implements IPluginManager {
 
   async discoverPlugins(): Promise<string[]> {
     const pluginPaths: string[] = [];
+    const isTsSupported = require.extensions['.ts'] !== undefined || 
+           process.execArgv.some(arg => arg.includes('ts-node') || arg.includes('tsx') || arg.includes('register'));
 
     // Discover from plugin directory
     if (fs.existsSync(this.pluginDir)) {
@@ -209,11 +211,16 @@ export class PluginManager extends EventEmitter implements IPluginManager {
           const tsIndexPath = path.join(pluginPath, 'index.ts');
 
           // Check if it's a valid plugin
-          if (fs.existsSync(packageJsonPath) && 
-              (fs.existsSync(indexPath) || fs.existsSync(tsIndexPath))) {
-            pluginPaths.push(fs.existsSync(indexPath) ? indexPath : tsIndexPath);
+          if (fs.existsSync(packageJsonPath)) {
+            if (fs.existsSync(indexPath)) {
+              pluginPaths.push(indexPath);
+            } else if (fs.existsSync(tsIndexPath) && isTsSupported) {
+              pluginPaths.push(tsIndexPath);
+            }
           }
-        } else if (entry.name.endsWith('.js') || entry.name.endsWith('.ts')) {
+        } else if (entry.name.endsWith('.js')) {
+          pluginPaths.push(path.join(this.pluginDir, entry.name));
+        } else if (entry.name.endsWith('.ts') && isTsSupported) {
           pluginPaths.push(path.join(this.pluginDir, entry.name));
         }
       }
@@ -227,7 +234,9 @@ export class PluginManager extends EventEmitter implements IPluginManager {
       const entries = fs.readdirSync(workspacePluginDir, { withFileTypes: true });
       
       for (const entry of entries) {
-        if (entry.name.endsWith('.js') || entry.name.endsWith('.ts')) {
+        if (entry.name.endsWith('.js')) {
+          pluginPaths.push(path.join(workspacePluginDir, entry.name));
+        } else if (entry.name.endsWith('.ts') && isTsSupported) {
           pluginPaths.push(path.join(workspacePluginDir, entry.name));
         }
       }
