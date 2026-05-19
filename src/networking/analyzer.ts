@@ -228,10 +228,6 @@ export class NetworkAnalyzer extends EventEmitter {
   }
 
   stopCapture(): void {
-    if (!this.isActive) {
-      return;
-    }
-
     this.isActive = false;
     if (this.simulationTimer) {
       clearTimeout(this.simulationTimer);

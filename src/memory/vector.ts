@@ -137,6 +137,9 @@ export class VectorStore {
     this.vectorFile = path.join(memoryDir, 'vectors.json');
     
     if (enabled) {
+      if (!fs.existsSync(memoryDir)) {
+        fs.mkdirSync(memoryDir, { recursive: true, mode: 0o700 });
+      }
       this.load();
       this.registerShutdownHooks();
     }
