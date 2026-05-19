@@ -72,6 +72,17 @@ function parseSkillFile(filePath: string, source: Skill['source']): Skill | null
 function parseYamlFrontmatter(yaml: string): SkillMetadata {
   const metadata: SkillMetadata = { name: '', description: '' };
   
+  const parseList = (val: string): string[] => {
+    let cleaned = val.trim();
+    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+      cleaned = cleaned.slice(1, -1);
+    }
+    return cleaned
+      .split(',')
+      .map(t => t.trim().replace(/^['"]|['"]$/g, ''))
+      .filter(Boolean);
+  };
+
   for (const line of yaml.split('\n')) {
     const colonIdx = line.indexOf(':');
     if (colonIdx === -1) continue;
@@ -84,9 +95,9 @@ function parseYamlFrontmatter(yaml: string): SkillMetadata {
       case 'description': metadata.description = value; break;
       case 'version': metadata.version = value; break;
       case 'author': metadata.author = value; break;
-      case 'tags': metadata.tags = value.split(',').map(t => t.trim()); break;
-      case 'os': metadata.os = value.split(',').map(t => t.trim()); break;
-      case 'requires': metadata.requires = value.split(',').map(t => t.trim()); break;
+      case 'tags': metadata.tags = parseList(value); break;
+      case 'os': metadata.os = parseList(value); break;
+      case 'requires': metadata.requires = parseList(value); break;
     }
   }
   

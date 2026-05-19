@@ -34,18 +34,26 @@ export class SlackAdapter extends ChannelAdapter {
     if (!data.ok) throw new Error(`Slack auth failed: ${data.error}`);
 
     const WebSocket = require('ws');
-    this.ws = new WebSocket(data.url);
+    const socket = new WebSocket(data.url);
+    this.ws = socket;
 
-    this.ws.on('open', () => {
-      this.connected = true;
-      this.lastPongAt = Date.now();
-      this.startKeepalive();
+    socket.on('open', () => {
+      if (this.ws === socket) {
+        this.connected = true;
+        this.lastPongAt = Date.now();
+        this.startKeepalive();
+      }
       auditLog('SLACK_CONNECTED', 'Socket Mode active');
     });
 
-    this.ws.on('pong', () => { this.lastPongAt = Date.now(); });
+    socket.on('pong', () => {
+      if (this.ws === socket) {
+        this.lastPongAt = Date.now();
+      }
+    });
 
-    this.ws.on('message', (raw: string) => {
+    socket.on('message', (raw: string) => {
+      if (this.ws !== socket) return;
       let payload: any;
       try {
         payload = JSON.parse(raw.toString());
@@ -60,13 +68,15 @@ export class SlackAdapter extends ChannelAdapter {
       }
     });
 
-    this.ws.on('close', () => {
-      this.connected = false;
-      this.stopKeepalive();
+    socket.on('close', () => {
+      if (this.ws === socket) {
+        this.connected = false;
+        this.stopKeepalive();
+      }
       auditLog('SLACK_DISCONNECTED', '');
     });
 
-    this.ws.on('error', (err: Error) => {
+    socket.on('error', (err: Error) => {
       auditLog('SLACK_ERROR', err.message);
     });
   }

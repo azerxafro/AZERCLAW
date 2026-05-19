@@ -38,7 +38,7 @@ export class TelegramAdapter extends ChannelAdapter {
   }
 
   async send(options: SendOptions): Promise<void> {
-    await fetch(`${this.baseUrl}/sendMessage`, {
+    const res = await fetch(`${this.baseUrl}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -48,6 +48,32 @@ export class TelegramAdapter extends ChannelAdapter {
         parse_mode: 'Markdown',
       }),
     });
+
+    if (!res.ok) {
+      let errDescription = '';
+      try {
+        const data = await res.json() as { ok: boolean; description?: string };
+        errDescription = data.description || '';
+      } catch { /* ignore */ }
+
+      if (errDescription.includes("can't parse entities") || errDescription.includes("can't find end of")) {
+        // Fall back to sending as plain text if Markdown formatting fails
+        const retryRes = await fetch(`${this.baseUrl}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: options.channelId,
+            text: options.content,
+            reply_to_message_id: options.replyTo ? parseInt(options.replyTo) : undefined,
+          }),
+        });
+        if (!retryRes.ok) {
+          throw new Error(`Telegram send fallback failed: ${retryRes.statusText}`);
+        }
+      } else {
+        throw new Error(`Telegram send failed: ${errDescription || res.statusText}`);
+      }
+    }
   }
 
   isConnected(): boolean {

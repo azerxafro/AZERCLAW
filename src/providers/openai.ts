@@ -223,15 +223,18 @@ export class OpenAIProvider extends BaseProvider {
   }
 
   async validateConnection(): Promise<{ valid: boolean; error?: string }> {
+    let timeoutId: NodeJS.Timeout | undefined;
     try {
       await Promise.race([
         this.client.models.list(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection timed out (10s)')), 10000)
-        ),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => reject(new Error('Connection timed out (10s)')), 10000);
+        }),
       ]);
+      if (timeoutId) clearTimeout(timeoutId);
       return { valid: true };
     } catch (error: unknown) {
+      if (timeoutId) clearTimeout(timeoutId);
       return { valid: false, error: error instanceof Error ? error.message : 'Connection failed' };
     }
   }
