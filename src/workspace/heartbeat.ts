@@ -569,17 +569,25 @@ This file defines proactive tasks that run automatically in your workspace.
   }
 
   private async executeShellCommand(command: string, execution: TaskExecution): Promise<any> {
-    const { execSync } = require('child_process');
+    const { exec } = require('child_process');
+    const { getSafeEnv } = require('../core/security');
     
-    try {
+    return new Promise((resolve, reject) => {
       execution.logs.push(`Executing shell command: ${command}`);
-      const output = execSync(command, { encoding: 'utf-8', cwd: this.config.workspaceDir });
-      execution.logs.push(`Command output: ${output}`);
-      return { command, output };
-    } catch (error: any) {
-      execution.logs.push(`Command error: ${error.message}`);
-      throw error;
-    }
+      exec(command, {
+        encoding: 'utf-8',
+        cwd: this.config.workspaceDir,
+        env: getSafeEnv(),
+      }, (error: any, stdout: string, stderr: string) => {
+        if (error) {
+          execution.logs.push(`Command error: ${error.message || String(error)}`);
+          reject(error);
+        } else {
+          execution.logs.push(`Command output: ${stdout}`);
+          resolve({ command, output: stdout });
+        }
+      });
+    });
   }
 
   private async executeWorkflow(workflowName: string, execution: TaskExecution): Promise<any> {

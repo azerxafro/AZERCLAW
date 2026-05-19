@@ -113,16 +113,33 @@ export class LocalLlamaProvider extends BaseProvider {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          if (buffer.trim()) {
+            try {
+              const data = JSON.parse(buffer.trim());
+              if (data.message?.content) {
+                yield { type: 'text', content: data.message.content };
+              }
+              if (data.done) {
+                yield { type: 'done' };
+              }
+            } catch { /* ignore */ }
+          }
+          break;
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(l => l.trim());
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
           try {
-            const data = JSON.parse(line);
+            const data = JSON.parse(trimmed);
             if (data.message?.content) {
               yield { type: 'text', content: data.message.content };
             }
@@ -130,7 +147,7 @@ export class LocalLlamaProvider extends BaseProvider {
               yield { type: 'done' };
             }
           } catch {
-            // Skip malformed NDJSON lines
+            // Skip malformed lines
           }
         }
       }

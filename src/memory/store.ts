@@ -203,6 +203,24 @@ export class SessionStore {
   }
 
   /**
+   * Replace the full message history for a session and update the persisted store.
+   */
+  updateHistory(sessionId: string, messages: ChatMessage[]): void {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+    session.messages = [...messages];
+    session.updatedAt = new Date().toISOString();
+    
+    // Re-estimate tokens
+    let totalTokens = 0;
+    for (const msg of messages) {
+      totalTokens += Math.ceil(msg.content.length / 4);
+    }
+    session.tokenCount = totalTokens;
+    this.save();
+  }
+
+  /**
    * Auto-title a session based on first message.
    */
   autoTitle(sessionId: string): void {

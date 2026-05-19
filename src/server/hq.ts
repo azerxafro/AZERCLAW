@@ -35,6 +35,18 @@ export class VoughtHQ {
   }
 
   start(): void {
+    if (this.server.listening) {
+      return;
+    }
+
+    this.server.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n[HQ Error] Port ${this.port} is already in use by another application. Dashboard cannot launch.`);
+      } else {
+        console.error(`\n[HQ Error] Server error: ${err.message || String(err)}`);
+      }
+    });
+
     // Bind to loopback by default; allow opt-in remote exposure via env var.
     const host = process.env.AZERCLAW_HQ_HOST || '127.0.0.1';
     this.server.listen(this.port, host, () => {

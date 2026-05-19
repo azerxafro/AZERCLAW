@@ -160,20 +160,64 @@ export const searchFilesTool: Tool = {
   async execute(args: Record<string, unknown>): Promise<ToolResult> {
     const searchPath = path.resolve(args.path as string);
     const pattern = args.pattern as string;
+    
     try {
-      const { spawnSync } = require('child_process');
-      const grepArgs = ['-rnI'];
-      if (args.filePattern) grepArgs.push(`--include=${args.filePattern as string}`);
-      // Use -e to ensure pattern starting with '-' is not parsed as a flag
-      grepArgs.push('-e', pattern, '--', searchPath);
-      const res = spawnSync('grep', grepArgs, { encoding: 'utf-8', timeout: 10000, maxBuffer: 10 * 1024 * 1024 });
-      // grep exit: 0 = matches, 1 = no matches, >1 = error
-      if (res.status !== null && res.status > 1) {
-        return { success: false, output: '', error: res.stderr?.trim() || `grep exited with ${res.status}` };
+      const fs = require('fs');
+      if (!fs.existsSync(searchPath)) {
+        return { success: false, output: '', error: `Path does not exist: ${searchPath}` };
       }
-      const lines = (res.stdout || '').split('\n').slice(0, 50).join('\n').trim();
+
+      let regex: RegExp;
+      try {
+        regex = new RegExp(pattern);
+      } catch {
+        const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        regex = new RegExp(escaped);
+      }
+
+      const globToRegExp = (glob: string) => {
+        const reString = glob
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+          .replace(/\*/g, '.*')
+          .replace(/\?/g, '.');
+        return new RegExp(`^${reString}$`);
+      };
+
+      const results: string[] = [];
+      const searchRecursive = (currentPath: string) => {
+        const base = path.basename(currentPath);
+        if (base === 'node_modules' || base === '.git' || base === 'dist' || base === 'build') return;
+
+        const stat = fs.statSync(currentPath);
+        if (stat.isDirectory()) {
+          const files = fs.readdirSync(currentPath);
+          for (const file of files) {
+            searchRecursive(path.join(currentPath, file));
+          }
+        } else if (stat.isFile()) {
+          if (args.filePattern) {
+            const globRe = globToRegExp(args.filePattern as string);
+            if (!globRe.test(base)) return;
+          }
+          try {
+            const content = fs.readFileSync(currentPath, 'utf8');
+            if (content.includes('\0')) return; // skip binary files
+            const lines = content.split(/\r?\n/);
+            lines.forEach((line: string, index: number) => {
+              if (regex.test(line)) {
+                results.push(`${currentPath}:${index + 1}:${line}`);
+              }
+            });
+          } catch { /* ignore read failures */ }
+        }
+      };
+
+      searchRecursive(searchPath);
+      const lines = results.slice(0, 50).join('\n').trim();
       return { success: true, output: lines || 'No matches found' };
-    } catch (e: any) { return { success: false, output: '', error: e?.message || 'search failed' }; }
+    } catch (e: any) {
+      return { success: false, output: '', error: e?.message || 'search failed' };
+    }
   },
 };
 

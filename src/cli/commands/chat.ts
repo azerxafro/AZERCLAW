@@ -370,9 +370,11 @@ export async function runChat(options: { model?: string; provider?: string; init
             summaryThinking.stop();
             
             if (summaryResult.finishReason !== 'error') {
-              agent.setHistory([
+              const newHistory = [
                 { role: 'system', content: `Previous Conversation Summary:\n${summaryResult.content}` }
-              ]);
+              ];
+              agent.setHistory(newHistory);
+              sessionStore.updateHistory(session.id, newHistory);
               messageCount = 1;
               fishSuccess('Conversation compacted into a summary.');
             } else {

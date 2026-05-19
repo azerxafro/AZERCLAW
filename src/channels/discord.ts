@@ -21,13 +21,14 @@ export class DiscordAdapter extends ChannelAdapter {
     if (!this.token) throw new Error('Discord bot token required');
 
     const WebSocket = require('ws');
-    this.ws = new WebSocket('wss://gateway.discord.gg/?v=10&encoding=json');
+    const socket = new WebSocket('wss://gateway.discord.gg/?v=10&encoding=json');
+    this.ws = socket;
 
-    this.ws.on('open', () => {
+    socket.on('open', () => {
       auditLog('DISCORD_CONNECTED', 'WebSocket opened');
     });
 
-    this.ws.on('message', (data: string) => {
+    socket.on('message', (data: string) => {
       let payload: any;
       try {
         payload = JSON.parse(data.toString());
@@ -42,13 +43,18 @@ export class DiscordAdapter extends ChannelAdapter {
       }
     });
 
-    this.ws.on('close', () => {
-      this.connected = false;
-      if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+    socket.on('close', () => {
+      if (this.ws === socket) {
+        this.connected = false;
+        if (this.heartbeatInterval) {
+          clearInterval(this.heartbeatInterval);
+          this.heartbeatInterval = null;
+        }
+      }
       auditLog('DISCORD_DISCONNECTED', 'WebSocket closed');
     });
 
-    this.ws.on('error', (err: Error) => {
+    socket.on('error', (err: Error) => {
       auditLog('DISCORD_ERROR', err.message);
     });
   }
@@ -158,7 +164,7 @@ export class DiscordAdapter extends ChannelAdapter {
       op: 2,
       d: {
         token: this.token,
-        intents: 513, // GUILDS + GUILD_MESSAGES
+        intents: 33281, // GUILDS (1) + GUILD_MESSAGES (512) + MESSAGE_CONTENT (32768)
         properties: {
           os: process.platform,
           browser: 'azerclaw',

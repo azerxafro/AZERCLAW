@@ -219,7 +219,7 @@ export class AgentRuntime {
       }
 
       const result = await router.complete({
-        messages: this.context.messages,
+        messages: this.getContextWindow(this.context.messages),
         systemPrompt: this.context.systemPrompt,
         tools: availableTools,
         maxTokens: runtimeConfig.ai.maxTokens || 2048,
@@ -558,5 +558,21 @@ export class AgentRuntime {
     } catch {
       return {};
     }
+  }
+
+  private getContextWindow(messages: ChatMessage[], maxTokens = 8000): ChatMessage[] {
+    const windowMessages: ChatMessage[] = [];
+    let tokenCount = 0;
+    
+    // Walk backward from most recent
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      const tokens = Math.ceil(msg.content.length / 4);
+      if (tokenCount + tokens > maxTokens) break;
+      windowMessages.unshift(msg);
+      tokenCount += tokens;
+    }
+    
+    return windowMessages;
   }
 }

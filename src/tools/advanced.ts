@@ -119,19 +119,65 @@ export const codeAnalysisTool: Tool = {
       return { success: false, output: '', error: 'Path contains invalid characters' };
     }
     try {
-      const analysis = execSync(`
-        echo "=== Directory: ${dir} ==="
-        echo ""
-        echo "--- File counts by extension ---"
-        find "${dir}" -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sed 's/.*\\.//' | sort | uniq -c | sort -rn | head -20
-        echo ""
-        echo "--- Total files ---"
-        find "${dir}" -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | wc -l
-        echo ""
-        echo "--- Package files ---"
-        find "${dir}" -maxdepth 2 -name "package.json" -o -name "Cargo.toml" -o -name "go.mod" -o -name "requirements.txt" -o -name "Gemfile" 2>/dev/null | head -10
-      `, { encoding: 'utf-8', timeout: 15000, cwd: dir });
-      return { success: true, output: analysis.trim() };
+      const extCounts: Record<string, number> = {};
+      let totalFiles = 0;
+      const packageFiles: string[] = [];
+
+      const walk = (currentPath: string, depth = 0) => {
+        const base = path.basename(currentPath);
+        if (base === 'node_modules' || base === '.git' || base === 'dist' || base === 'build') return;
+
+        try {
+          const stat = fs.statSync(currentPath);
+          if (stat.isDirectory()) {
+            const files = fs.readdirSync(currentPath);
+            for (const file of files) {
+              walk(path.join(currentPath, file), depth + 1);
+            }
+          } else if (stat.isFile()) {
+            totalFiles++;
+            
+            // Extension count
+            let ext = path.extname(currentPath).toLowerCase().slice(1);
+            if (!ext) ext = 'no-extension';
+            extCounts[ext] = (extCounts[ext] || 0) + 1;
+
+            // Package files (maxdepth 2 check: depth 0 is root dir, depth 1 is direct children)
+            if (depth <= 2) {
+              const lowerBase = base.toLowerCase();
+              if (['package.json', 'cargo.toml', 'go.mod', 'requirements.txt', 'gemfile'].includes(lowerBase)) {
+                packageFiles.push(currentPath);
+              }
+            }
+          }
+        } catch { /* ignore read / access errors */ }
+      };
+
+      walk(dir, 0);
+
+      // Format file counts by extension
+      const extensionLines = Object.entries(extCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([ext, count]) => `   ${count} ${ext}`)
+        .join('\n');
+
+      const packageLines = packageFiles.slice(0, 10).join('\n');
+
+      const lines = [
+        `=== Directory: ${dir} ===`,
+        '',
+        '--- File counts by extension ---',
+        extensionLines || 'No files found',
+        '',
+        '--- Total files ---',
+        `${totalFiles}`,
+        '',
+        '--- Package files ---',
+        packageLines || 'No package files found'
+      ].join('\n');
+
+      return { success: true, output: lines };
     } catch (e: any) {
       return { success: false, output: '', error: e.message };
     }
