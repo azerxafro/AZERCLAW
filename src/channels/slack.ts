@@ -65,6 +65,10 @@ export class SlackAdapter extends ChannelAdapter {
       this.stopKeepalive();
       auditLog('SLACK_DISCONNECTED', '');
     });
+
+    this.ws.on('error', (err: Error) => {
+      auditLog('SLACK_ERROR', err.message);
+    });
   }
 
   private startKeepalive(): void {

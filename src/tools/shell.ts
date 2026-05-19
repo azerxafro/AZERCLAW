@@ -5,6 +5,7 @@
 
 import { execSync, spawn } from 'child_process';
 import { Tool, ToolResult } from './registry';
+import { getSafeEnv } from '../core/security';
 
 export const shellTool: Tool = {
   name: 'run_shell',
@@ -31,6 +32,7 @@ export const shellTool: Tool = {
         encoding: 'utf-8',
         maxBuffer: 1024 * 1024 * 10, // 10MB
         stdio: ['pipe', 'pipe', 'pipe'],
+        env: getSafeEnv(),
       });
       return { success: true, output: output.trim() };
     } catch (error: any) {

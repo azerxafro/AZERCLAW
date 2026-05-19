@@ -11,6 +11,7 @@ import { Index } from 'flexsearch';
 
 const INDEX_FILE = path.join(os.homedir(), '.azerclaw', 'memory', 'project_index.json');
 let searchIndex: any = null;
+let indexedCache: Record<string, string> = {};
 
 async function getIndex() {
   if (searchIndex) return searchIndex;
@@ -21,9 +22,10 @@ async function getIndex() {
 
   try {
     const data = await fs.readFile(INDEX_FILE, 'utf-8');
-    const json = JSON.parse(data);
-    // Note: flexsearch import/export is a bit complex in commonjs, 
-    // for now we re-index if not loaded or just store keys.
+    indexedCache = JSON.parse(data);
+    for (const [fullPath, content] of Object.entries(indexedCache)) {
+      searchIndex.add(fullPath, content);
+    }
   } catch { /* fresh index */ }
   
   return searchIndex;
@@ -58,7 +60,9 @@ export const indexProjectTool: Tool = {
           const ext = path.extname(entry.name);
           if (['.ts', '.js', '.md', '.json', '.txt', '.py', '.go', '.rs'].includes(ext)) {
             const content = await fs.readFile(fullPath, 'utf-8');
-            index.add(fullPath, content.slice(0, 10000)); // Index first 10k chars
+            const sliced = content.slice(0, 10000);
+            index.add(fullPath, sliced); // Index first 10k chars
+            indexedCache[fullPath] = sliced;
             fileCount++;
           }
         }
@@ -67,6 +71,9 @@ export const indexProjectTool: Tool = {
 
     try {
       await scan(rootDir);
+      // Persist the index cache to disk
+      await fs.mkdir(path.dirname(INDEX_FILE), { recursive: true });
+      await fs.writeFile(INDEX_FILE, JSON.stringify(indexedCache, null, 2), 'utf-8');
       return { success: true, output: `Successfully indexed ${fileCount} files in ${rootDir}.` };
     } catch (e: any) {
       return { success: false, output: '', error: e.message };

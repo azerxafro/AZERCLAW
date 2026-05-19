@@ -62,7 +62,11 @@ export class TelegramAdapter extends ChannelAdapter {
     let delay = 1000;
     try {
       const res = await fetch(`${this.baseUrl}/getUpdates?offset=${this.offset}&timeout=30`);
-      const data = await res.json() as { ok: boolean; result?: Record<string, unknown>[] };
+      const data = await res.json() as { ok: boolean; description?: string; error_code?: number; result?: Record<string, unknown>[] };
+
+      if (!data.ok) {
+        throw new Error(`Telegram API Error: ${data.description || 'Unknown error'} (${data.error_code || 'no code'})`);
+      }
 
       // Successful poll — reset backoff.
       this.consecutiveErrors = 0;

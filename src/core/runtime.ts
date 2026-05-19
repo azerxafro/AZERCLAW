@@ -440,6 +440,10 @@ export class AgentRuntime {
    */
   abort(): void {
     this.aborted = true;
+    if (this.approvalPromise) {
+      this.approvalPromise.resolve(false);
+      this.approvalPromise = null;
+    }
     for (const [, subAgent] of this.subAgents) {
       subAgent.abort();
     }

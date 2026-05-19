@@ -146,22 +146,25 @@ class ToolRegistry {
       process: {
         env: { ...process.env, OPENAI_API_KEY: undefined, ANTHROPIC_API_KEY: undefined, GOOGLE_API_KEY: undefined }
       },
-      result: { success: false, output: '' } as ToolResult
+      promise: null as Promise<ToolResult> | null
     };
     
     vm.createContext(context);
     const code = `
-      (async () => {
+      promise = (async () => {
         try {
-          result = await tool.execute(args);
+          return await tool.execute(args);
         } catch (e) {
-          result = { success: false, output: '', error: e.message };
+          return { success: false, output: '', error: e.message };
         }
       })()
     `;
     
-    await vm.runInContext(code, context);
-    return context.result;
+    vm.runInContext(code, context);
+    if (context.promise) {
+      return await context.promise;
+    }
+    return { success: false, output: '', error: 'Sandbox execution failed to produce a promise' };
   }
 
   private logTelemetry(toolName: string, duration: number, success: boolean, error?: string): void {

@@ -5,6 +5,7 @@
 
 import { Tool, ToolResult } from './registry';
 import { execSync } from 'child_process';
+import { getSafeEnv } from '../core/security';
 
 /**
  * FRENCHIE: reverse_engineer
@@ -34,13 +35,13 @@ export const reverseEngineerTool: Tool = {
     if (!fs.existsSync(filePath)) {
       return { success: false, output: '', error: `File not found: ${filePath}` };
     }
-    if (/[;|&$`\\"'(){}\[\]!#~]/.test(filePath)) {
+    if (/[;|&$`\\"'(){}\[\]!#~\n\r]/.test(filePath)) {
       return { success: false, output: '', error: 'Path contains invalid characters' };
     }
     try {
-      const stats = execSync(`ls -lh "${filePath}"`, { encoding: 'utf-8' });
-      const strings = execSync(`strings "${filePath}" | head -n 50`, { encoding: 'utf-8' });
-      const fileType = execSync(`file "${filePath}"`, { encoding: 'utf-8' });
+      const stats = execSync(`ls -lh "${filePath}"`, { encoding: 'utf-8', env: getSafeEnv() });
+      const strings = execSync(`strings "${filePath}" | head -n 50`, { encoding: 'utf-8', env: getSafeEnv() });
+      const fileType = execSync(`file "${filePath}"`, { encoding: 'utf-8', env: getSafeEnv() });
       
       return {
         success: true,
@@ -79,12 +80,12 @@ export const stealthAuditTool: Tool = {
     if (!fs.existsSync(target)) {
       return { success: false, output: '', error: `Target not found: ${target}` };
     }
-    if (/[;|&$`\\"'(){}\[\]!#~]/.test(target)) {
+    if (/[;|&$`\\"'(){}\[\]!#~\n\r]/.test(target)) {
       return { success: false, output: '', error: 'Target path contains invalid characters' };
     }
     try {
       // Basic secret sniffing
-      const secretScan = execSync(`grep -rEi "api_key|secret|password|token" "${target}" --exclude-dir=node_modules | head -n 20`, { encoding: 'utf-8' });
+      const secretScan = execSync(`grep -rEi "api_key|secret|password|token" "${target}" --exclude-dir=node_modules | head -n 20`, { encoding: 'utf-8', env: getSafeEnv() });
       return {
         success: true,
         output: `Stealth Audit Results for ${target}:\n\nPotential Secret Leaks:\n${secretScan || 'None found.'}`,
@@ -123,11 +124,11 @@ export const patternSpotterTool: Tool = {
     if (!fs.existsSync(filePath)) {
       return { success: false, output: '', error: `File not found: ${filePath}` };
     }
-    if (/[;|&$`\\"'(){}\[\]!#~]/.test(filePath)) {
+    if (/[;|&$`\\"'(){}\[\]!#~\n\r]/.test(filePath)) {
       return { success: false, output: '', error: 'Path contains invalid characters' };
     }
     try {
-      const patterns = execSync(`sort "${filePath}" | uniq -c | sort -rn | head -n 20`, { encoding: 'utf-8' });
+      const patterns = execSync(`sort "${filePath}" | uniq -c | sort -rn | head -n 20`, { encoding: 'utf-8', env: getSafeEnv() });
       return {
         success: true,
         output: `Pattern Spotter Insights for ${filePath}:\n\nTop Unique Lines:\n${patterns}`,
@@ -218,6 +219,7 @@ export const applyFixTool: Tool = {
         encoding: 'utf-8',
         timeout: 30_000,
         maxBuffer: 10 * 1024 * 1024,
+        env: getSafeEnv(),
       });
       return {
         success: true,
