@@ -212,10 +212,10 @@ export async function runOnboard(): Promise<void> {
 
   // ─── Step 2: Select default model ─────────────────────────
 
-  const defaultProvider = config.getAll().ai.defaultProvider;
-  const knownModels = PROVIDER_MODELS[defaultProvider] || [];
+  const defaultProvider = config.getAll()?.ai?.defaultProvider;
+  const knownModels = (defaultProvider && PROVIDER_MODELS && PROVIDER_MODELS[defaultProvider]) || [];
   
-  if (knownModels.length > 0) {
+  if (defaultProvider && knownModels.length > 0) {
     console.log('');
     const currentModel = config.getAll().ai.providers[defaultProvider as typeof ProviderName]?.defaultModel;
     

@@ -82,6 +82,26 @@ const SPLASH_FISH_ART = [
   `           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       `,
 ];
 
+export const GOJO_ASCII_ART = [
+  `                      /\\   /\\   /\\                    `,
+  `                     /  \\ /  \\ /  \\                   `,
+  `                    / /\\ V /\\ V /\\ \\                  `,
+  `                   / /  \\|/  \\|/  \\ \\                 `,
+  `                  | |   (⚙)  (⚙)   | |                `,
+  `                  | |      ||      | |                `,
+  `                  | |     \\__/     | |                `,
+  `                   \\ \\   /====\\   / /                 `,
+  `                    \\_\\ /      \\ /_/                  `,
+  `                       /        \\                     `,
+  `                      /  /\\  /\\  \\                    `,
+  `                     /  /  \\/  \\  \\                   `,
+  `                    /  /  |  |  \\  \\                  `,
+  `                   (  (   |  |   )  )                 `,
+  `                    \\  \\  |__|  /  /                  `,
+  `                     \\  \\/    \\/  /                   `,
+  `                   ~~~~ INFINITE VOID ~~~~            `,
+];
+
 const TAGLINE = `Diabolical AI · Scorched Earth · Your Way`;
 const SUBTITLE = `Uncensored & Autonomous — Powered by Compound V`;
 
@@ -160,6 +180,14 @@ export async function playSplashScreen(version: string): Promise<void> {
     const pad = Math.max(0, Math.floor((termWidth - line.length) / 2));
     process.stdout.write(' '.repeat(pad) + BLOOD_GRADIENT(line) + '\n');
     await sleep(20);
+  }
+
+  await sleep(50);
+  for (let row = 0; row < GOJO_ASCII_ART.length; row++) {
+    const line = GOJO_ASCII_ART[row];
+    const pad = Math.max(0, Math.floor((termWidth - line.length) / 2));
+    process.stdout.write(' '.repeat(pad) + BLOOD_GRADIENT(line) + '\n');
+    await sleep(15);
   }
   
   await sleep(150);

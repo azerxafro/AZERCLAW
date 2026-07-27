@@ -32,7 +32,7 @@ const BLOOD = gradientString(['#7f1d1d', '#ef4444', '#dc2626', '#b91c1c']);
 
 // ─── Known Models Per Provider ──────────────────────────────────
 
-const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
+export const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }[]> = {
   opencode: [
     { name: 'MiniMax M2.5 Free', id: 'minimax-m2.5-free', hint: '🆓 Free tier · 1T context' },
     { name: 'Ring 2.6 Free', id: 'ring-2.6-1t:free', hint: '🆓 Free tier · 1T context' },
@@ -69,7 +69,7 @@ const PROVIDER_MODELS: Record<string, { name: string; id: string; hint: string }
   ],
 };
 
-const PROVIDER_LABELS: Record<string, string> = {
+export const PROVIDER_LABELS: Record<string, string> = {
   opencode: '🔷 Opencode (Free)',
   groq: '⚡ Groq (Fast Free)',
   openrouter: '🔌 OpenRouter (Free Tier)',
